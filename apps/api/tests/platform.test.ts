@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto';
 import { app } from '../src/app';
 import { db } from '../src/db';
 import { CONFIG } from '../src/config';
-import { analytics, csvExport } from '../src/services/analytics.service';
+import { analytics, csvExport, dhakaDay } from '../src/services/analytics.service';
 import { PriorityService } from '../src/services/priority.service';
 import { analyzeBengaliComplaint } from '../src/services/ai.service';
 import { provisionOperator } from '../src/services/operator.service';
@@ -63,6 +63,7 @@ describe('Citizen tracking, analytics and production protection',()=>{
   test('Dhaka date filters include the local day before the UTC calendar rollover',()=>{
     const report=db.reports.get('rep-001')!;db.updateReport(report.id,{createdAt:'2026-10-09T19:00:00.000Z'});
     const result=analytics({from:'2026-10-10',to:'2026-10-10',source:'demo_seed'});expect(result.rows.some(r=>r.id===report.id)).toBe(true);
+    expect(dhakaDay('2026-09-30T19:00:00.000Z')).toBe('2026-10-01');
     expect(analytics({from:'2026-10-11',to:'2026-10-11'}).rows.some(r=>r.id===report.id)).toBe(false);
   });
   test('analytics aggregates match scoped rows, date validation and pagination; export neutralizes formulas',async()=>{

@@ -3,7 +3,7 @@ import { app } from '../src/app';
 import { db } from '../src/db';
 import { CONFIG } from '../src/config';
 import * as analyticsModule from '../src/services/analytics.service';
-import { seedCompetitionDemo, scenarios, rootClusters, twin, coverage, demoCases, MissionInput, MissionUpdate, saveMission, updateMission } from '../src/services/competition.service';
+import { seedCompetitionDemo, scenarios, rootClusters, twin, coverage, demoCases, MissionInput, MissionUpdate, saveMission, updateMission, routeStops } from '../src/services/competition.service';
 
 describe('Competition MVP integrity and integration',()=>{
   let before:ReturnType<typeof db.snapshot>,token:string;
@@ -43,6 +43,7 @@ describe('Competition MVP integrity and integration',()=>{
   test('mission saves suggested route, supports later assignment and persists updates in report history',async()=>{
     const mission=saveMission(MissionInput.parse({title:'Demo field mission',reportIds:['mvp-demo-water-3','mvp-demo-drain-1']}),'user-admin-01',true);
     expect(mission.route.map(s=>s.order)).toEqual([1,2]);expect(mission.route.every(s=>s.checklist.length>=4)).toBe(true);
+    expect(mission.route.map(s=>s.visitGroup)).toEqual([1,1]);expect(new Set(routeStops(['mvp-demo-water-1','mvp-demo-light-1']).map(s=>s.visitGroup)).size).toBe(2);
     const planned=updateMission(mission.id,MissionUpdate.parse({revision:1,status:'PLANNED',note:'Demo inspection route reviewed'}),'user-admin-01',true);
     const assigned=updateMission(mission.id,MissionUpdate.parse({revision:planned.revision,status:'ASSIGNED',note:'Demo team assigned for inspection',departmentId:'mvp-demo-drainage',officerId:'mvp-demo-inspector',team:'DEMO team'}),'user-admin-01',true);expect(assigned.status).toBe('ASSIGNED');
     expect(()=>updateMission(mission.id,MissionUpdate.parse({revision:1,status:'IN_PROGRESS',note:'Another update'}),'user-admin-01',true)).toThrow('reload');

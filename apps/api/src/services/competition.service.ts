@@ -164,7 +164,8 @@ export function routeStops(ids:string[]) {
   const pending=ids.map(id=>{const r=db.reports.get(id);if(!r)fail('Report not found',404);return r!;}).sort((a,b)=>a.id.localeCompare(b.id));
   const ordered:Report[]=[];
   while(pending.length){if(ordered.length){const last=ordered[ordered.length-1];pending.sort((a,b)=>distance(last,a)-distance(last,b) || a.id.localeCompare(b.id));}ordered.push(pending.shift()!);}
-  return ordered.map((r,index)=>({reportId:r.id,order:index+1,latitude:r.latitude,longitude:r.longitude,distanceFromPrevious:index?Math.round(distance(ordered[index-1],r)):0,
+  const groups=groupStops(ordered);
+  return ordered.map((r,index)=>({reportId:r.id,order:index+1,visitGroup:groups.findIndex(g=>g.reportIds.includes(r.id))+1,latitude:r.latitude,longitude:r.longitude,distanceFromPrevious:index?Math.round(distance(ordered[index-1],r)):0,
     checklist:['নিরাপদ প্রবেশ ও সঠিক স্থান নিশ্চিত করুন',...(['DRAINAGE','WATERLOGGING'].includes(r.category)?['বাধা ও প্রবাহ পরীক্ষা করুন','বৃষ্টি / পানির গভীরতা নথিভুক্ত করুন']:r.category==='ROAD_DAMAGE'?['গর্ত ও পৃষ্ঠের মাপ নিন','ভিত্তি ও পানি নিষ্কাশন পরীক্ষা করুন']:r.category==='STREETLIGHT'?['প্রশিক্ষিত কর্মীর বৈদ্যুতিক নিরাপত্তা পরীক্ষা','বাতি ও সংযোগের অবস্থা নথিভুক্ত করুন']:['সমস্যার পরিমাণ ও সেবার প্রবেশপথ নথিভুক্ত করুন']),'ছবি, পর্যবেক্ষণ ও follow-up নথিভুক্ত করুন']}));
 }
 

@@ -1,7 +1,16 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+// Source lives in src/; compiled code lives in dist/src/.
+export const API_ROOT_DIR = path.resolve(
+  __dirname,
+  path.basename(path.dirname(__dirname)) === 'dist' ? '../..' : '..'
+);
+dotenv.config({ path: path.join(API_ROOT_DIR, '.env') });
+
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET must be configured in production');
+}
 
 export const CONFIG = {
   PORT: process.env.PORT ? parseInt(process.env.PORT, 10) : 5000,
@@ -16,7 +25,8 @@ export const CONFIG = {
 
   // Image Upload / Storage
   STORAGE_PROVIDER: process.env.STORAGE_PROVIDER || 'local', // 'local' or 'supabase'
-  UPLOAD_DIR: path.resolve(__dirname, '../uploads'),
+  UPLOAD_DIR: process.env.UPLOAD_DIR || path.join(API_ROOT_DIR, 'uploads'),
+  PUBLIC_DIR: path.join(API_ROOT_DIR, 'public'),
   PUBLIC_BASE_URL: process.env.PUBLIC_BASE_URL || 'http://localhost:5000',
 
   // Civic Analytics & Priority Configuration

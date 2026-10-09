@@ -44,6 +44,7 @@ const CreateReportSchema = z.object({
 
 import fs from 'fs';
 import path from 'path';
+import { CONFIG } from '../config';
 
 // POST /api/v1/reports/upload-image
 // Accepts base64 image data and stores in uploads folder
@@ -67,7 +68,7 @@ router.post('/upload-image', (req, res) => {
 
     const buffer = Buffer.from(matches[2], 'base64');
     const filename = `img_${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
-    const uploadsDir = path.resolve(__dirname, '../../uploads');
+    const uploadsDir = CONFIG.UPLOAD_DIR;
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }

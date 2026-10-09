@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: nagarbondhu-api
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci --include=dev --workspace=@nagarbondhu/shared --workspace=@nagarbondhu/api && npm run build:shared && npm --prefix apps/api run build
+    startCommand: npm run start:api
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.16.0
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash

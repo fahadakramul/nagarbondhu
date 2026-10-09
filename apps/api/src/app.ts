@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import { CONFIG } from './config';
 import { errorHandler } from './middleware/errorHandler';
 
 import authRoutes from './routes/auth.routes';
@@ -21,8 +22,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 import fs from 'fs';
 
 // Static uploads directory and Public Web App
-app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
-app.use(express.static(path.resolve(__dirname, '../public')));
+app.use('/uploads', express.static(CONFIG.UPLOAD_DIR));
+app.use(express.static(CONFIG.PUBLIC_DIR));
 
 // Health check
 app.get('/api/v1/health', (req, res) => {
@@ -48,7 +49,7 @@ app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
     return next();
   }
-  const indexPath = path.resolve(__dirname, '../public/index.html');
+  const indexPath = path.join(CONFIG.PUBLIC_DIR, 'index.html');
   if (fs.existsSync(indexPath)) {
     return res.sendFile(indexPath);
   }

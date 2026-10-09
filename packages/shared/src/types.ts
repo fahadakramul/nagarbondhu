@@ -144,6 +144,7 @@ export interface Report {
   wardName?: string | null;
   imageUrl?: string | null;
   status: ReportStatus;
+  actionStatus?: import('./actions').ActionStatus;
   sourceType: SourceType;
   createdAt: string;
   updatedAt: string;

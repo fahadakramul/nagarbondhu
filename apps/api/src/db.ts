@@ -14,13 +14,14 @@ import {
 } from '@nagarbondhu/shared';
 import { RAJSHAHI_WARDS, calculateHaversineDistanceMeters } from '@nagarbondhu/shared';
 import bcrypt from 'bcryptjs';
+import { Department, ResponsiblePerson, ActionRecommendation, ActionPlan, ActionEvent, ProgressUpdate } from '@nagarbondhu/shared';
 
 /**
  * Robust Database Repository for NagarBondhu AI
  * Provides seamless in-memory database store initialized with seed records,
  * and connects with PostgreSQL Prisma when available.
  */
-class InMemoryDatabase {
+export class DatabaseRepository {
   users: Map<string, User & { passwordHash: string }> = new Map();
   wards: Map<string, Ward> = new Map();
   reports: Map<string, Report> = new Map();
@@ -28,9 +29,33 @@ class InMemoryDatabase {
   priorityAssessments: Map<string, PriorityAssessmentRecord> = new Map();
   possibleDuplicates: Map<string, PossibleDuplicateRecord> = new Map();
   statusHistories: ReportStatusHistoryRecord[] = [];
+  departments = new Map<string, Department>();
+  officers = new Map<string, ResponsiblePerson>();
+  recommendations = new Map<string, ActionRecommendation>();
+  actionPlans = new Map<string, ActionPlan>();
+  actionEvents = new Map<string, ActionEvent>();
+  progressUpdates = new Map<string, ProgressUpdate>();
 
   constructor() {
     this.seedDefaultData();
+    for (const [id, displayName] of [
+      ['roads', 'সড়ক ও ফুটপাথ রক্ষণাবেক্ষণ দল'], ['drainage', 'ড্রেনেজ সেবা দল'],
+      ['waste', 'বর্জ্য ব্যবস্থাপনা দল'], ['lighting', 'সড়কবাতি রক্ষণাবেক্ষণ দল'], ['general', 'নাগরিক সেবা সমন্বয় দল'],
+    ]) this.departments.set(id, { id, displayName, active: true, source: 'Generic service team template; not an official municipal directory', verificationStatus: 'DEMO' });
+  }
+
+  snapshot(): Record<string, any[]> {
+    const names = ['users', 'wards', 'reports', 'aiAnalyses', 'priorityAssessments', 'possibleDuplicates', 'departments', 'officers', 'recommendations', 'actionPlans', 'actionEvents', 'progressUpdates'] as const;
+    const snapshot: Record<string, any[]> = { statusHistories: this.statusHistories };
+    for (const name of names) snapshot[name] = Array.from((this[name] as Map<string, unknown>).values());
+    return JSON.parse(JSON.stringify(snapshot));
+  }
+
+  restore(snapshot: Record<string, any[]>) {
+    for (const [name, values] of Object.entries(snapshot)) {
+      if (name === 'statusHistories') this.statusHistories = values as ReportStatusHistoryRecord[];
+      else (this as any)[name] = new Map(values.map(value => [value.id, value]));
+    }
   }
 
   seedDefaultData() {
@@ -492,6 +517,7 @@ class InMemoryDatabase {
     const report = this.reports.get(id);
     if (!report) return null;
     const clone = { ...report };
+    clone.wardName = report.wardId ? this.findWardById(report.wardId)?.wardName : null;
     clone.aiAnalysis = this.findAiAnalysisByReportId(id);
     clone.priorityAssessment = this.findPriorityAssessmentByReportId(id);
     clone.possibleDuplicates = this.findDuplicatesForReport(id);
@@ -539,6 +565,9 @@ class InMemoryDatabase {
       ...r,
       aiAnalysis: this.findAiAnalysisByReportId(r.id),
       priorityAssessment: this.findPriorityAssessmentByReportId(r.id),
+      possibleDuplicates: this.findDuplicatesForReport(r.id),
+      statusHistory: this.statusHistories.filter(h => h.reportId === r.id),
+      wardName: r.wardId ? this.findWardById(r.wardId)?.wardName : null,
     }));
 
     return { reports: paginated, total };
@@ -773,4 +802,4 @@ class InMemoryDatabase {
 }
 
 // Global database singleton
-export const db = new InMemoryDatabase();
+export const db = new DatabaseRepository();

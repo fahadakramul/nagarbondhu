@@ -5,7 +5,7 @@ services:
     plan: free
     region: singapore
     buildCommand: npm ci --include=dev --workspace=@nagarbondhu/shared --workspace=@nagarbondhu/api && npm run build:shared && npm --prefix apps/api run build
-    startCommand: npm run start:api
+    startCommand: npm --prefix apps/api run start:render
     healthCheckPath: /api/v1/health
     envVars:
       - key: NODE_VERSION
@@ -16,3 +16,14 @@ services:
         generateValue: true
       - key: GEMINI_MODEL
         value: gemini-2.5-flash
+      - key: DATABASE_PROVIDER
+        value: postgres
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nagarbondhu-db
+          property: connectionString
+databases:
+  - name: nagarbondhu-db
+    plan: free
+    region: singapore
+    postgresMajorVersion: "16"

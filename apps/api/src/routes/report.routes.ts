@@ -13,6 +13,9 @@ import {
 } from '@nagarbondhu/shared';
 
 const router = Router();
+const publicReport = (report: Report) => ({ ...report, reporterId: undefined, reporterName: undefined,
+  possibleDuplicates: report.possibleDuplicates?.map(duplicate => ({...duplicate, candidateReport: duplicate.candidateReport ? {...duplicate.candidateReport, reporterId: undefined, reporterName: undefined} : undefined})),
+});
 
 const CreateReportSchema = z.object({
   title: z.string().min(3, 'Title is required'),
@@ -45,17 +48,19 @@ const CreateReportSchema = z.object({
 import fs from 'fs';
 import path from 'path';
 import { CONFIG } from '../config';
+import { storeImage } from '../persistence';
+import { randomUUID } from 'crypto';
 
 // POST /api/v1/reports/upload-image
 // Accepts base64 image data and stores in uploads folder
-router.post('/upload-image', (req, res) => {
+router.post('/upload-image', async (req, res, next) => {
   try {
     const { imageBase64 } = req.body;
-    if (!imageBase64) {
+    if (typeof imageBase64 !== 'string') {
       return res.status(400).json({ success: false, error: 'No image data provided' });
     }
 
-    const matches = imageBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    const matches = imageBase64.match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/]+={0,2})$/);
     if (!matches || matches.length !== 3) {
       return res.status(400).json({ success: false, error: 'Invalid base64 image format' });
     }
@@ -67,21 +72,23 @@ router.post('/upload-image', (req, res) => {
     else ext = 'jpg';
 
     const buffer = Buffer.from(matches[2], 'base64');
-    const filename = `img_${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`;
+    const valid = matches[1] === 'image/png' ? buffer.subarray(0,8).equals(Buffer.from('89504e470d0a1a0a','hex')) : matches[1] === 'image/jpeg' ? buffer.subarray(0,3).equals(Buffer.from('ffd8ff','hex')) : buffer.subarray(0,4).toString() === 'RIFF' && buffer.subarray(8,12).toString() === 'WEBP';
+    if (!valid || buffer.length > 4 * 1024 * 1024) return res.status(400).json({success:false,error:'Use a valid JPEG, PNG or WebP image up to 4 MB.'});
+    const filename = `img_${randomUUID()}.${ext}`;
     const uploadsDir = CONFIG.UPLOAD_DIR;
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
     const uploadPath = path.join(uploadsDir, filename);
 
-    fs.writeFileSync(uploadPath, buffer);
+    if (!(await storeImage(filename, matches[1], buffer))) fs.writeFileSync(uploadPath, buffer);
 
     res.json({
       success: true,
       imageUrl: `/uploads/${filename}`,
     });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message || 'Image upload failed' });
+  } catch (err) {
+    next(err);
   }
 });
 
@@ -208,10 +215,7 @@ router.get('/', (req, res) => {
   });
 
   // Sanitize reports (strip private reporter ids)
-  const sanitized = results.reports.map((r) => ({
-    ...r,
-    reporterId: undefined, // Hide private user id
-  }));
+  const sanitized = results.reports.map(publicReport);
 
   res.json({
     success: true,
@@ -245,7 +249,7 @@ router.get('/:id', (req, res) => {
 
   res.json({
     success: true,
-    report,
+    report: publicReport(report),
   });
 });
 

@@ -70,16 +70,17 @@ describe('Reports & Planning Dashboard Integration Tests', () => {
 
   test('admin successfully transitions report status with audit note', async () => {
     const updateRes = await request(app)
-      .patch('/api/v1/admin/reports/rep-001/status')
+      .patch('/api/v1/admin/reports/rep-001/action-status')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
-        status: 'IN_PROGRESS',
+        status: 'AWAITING_FIELD_VERIFICATION',
+        revision: 0,
         note: 'সিটি কর্পোরেশনের সড়ক টিমকে মাঠ পর্যায়ে পাঠানো হয়েছে।',
       });
 
     expect(updateRes.status).toBe(200);
     expect(updateRes.body.success).toBe(true);
-    expect(updateRes.body.report.status).toBe('IN_PROGRESS');
+    expect(updateRes.body.status).toBe('AWAITING_FIELD_VERIFICATION');
 
     // Verify history audit log
     const fetchRes = await request(app).get('/api/v1/reports/rep-001');

@@ -57,6 +57,7 @@ model User {
 
   reports       Report[]
   statusHistory ReportStatusHistory[]
+  actionEvents ActionAuditEvent[]
 
   @@map("users")
 }
@@ -72,6 +73,8 @@ model Ward {
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   reports Report[]
+  officers ResponsiblePerson[]
+  actionPlans ActionPlan[]
 
   @@map("wards")
 }
@@ -89,6 +92,7 @@ model Report {
   wardId       String?        @map("ward_id")
   imageUrl     String?        @map("image_url")
   status       ReportStatus   @default(SUBMITTED)
+  actionStatus ActionStatus?  @map("action_status")
   sourceType   String         @default("citizen_report") @map("source_type")
   createdAt    DateTime       @default(now()) @map("created_at")
   updatedAt    DateTime       @updatedAt @map("updated_at")
@@ -99,6 +103,9 @@ model Report {
   aiAnalysis         AiAnalysis?
   priorityAssessment PriorityAssessment?
   statusHistory      ReportStatusHistory[]
+  actionRecommendations ActionRecommendation[]
+  actionPlan ActionPlan?
+  actionEvents ActionAuditEvent[]
 
   duplicatesAsOriginal  PossibleDuplicate[] @relation("ReportOriginal")
   duplicatesAsCandidate PossibleDuplicate[] @relation("ReportCandidate")
@@ -175,7 +182,8 @@ model ReportStatusHistory {
   reportId       String       @map("report_id")
   previousStatus ReportStatus @map("previous_status")
   newStatus      ReportStatus @map("new_status")
-  changedBy      String       @map("changed_by")
+  changedBy      String?      @map("changed_by")
+  changedByLabel String?      @map("changed_by_label")
   note           String?
   createdAt      DateTime     @default(now()) @map("created_at")
 
@@ -184,4 +192,136 @@ model ReportStatusHistory {
 
   @@index([reportId])
   @@map("report_status_history")
+}
+
+enum ActionStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  AWAITING_FIELD_VERIFICATION
+  READY_FOR_ASSIGNMENT
+  ASSIGNED
+  IN_PROGRESS
+  ON_HOLD
+  RESOLVED
+  CLOSED
+  REJECTED
+}
+
+model Department {
+  id String @id
+  displayName String @map("display_name")
+  active Boolean @default(true)
+  source String
+  verificationStatus String @map("verification_status")
+  officers ResponsiblePerson[]
+  actionPlans ActionPlan[]
+  @@map("departments")
+}
+
+model ResponsiblePerson {
+  id String @id
+  displayName String @map("display_name")
+  title String
+  wardId String? @map("ward_id")
+  departmentId String @map("department_id")
+  contact String?
+  active Boolean @default(true)
+  source String
+  verificationStatus String @map("verification_status")
+  ward Ward? @relation(fields: [wardId], references: [id])
+  department Department @relation(fields: [departmentId], references: [id])
+  actionPlans ActionPlan[]
+  @@index([wardId, active])
+  @@map("responsible_persons")
+}
+
+model ActionRecommendation {
+  id String @id
+  reportId String @map("report_id")
+  data Json
+  provider String
+  modelName String @map("model_name")
+  isFallback Boolean @map("is_fallback")
+  createdBy String @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  report Report @relation(fields: [reportId], references: [id])
+  plans ActionPlan[]
+  @@index([reportId, createdAt])
+  @@map("action_recommendations")
+}
+
+model ActionPlan {
+  id String @id
+  reportId String @unique @map("report_id")
+  recommendationId String? @map("recommendation_id")
+  actionDescription String @map("action_description")
+  wardId String @map("ward_id")
+  officerId String? @map("officer_id")
+  departmentId String @map("department_id")
+  assignmentNote String @map("assignment_note")
+  wardVerificationNote String @map("ward_verification_note")
+  locationOverrideReason String? @map("location_override_reason")
+  priority PriorityLevel
+  urgency String
+  targetDate DateTime @map("target_date")
+  adminNotes String @map("admin_notes")
+  status ActionStatus @default(ASSIGNED)
+  revision Int @default(1)
+  resolutionNotes String? @map("resolution_notes")
+  verificationMethod String? @map("verification_method")
+  verificationStatus String @default("PENDING") @map("verification_status")
+  verificationNote String? @map("verification_note")
+  verifiedBy String? @map("verified_by")
+  verifiedAt DateTime? @map("verified_at")
+  beforePhotoUrl String? @map("before_photo_url")
+  afterPhotoUrl String? @map("after_photo_url")
+  createdBy String @map("created_by")
+  updatedBy String @map("updated_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  report Report @relation(fields: [reportId], references: [id])
+  recommendation ActionRecommendation? @relation(fields: [recommendationId], references: [id])
+  ward Ward @relation(fields: [wardId], references: [id])
+  officer ResponsiblePerson? @relation(fields: [officerId], references: [id])
+  department Department @relation(fields: [departmentId], references: [id])
+  progress ActionProgress[]
+  events ActionAuditEvent[]
+  @@index([status, targetDate])
+  @@index([wardId, departmentId, officerId])
+  @@map("action_plans")
+}
+
+model UploadedImage {
+  id String @id
+  mimeType String @map("mime_type")
+  data Bytes
+  createdAt DateTime @default(now()) @map("created_at")
+  @@map("uploaded_images")
+}
+
+model ActionProgress {
+  id String @id
+  planId String @map("plan_id")
+  note String
+  photoUrl String? @map("photo_url")
+  createdBy String @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  plan ActionPlan @relation(fields: [planId], references: [id])
+  @@map("action_progress")
+}
+
+model ActionAuditEvent {
+  id String @id
+  reportId String @map("report_id")
+  planId String? @map("plan_id")
+  actorId String @map("actor_id")
+  type String
+  note String
+  details Json
+  createdAt DateTime @default(now()) @map("created_at")
+  report Report @relation(fields: [reportId], references: [id])
+  plan ActionPlan? @relation(fields: [planId], references: [id])
+  actor User @relation(fields: [actorId], references: [id])
+  @@index([reportId, createdAt])
+  @@map("action_audit_events")
 }

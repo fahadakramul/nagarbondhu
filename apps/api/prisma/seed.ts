@@ -1,11 +1,12 @@
 import { db } from '../src/db';
 import { RAJSHAHI_WARDS } from '@nagarbondhu/shared';
+import { initializeDatabase, disconnectDatabase } from '../src/persistence';
 
 async function main() {
   console.log('Seeding NagarBondhu AI Database for Rajshahi, Bangladesh...');
 
-  // Reset / ensure seeded
-  db.seedDefaultData();
+  // A fresh database is seeded once; an existing database is loaded without overwriting it.
+  await initializeDatabase();
 
   const wards = db.getAllWards();
   const reports = db.findReports({ limit: 100 });
@@ -18,6 +19,7 @@ async function main() {
   console.log(`✅ Seeded ${reports.total} Realistic Civic Reports across Rajshahi with AI analysis and priority assessments.`);
   console.log(`✅ Seeded Duplicate Detection pair: 'rep-001' and 'rep-002' at Shaheb Bazar.`);
   console.log('Database seeding successfully finished!');
+  await disconnectDatabase();
 }
 
 main().catch((e) => {

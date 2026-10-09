@@ -8,7 +8,7 @@ export function errorHandler(
   res: Response,
   next: NextFunction
 ) {
-  console.error(`[Error] ${req.method} ${req.url}:`, err);
+  if (CONFIG.NODE_ENV !== 'test') console.error(`[Error] ${req.method} ${req.path}: ${err.name || 'Error'}`);
 
   if (err instanceof ZodError) {
     return res.status(400).json({
@@ -33,7 +33,7 @@ export function errorHandler(
       statusCode = 401;
     }
   }
-  const message = err.message || 'Internal server error';
+  const message = statusCode >= 500 && !err.statusCode ? 'Internal server error' : err.message || 'Internal server error';
 
   res.status(statusCode).json({
     success: false,

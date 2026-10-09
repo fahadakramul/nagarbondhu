@@ -31,6 +31,7 @@ services:
       NODE_ENV: production
       PORT: 5000
       DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/nagarbondhu?schema=public
+      DATABASE_PROVIDER: postgres
       JWT_SECRET: nagarbondhu_competition_super_jwt_secret_2026
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: gemini-2.5-flash

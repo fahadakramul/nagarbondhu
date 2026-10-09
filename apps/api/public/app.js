@@ -1,3 +1,5 @@
+function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character])); }
+function safePhotoUrl(value) { return /^https?:\/\//i.test(value || '') || /^\/uploads\/[\w.-]+$/.test(value || '') ? value : ''; }
 // Global State
 let currentTab = 'home';
 let isAdminMode = false;
@@ -388,15 +390,15 @@ function renderMapMarkers() {
 
     const marker = L.marker([r.latitude, r.longitude], { icon: customIcon });
 
-    const photoThumb = r.imageUrl ? `<img src="${r.imageUrl}" alt="Photo" style="width: 100%; height: 80px; object-fit: cover; border-radius: 6px; margin-top: 6px;">` : '';
+    const photoThumb = r.imageUrl ? `<img src="${escapeHtml(safePhotoUrl(r.imageUrl))}" alt="Photo" style="width: 100%; height: 80px; object-fit: cover; border-radius: 6px; margin-top: 6px;">` : '';
 
     const popupHtml = `
       <div class="p-2 space-y-1.5" style="min-width: 200px;">
         <span style="background-color: ${color}; color: white; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: bold;">
           ${CATEGORY_NAMES_BN[r.category] || r.category}
         </span>
-        <h4 style="font-weight: bold; font-size: 13px; margin-top: 4px; color: #0F172A;">${r.title}</h4>
-        <p style="font-size: 11px; color: #64748B;">📍 ${r.addressLabel || 'রাজশাহী'}</p>
+        <h4 style="font-weight: bold; font-size: 13px; margin-top: 4px; color: #0F172A;">${escapeHtml(r.title)}</h4>
+        <p style="font-size: 11px; color: #64748B;">📍 ${escapeHtml(r.addressLabel || 'রাজশাহী')}</p>
         <p style="font-size: 11px; font-weight: bold; color: #D97706;">অগ্রাধিকার স্কোর: ${r.priorityAssessment?.score || 50}/১০০</p>
         ${photoThumb}
         <button onclick="openDetailModal('${r.id}')" style="margin-top: 8px; width: 100%; background-color: #0F766E; color: white; font-size: 11px; font-weight: bold; padding: 5px 8px; border-radius: 6px; border: none; cursor: pointer;">
@@ -415,13 +417,13 @@ function handleFilePicked(event) {
   const file = event.target.files && event.target.files[0];
   if (!file) return;
 
-  if (!file.type.startsWith('image/')) {
+  if (!['image/jpeg','image/png','image/webp'].includes(file.type)) {
     alert('অনুগ্রহ করে শুধুমাত্র ছবি ফাইল নির্বাচন করুন (JPG, PNG, WebP)।');
     return;
   }
 
-  if (file.size > 12 * 1024 * 1024) {
-    alert('ছবির আকার ১২ মেগাবাইটের কম হতে হবে।');
+  if (file.size > 4 * 1024 * 1024) {
+    alert('ছবির আকার ৪ মেগাবাইটের কম হতে হবে।');
     return;
   }
 
@@ -497,7 +499,11 @@ async function loadData() {
       allReports = reportsRes.reports;
       renderReportsFeed(reportsRes.reports);
       if (mainMap) renderMapMarkers();
+      if (dashboardData) renderDashboard(dashboardData);
     }
+    if (!summaryRes.success) ['stat-total','stat-open','stat-high','stat-resolved'].forEach(id => document.getElementById(id).textContent = 'তথ্য অনুপলব্ধ');
+    if (!reportsRes.success) document.getElementById('reports-feed-container').textContent = 'রিপোর্ট লোড করা যায়নি। আবার চেষ্টা করুন।';
+    if (isAdminMode && authToken) loadActionDashboard();
   } catch (err) {
     console.error('Data load error:', err);
   }
@@ -516,6 +522,8 @@ function renderReportsFeed(reports) {
   const container = document.getElementById('reports-feed-container');
   container.innerHTML = '';
 
+  if (!reports.length) container.textContent = 'এখনও কোনো রিপোর্ট নেই।';
+
   reports.forEach(r => {
     const color = CATEGORY_COLORS[r.category] || '#0F766E';
     const prioLevel = r.priorityAssessment?.priorityLevel || 'MEDIUM';
@@ -527,7 +535,7 @@ function renderReportsFeed(reports) {
 
     const photoHtml = r.imageUrl ? `
       <div class="mt-2 rounded-lg overflow-hidden border border-slate-200 max-h-48 bg-slate-100">
-        <img src="${r.imageUrl}" alt="Report photo" class="w-full h-40 object-cover hover:scale-105 transition duration-300">
+        <img src="${escapeHtml(safePhotoUrl(r.imageUrl))}" alt="Report photo" class="w-full h-40 object-cover hover:scale-105 transition duration-300">
       </div>
     ` : '';
 
@@ -540,11 +548,11 @@ function renderReportsFeed(reports) {
           স্কোর ${r.priorityAssessment?.score || 50} • ${prioLevel}
         </span>
       </div>
-      <h3 class="text-sm font-bold text-slate-900 leading-snug">${r.title}</h3>
-      <p class="text-xs text-slate-500 line-clamp-2">${r.description}</p>
+      <p class="text-[10px] text-slate-500">${r.sourceType === 'demo_seed' ? 'নমুনা রিপোর্ট (SAMPLE)' : 'নাগরিক রিপোর্ট'}</p><h3 class="text-sm font-bold text-slate-900 leading-snug">${escapeHtml(r.title)}</h3>
+      <p class="text-xs text-slate-500 line-clamp-2">${escapeHtml(r.description)}</p>
       ${photoHtml}
       <div class="flex justify-between items-center text-[11px] text-slate-400 pt-2 border-t border-slate-100">
-        <span>📍 ${r.addressLabel || 'রাজশাহী'}</span>
+        <span>📍 ${escapeHtml(r.addressLabel || 'রাজশাহী')}</span>
         <span>${new Date(r.createdAt).toLocaleDateString('bn-BD')}</span>
       </div>
     `;
@@ -562,9 +570,9 @@ function renderDashboard(data) {
     item.className = 'bg-rose-50 border-l-4 border-rose-500 p-3 rounded-xl flex justify-between items-center gap-3';
     item.innerHTML = `
       <div>
-        <h4 class="text-xs font-bold text-rose-900">${rec.title}</h4>
-        <p class="text-[11px] text-rose-700 mt-0.5">💡 ${rec.reason}</p>
-        <span class="text-[10px] text-rose-600">📍 ${rec.location}</span>
+        <h4 class="text-xs font-bold text-rose-900">${escapeHtml(rec.title)}</h4>
+        <p class="text-[11px] text-rose-700 mt-0.5">💡 ${escapeHtml(rec.reason)}</p>
+        <span class="text-[10px] text-rose-600">📍 ${escapeHtml(rec.location)}</span>
       </div>
       <span class="text-xs font-extrabold text-rose-700 bg-rose-200/60 px-2 py-1 rounded">স্কোর ${rec.score}</span>
     `;
@@ -598,7 +606,7 @@ function renderDashboard(data) {
     div.className = 'bg-slate-50 p-3 rounded-xl border border-slate-200 flex justify-between items-center';
     div.innerHTML = `
       <div>
-        <h4 class="text-xs font-bold text-slate-900">📍 ${h.areaName}</h4>
+        <h4 class="text-xs font-bold text-slate-900">📍 ${escapeHtml(h.areaName)}</h4>
         <p class="text-[11px] text-slate-500 mt-0.5">প্রধান সমস্যা: ${CATEGORY_NAMES_BN[h.primaryCategory] || h.primaryCategory}</p>
       </div>
       <span class="text-xs font-bold text-amber-700 bg-amber-100 px-2.5 py-1 rounded-lg">${h.reportCount}টি রিপোর্ট</span>
@@ -619,10 +627,10 @@ function renderDashboard(data) {
         div.className = 'bg-purple-50 p-3 rounded-xl border border-purple-200 space-y-1.5';
         div.innerHTML = `
           <div class="flex justify-between items-center text-xs font-bold text-purple-900">
-            <span>${r.title}</span>
+            <span>${escapeHtml(r.title)}</span>
             <span class="bg-purple-200 text-purple-800 px-2 py-0.5 rounded text-[10px]">সাদৃশ্য ${Math.round(d.similarityScore * 100)}%</span>
           </div>
-          <p class="text-[11px] text-purple-800">${d.matchingReasons.distanceExplanation} | ${d.matchingReasons.textMatchExplanation}</p>
+          <p class="text-[11px] text-purple-800">${escapeHtml(d.matchingReasons.distanceExplanation)} | ${escapeHtml(d.matchingReasons.textMatchExplanation)}</p>
           ${isAdminMode && d.reviewStatus === 'PENDING' ? `
             <div class="flex gap-2 pt-1">
               <button onclick="reviewDuplicate('${d.id}', 'CONFIRMED_DUPLICATE')" class="bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-1 rounded hover:bg-emerald-700">✓ ডুপ্লিকেট নিশ্চিত</button>
@@ -765,7 +773,7 @@ function openDetailModal(reportId) {
   selectedReport = r;
 
   document.getElementById('modal-title').textContent = r.title;
-  document.getElementById('modal-location').textContent = `📍 ${r.addressLabel || 'রাজশাহী'}`;
+  document.getElementById('modal-location').textContent = `📍 ${escapeHtml(r.addressLabel || 'রাজশাহী')}`;
   document.getElementById('modal-description').textContent = r.description;
   document.getElementById('modal-category').textContent = CATEGORY_NAMES_BN[r.category] || r.category;
   document.getElementById('modal-status').textContent = r.status;
@@ -782,6 +790,9 @@ function openDetailModal(reportId) {
   }
 
   // AI Box
+  document.getElementById('modal-ai-summary').textContent = 'বিশ্লেষণ পাওয়া যায়নি';
+  document.getElementById('modal-ai-severity').textContent = 'অনুপলব্ধ';
+  document.getElementById('modal-ai-reasons').textContent = '';
   if (r.aiAnalysis) {
     document.getElementById('modal-ai-summary').textContent = r.aiAnalysis.summary;
     document.getElementById('modal-ai-severity').textContent = r.aiAnalysis.severity;
@@ -795,6 +806,8 @@ function openDetailModal(reportId) {
   }
 
   // Priority Box
+  document.getElementById('modal-prio-score').textContent = 'অনুপলব্ধ';
+  document.getElementById('modal-prio-summary').textContent = 'অগ্রাধিকার মূল্যায়ন পাওয়া যায়নি';
   if (r.priorityAssessment) {
     document.getElementById('modal-prio-score').textContent = r.priorityAssessment.score;
     document.getElementById('modal-prio-summary').textContent = r.priorityAssessment.explanation?.summary || 'অগ্রাধিকার মূল্যায়ন সম্পন্ন';
@@ -804,6 +817,7 @@ function openDetailModal(reportId) {
   const adminBox = document.getElementById('modal-admin-controls');
   if (isAdminMode) {
     adminBox.classList.remove('hidden');
+    loadReportActions(reportId);
   } else {
     adminBox.classList.add('hidden');
   }
@@ -846,6 +860,8 @@ async function toggleUserRole() {
   }
 
   loadData();
+  document.getElementById('admin-action-dashboard').classList.toggle('hidden', !isAdminMode);
+  if (selectedReport) openDetailModal(selectedReport.id);
 }
 
 // Admin Status Update

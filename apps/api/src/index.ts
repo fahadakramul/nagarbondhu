@@ -1,13 +1,16 @@
 import { app } from './app';
 import { CONFIG } from './config';
 import fs from 'fs';
+import { initializeDatabase, disconnectDatabase } from './persistence';
 
 // Ensure uploads folder exists
 if (!fs.existsSync(CONFIG.UPLOAD_DIR)) {
   fs.mkdirSync(CONFIG.UPLOAD_DIR, { recursive: true });
 }
 
-const server = app.listen(CONFIG.PORT, () => {
+async function start() {
+ await initializeDatabase();
+ const server = app.listen(CONFIG.PORT, () => {
   console.log(`====================================================`);
   console.log(`  NagarBondhu AI Backend Server Running!`);
   console.log(`  City: Rajshahi, Bangladesh (BIP Apps4Solutions)`);
@@ -16,5 +19,8 @@ const server = app.listen(CONFIG.PORT, () => {
   console.log(`  AI Engine: ${CONFIG.GEMINI_API_KEY ? 'Live Google Gemini (' + CONFIG.GEMINI_MODEL + ')' : 'Smart Heuristic Rule Fallback'}`);
   console.log(`====================================================`);
 });
+ process.on('SIGTERM', () => server.close(() => { disconnectDatabase().finally(() => process.exit(0)); }));
+ return server;
+}
 
-export default server;
+start().catch(error => { console.error('Startup failed:', error.message); process.exit(1); });

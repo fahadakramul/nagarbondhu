@@ -1,5 +1,6 @@
 # 🏙️ NagarBondhu AI (নগরবন্ধু এআই)
 ### AI-Powered Urban Problem Intelligence & Planning Support Platform
+Admin action recommendations, assignments, progress and persistence: [workflow and API documentation](docs/admin-actions.md), [Render deployment](docs/render-deployment.md).
 **Target City:** Rajshahi, Bangladesh  
 **Competition:** BIP Apps4Solutions Competition  
 **Core Differentiator:** Moving beyond mere citizen complaint collection toward **explainable AI-driven urban problem intelligence, automated duplicate detection, deterministic priority scoring, and spatial planning support.**
@@ -157,7 +158,7 @@ The API becomes available at `http://localhost:5000/api/v1/health`.
 
 ## 🔑 7. Demo Accounts & Credentials
 
-The seed database comes preloaded with authentic Rajshahi demo data:
+The seed database comes preloaded with illustrative Rajshahi sample data:
 - **Demo Urban Planner / Admin:**
   - Email: `admin@nagarbondhu.gov.bd`
   - Password: `DemoAdmin123!`

@@ -8,9 +8,9 @@ Keep Root Directory empty because the API needs `packages/shared`.
 For a manually created Web Service, use:
 
 - Build: `npm ci --include=dev --workspace=@nagarbondhu/shared --workspace=@nagarbondhu/api && npm run build:shared && npm --prefix apps/api run build`
-- Start: `npm run start:api`
+- Start: `npm --prefix apps/api run start:render`
 - Health check: `/api/v1/health`
-- Environment: `NODE_ENV=production`, `NODE_VERSION=22.16.0`, and a random `JWT_SECRET`.
+- Environment: `NODE_ENV=production`, `NODE_VERSION=22.16.0`, a random `JWT_SECRET`, `DATABASE_PROVIDER=postgres`, and the private Render PostgreSQL internal connection URL in `DATABASE_URL`.
 - Optional: `GEMINI_API_KEY` to enable live Gemini analysis. Otherwise the existing heuristic analyzer runs.
 
 After the service is live, verify `/`, `/api/v1/health`, login, reports, and image
@@ -21,12 +21,17 @@ an APK; an already installed APK keeps its previous URL.
 
 ## Data retention
 
-The current repository uses an in-memory database, including in production.
-`DATABASE_URL` does not currently enable PostgreSQL persistence. New accounts,
-reports, and changes reset when the server restarts. Uploaded files use Render's
-ephemeral filesystem and can also disappear. The free service is suitable for
-the current demo; durable storage requires implementing a database repository
-and persistent image storage before collecting real reports.
+Postgres mode now persists accounts, reports, drafts, action plans, progress and audit events through Prisma. Mutations commit before returning success, failed writes restore the cache, and startup errors do not silently fall back to memory. Keep one API instance: the compatibility cache does not support independent replicas or direct database edits while running. Restart after out-of-band changes. `DATABASE_PROVIDER=memory` remains an explicit local/demo option that resets on restart.
+
+JPEG/PNG/WebP uploads (maximum 4 MB) are stored as PostgreSQL bytes and retain their existing `/uploads/...` URLs. External photo URLs remain dependent on their external host. Photo storage shares the free database's 1 GB capacity.
+
+The start command runs Prisma migrations. `202610090001_action_workflow` is an initial migration for a fresh database because the project had no committed migrations. Inspect and baseline an existing SQL database before deployment; never reset production tables. Render free PostgreSQL expires after 30 days. The created `nagarbondhu-db` expires **8 November 2026**; export/migrate data or upgrade before expiry.
+
+The installed WebView APK already uses this hosted URL, so these server UI changes require no APK rebuild.
+
+For an opt-in real database smoke check, create ignored `apps/api/.env.persistence-test` with `DATABASE_URL` and run `node scripts/check-persistence.cjs` from `apps/api` after building. It migrates and uses a separate `workflow_smoke_test` schema, verifies reconnect persistence for drafts/plans/audit/photos and transactional FK rejection. It retains its isolated test records for inspection and does not delete production data.
+
+The existing demo role toggle remains unchanged and uses the publicly documented demo administrator. New endpoints enforce JWT ADMIN/URBAN_PLANNER roles, but this is **not secure production administrator access**. Separate login is deliberately deferred. Ward centres are approximate; boundaries need admin verification. No commissioner names are seeded; generic teams are labelled DEMO. No external notifications are sent.
 
 Render free services can sleep during inactivity, so the first app load may take
 longer. See https://render.com/docs/free for current limits.

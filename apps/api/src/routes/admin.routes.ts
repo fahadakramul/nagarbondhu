@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { db } from '../db';
 import { authenticate, requireRole } from '../middleware/auth';
 import { PriorityService } from '../services/priority.service';
-import { ReportStatus, PriorityLevel } from '@nagarbondhu/shared';
+import { PriorityLevel } from '@nagarbondhu/shared';
+import { getPlan, transition, fail, event } from '../services/action.service';
 
 const router = Router();
 
@@ -39,29 +40,10 @@ router.patch(
         return res.status(404).json({ success: false, error: 'Report not found' });
       }
 
-      const previousStatus = existing.status;
-      const resolvedAt = status === 'RESOLVED' ? new Date().toISOString() : null;
-
-      const updated = db.updateReport(req.params.id, {
-        status: status as ReportStatus,
-        resolvedAt: resolvedAt || existing.resolvedAt,
-      });
-
-      // Audit history log
-      db.addStatusHistory({
-        id: `hist-${req.params.id}-${Date.now()}`,
-        reportId: req.params.id,
-        previousStatus,
-        newStatus: status as ReportStatus,
-        changedBy: req.user!.displayName,
-        note: note || `স্ট্যাটাস পরিবর্তন করা হয়েছে: ${status}`,
-        createdAt: new Date().toISOString(),
-      });
-
-      res.json({
-        success: true,
-        report: updated,
-      });
+      if (getPlan(req.params.id)) fail('Use action-status with the current plan revision for workflow changes.',409);
+      if (status === 'AI_ANALYZED') fail('AI_ANALYZED is a system analysis state, not an administrative transition.');
+      transition(req.params.id, { status, note: note || 'ওয়েব ড্যাশবোর্ড থেকে স্ট্যাটাস পরিবর্তন', revision: 0 }, req.user!.id);
+      return res.json({success: true, report: db.findReportById(req.params.id)});
     } catch (err) {
       next(err);
     }
@@ -87,6 +69,10 @@ router.patch(
       if (!updated) {
         return res.status(404).json({ success: false, error: 'Report not found' });
       }
+
+      const plan = getPlan(req.params.id);
+      if (plan) db.actionPlans.set(plan.id, {...plan, priority: priorityLevel, revision: plan.revision + 1, updatedBy: req.user!.id, updatedAt: new Date().toISOString() });
+      event(req.params.id, req.user!.id, 'PRIORITY_OVERRIDDEN', reason, {priorityLevel});
 
       res.json({
         success: true,

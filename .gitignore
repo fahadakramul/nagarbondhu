@@ -23,6 +23,8 @@ ios/
 .env
 .env.local
 .env.*.local
+.env.persistence-test
+uploads/
 credentials.json
 
 # Logs

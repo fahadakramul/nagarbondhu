@@ -48,6 +48,7 @@ async function loadReportActions(reportId) {
   }
 }
 function renderActionWorkspace(data,directory) {
+  document.getElementById('modal-status').textContent = ACTION_LABELS[data.status];
   const plan=data.plan, recommendation=data.recommendations[0], draft=recommendation?.data;
   const terminal=['RESOLVED','CLOSED','REJECTED'].includes(data.status);
   document.getElementById('report-action-workspace').innerHTML=`
@@ -102,7 +103,7 @@ function renderActionWorkspace(data,directory) {
     ${plan ? `<form onsubmit="saveActionProgress(event)" class="space-y-2 border-t pt-3"><h4 class="font-bold text-sm">কাজের অগ্রগতি (Progress)</h4>
       <label class="block text-xs">অগ্রগতির নোট<textarea id="action-progress-note" required minlength="5" class="${inputClass}"></textarea></label>
       <label class="block text-xs">অগ্রগতির ছবি (ঐচ্ছিক)<input id="action-progress-photo" type="file" accept="image/png,image/jpeg,image/webp" class="${inputClass}"></label>
-      <button id="save-action-progress" class="${buttonClass}">অগ্রগতি সংরক্ষণ করুন</button><p id="action-progress-message" class="text-xs"></p></form>` : ''}
+      <button id="save-action-progress" class="${buttonClass}" ${['RESOLVED','CLOSED','REJECTED'].includes(data.status)?'disabled':''}>অগ্রগতি সংরক্ষণ করুন</button><p id="action-progress-message" class="text-xs"></p></form>` : ''}
     ${plan?.status==='RESOLVED' ? `<form onsubmit="saveResolutionVerification(event)" class="space-y-2 border-t pt-3"><h4 class="font-bold text-sm">সমাধান যাচাই (Resolution Verification)</h4>
       <p class="text-xs">${actionEscape(plan.resolutionNotes)} • পদ্ধতি: ${actionEscape(plan.verificationMethod)} • ${actionEscape(plan.verificationStatus)}</p>
       <label class="block text-xs">যাচাইয়ের সিদ্ধান্ত<select id="resolution-verdict" class="${inputClass}"><option value="true">প্রমাণ পর্যালোচনা করে নিশ্চিত</option><option value="false">প্রমাণ অপর্যাপ্ত / পুনরায় কাজ প্রয়োজন</option></select></label>

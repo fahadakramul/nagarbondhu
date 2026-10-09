@@ -776,7 +776,7 @@ function openDetailModal(reportId) {
   document.getElementById('modal-location').textContent = `📍 ${escapeHtml(r.addressLabel || 'রাজশাহী')}`;
   document.getElementById('modal-description').textContent = r.description;
   document.getElementById('modal-category').textContent = CATEGORY_NAMES_BN[r.category] || r.category;
-  document.getElementById('modal-status').textContent = r.status;
+  document.getElementById('modal-status').textContent = r.actionStatus ? ACTION_LABELS[r.actionStatus] : r.status;
 
   // Image in modal
   const imgContainer = document.getElementById('modal-image-container');

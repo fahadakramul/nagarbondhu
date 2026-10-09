@@ -50,6 +50,7 @@ import path from 'path';
 import { CONFIG } from '../config';
 import { storeImage } from '../persistence';
 import { randomUUID } from 'crypto';
+import { photoSchema, fail } from '../services/action.service';
 
 // POST /api/v1/reports/upload-image
 // Accepts base64 image data and stores in uploads folder
@@ -97,6 +98,8 @@ router.post('/upload-image', async (req, res, next) => {
 router.post('/', optionalAuthenticate, async (req, res, next) => {
   try {
     const input = CreateReportSchema.parse(req.body);
+    if (input.wardId && !db.wards.has(input.wardId)) fail('Unknown ward; select an available ward.');
+    if (input.imageUrl) photoSchema.parse(input.imageUrl);
     const reportId = `rep-${Date.now()}`;
     const reporterId = req.user?.id || null;
     const reporterName = req.user?.displayName || 'সচেতন নাগরিক';
@@ -267,11 +270,7 @@ router.patch('/:id', authenticate, (req, res, next) => {
       return res.status(403).json({ success: false, error: 'Cannot modify reports of other citizens' });
     }
 
-    const updates: Partial<Report> = {};
-    if (req.body.title) updates.title = req.body.title;
-    if (req.body.description) updates.description = req.body.description;
-    if (req.body.category) updates.category = req.body.category;
-    if (req.body.addressLabel) updates.addressLabel = req.body.addressLabel;
+    const updates = CreateReportSchema.pick({title:true,description:true,category:true,addressLabel:true}).partial().strict().parse(req.body);
 
     const updated = db.updateReport(req.params.id, updates);
     res.json({ success: true, report: updated });

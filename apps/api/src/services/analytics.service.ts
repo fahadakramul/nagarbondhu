@@ -24,7 +24,7 @@ export function analytics(filters:AnalyticsFilters) {
   for(const seed of unresolved) {
     if(!unseen.delete(seed.id)) continue;
     const members=[seed];
-    for(let i=0;i<members.length;i++) for(const candidate of unresolved) if(unseen.has(candidate.id) && candidate.category===seed.category && calculateHaversineDistanceMeters(members[i].latitude,members[i].longitude,candidate.latitude,candidate.longitude)<=300) {unseen.delete(candidate.id);members.push(candidate);}
+    for(let i=0;i<members.length;i++) for(const candidate of unresolved) if(unseen.has(candidate.id) && candidate.sourceType===seed.sourceType && candidate.category===seed.category && [candidate.latitude,candidate.longitude,members[i].latitude,members[i].longitude].every(Number.isFinite) && calculateHaversineDistanceMeters(members[i].latitude,members[i].longitude,candidate.latitude,candidate.longitude)<=300) {unseen.delete(candidate.id);members.push(candidate);}
     if(members.length>=2) clusters.push({category:seed.category,reportIds:members.map(r=>r.id),count:members.length,latitude:members.reduce((n,r)=>n+r.latitude,0)/members.length,longitude:members.reduce((n,r)=>n+r.longitude,0)/members.length,distinctMonths:new Set(members.map(r=>dhakaDay(r.createdAt).slice(0,7))).size,interpretation:'Nearby reports; recurrence and common cause require field validation'});
   }
   const sorted=unresolved.slice().sort((a,b)=>Number(b.overdue)-Number(a.overdue) || ['CRITICAL','HIGH','MEDIUM','LOW'].indexOf(a.priority || 'LOW')-['CRITICAL','HIGH','MEDIUM','LOW'].indexOf(b.priority || 'LOW') || a.createdAt.localeCompare(b.createdAt));

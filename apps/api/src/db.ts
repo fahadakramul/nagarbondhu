@@ -1,3 +1,5 @@
+import { dashboardSummary } from './services/dashboard-summary';
+import { derivePriority } from './services/priority.service';
 import {
   User,
   Ward,
@@ -537,6 +539,7 @@ export class DatabaseRepository {
     priority?: PriorityLevel;
     wardId?: string;
     reporterId?: string;
+    source?: string;
     limit?: number;
     offset?: number;
   }): { reports: Report[]; total: number } {
@@ -560,6 +563,8 @@ export class DatabaseRepository {
         return p?.priorityLevel === filters.priority;
       });
     }
+
+    if(filters?.source && filters.source !== 'all') list=list.filter(r=>r.sourceType===filters.source);
 
     // Sort descending by created date
     list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -595,10 +600,15 @@ export class DatabaseRepository {
   }
 
   findPriorityAssessmentByReportId(reportId: string): PriorityAssessmentRecord | null {
-    for (const p of this.priorityAssessments.values()) {
-      if (p.reportId === reportId) return p;
-    }
-    return null;
+    const stored = Array.from(this.priorityAssessments.values()).find(p=>p.reportId===reportId) || null;
+    const report = this.reports.get(reportId);
+    if (!report) return null;
+    // Live age is derived without writing on GET; fictional fixture scores remain explicit.
+    const assessment = report.sourceType==='citizen_report' ? derivePriority(reportId, stored) : stored;
+    const plan = Array.from(this.actionPlans.values()).find(p=>p.reportId===reportId);
+    if (!assessment || !plan) return assessment;
+    return {...assessment, priorityLevel:plan.priority, explanation:{...assessment.explanation,
+      summary:assessment.explanation.summary+' Confirmed plan priority: '+plan.priority+'; score remains the provisional estimate.'}};
   }
 
   savePriorityAssessment(assessment: PriorityAssessmentRecord) {
@@ -645,147 +655,8 @@ export class DatabaseRepository {
   }
 
   // Dynamic Dashboard Aggregations from real data
-  getDashboardSummary() {
-    const allReports = Array.from(this.reports.values());
-    const totalReports = allReports.length;
-    const openReports = allReports.filter((r) => r.status === 'SUBMITTED' || r.status === 'AI_ANALYZED' || r.status === 'UNDER_REVIEW').length;
-    const inProgressReports = allReports.filter((r) => r.status === 'IN_PROGRESS').length;
-    const resolvedReports = allReports.filter((r) => r.status === 'RESOLVED').length;
+  getDashboardSummary() { return dashboardSummary(); }
 
-    // High & Critical Priority counts
-    let highPriorityReports = 0;
-    let criticalPriorityReports = 0;
-    allReports.forEach((r) => {
-      const p = this.findPriorityAssessmentByReportId(r.id);
-      if (p?.priorityLevel === 'HIGH') highPriorityReports++;
-      if (p?.priorityLevel === 'CRITICAL') criticalPriorityReports++;
-    });
-
-    // Unresolved > 7 days
-    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    const unresolvedOver7Days = allReports.filter(
-      (r) => r.status !== 'RESOLVED' && r.status !== 'REJECTED' && new Date(r.createdAt).getTime() < sevenDaysAgo
-    ).length;
-
-    const duplicateReportsFlagged = this.possibleDuplicates.size;
-
-    // Breakdown by Category
-    const categoryCounts: Record<ReportCategory, number> = {
-      ROAD_DAMAGE: 0,
-      WATERLOGGING: 0,
-      DRAINAGE: 0,
-      WASTE: 0,
-      FOOTPATH: 0,
-      STREETLIGHT: 0,
-      OTHER: 0,
-    };
-    allReports.forEach((r) => {
-      if (categoryCounts[r.category] !== undefined) {
-        categoryCounts[r.category]++;
-      } else {
-        categoryCounts.OTHER++;
-      }
-    });
-
-    const categoryBnNames: Record<ReportCategory, string> = {
-      ROAD_DAMAGE: 'সড়ক ক্ষতি ও খানাখন্দ',
-      WATERLOGGING: 'জলাবদ্ধতা ও পানি জমা',
-      DRAINAGE: 'ড্রেনেজ ও নর্দমা',
-      WASTE: 'বর্জ্য ও ময়লার স্তূপ',
-      FOOTPATH: 'ভাঙা ফুটপাথ',
-      STREETLIGHT: 'অচল সড়কবাতি',
-      OTHER: 'অন্যান্য নাগরিক সমস্যা',
-    };
-
-    const byCategory = (Object.keys(categoryCounts) as ReportCategory[]).map((cat) => ({
-      category: cat,
-      categoryLabelBn: categoryBnNames[cat],
-      count: categoryCounts[cat],
-      percentage: totalReports > 0 ? Math.round((categoryCounts[cat] / totalReports) * 100) : 0,
-    }));
-
-    // Breakdown by Ward
-    const wardMap = new Map<string, { count: number; highPrio: number }>();
-    allReports.forEach((r) => {
-      const wardId = r.wardId || 'unassigned';
-      const cur = wardMap.get(wardId) || { count: 0, highPrio: 0 };
-      cur.count++;
-      const p = this.findPriorityAssessmentByReportId(r.id);
-      if (p?.priorityLevel === 'HIGH' || p?.priorityLevel === 'CRITICAL') cur.highPrio++;
-      wardMap.set(wardId, cur);
-    });
-
-    const byWard = Array.from(this.wards.values()).map((w) => {
-      const stats = wardMap.get(w.id) || { count: 0, highPrio: 0 };
-      return {
-        wardId: w.id,
-        wardName: w.wardName,
-        count: stats.count,
-        highPriorityCount: stats.highPrio,
-      };
-    });
-
-    // Hotspots identification
-    const hotspots = Array.from(wardMap.entries()).filter(([,stats])=>stats.count>=2).map(([wardId,stats])=>{
-      const records=allReports.filter(r=>(r.wardId || 'unassigned')===wardId);
-      const frequencies=records.reduce<Record<string,number>>((acc,r)=>{acc[r.category]=(acc[r.category]||0)+1;return acc;},{});
-      const category=Object.keys(frequencies).sort((a,b)=>frequencies[b]-frequencies[a])[0] as ReportCategory;
-      return {areaName:(this.wards.get(wardId)?.wardName || 'ওয়ার্ড অজানা')+' — রিপোর্টের ঘনত্ব, নিশ্চিত hazard নয়',latitude:records.reduce((n,r)=>n+r.latitude,0)/records.length,longitude:records.reduce((n,r)=>n+r.longitude,0)/records.length,reportCount:stats.count,primaryCategory:category,topSeverity:Math.max(...records.map(r=>this.findAiAnalysisByReportId(r.id)?.severity || 0))};
-    }).sort((a,b)=>b.reportCount-a.reportCount);
-
-
-    // Recent activity
-    const recentActivity = allReports
-      .slice()
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 5)
-      .map((r) => {
-        const p = this.findPriorityAssessmentByReportId(r.id);
-        return {
-          reportId: r.id,
-          title: publicText(r.title),
-          category: r.category,
-          status: r.status,
-          priorityLevel: p?.priorityLevel,
-          wardName: r.wardName,
-          createdAt: r.createdAt,
-        };
-      });
-
-    // Recommended Actions: Top issues requiring immediate intervention
-    const recommendedActions = allReports
-      .filter((r) => r.status !== 'RESOLVED' && r.status !== 'REJECTED')
-      .map((r) => {
-        const p = this.findPriorityAssessmentByReportId(r.id);
-        return {
-          reportId: r.id,
-          title: publicText(r.title),
-          category: r.category,
-          score: p?.score || 50,
-          priorityLevel: p?.priorityLevel || ('MEDIUM' as PriorityLevel),
-          reason: p?.explanation.summary || 'অগ্রাধিকার পর্যালোচনা প্রয়োজন',
-          location: r.addressLabel || r.wardName || 'রাজশাহী',
-        };
-      })
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 4);
-
-    return {
-      totalReports,
-      openReports,
-      inProgressReports,
-      resolvedReports,
-      highPriorityReports,
-      criticalPriorityReports,
-      unresolvedOver7Days,
-      duplicateReportsFlagged,
-      byCategory,
-      byWard,
-      hotspots,
-      recentActivity,
-      recommendedActions,
-    };
-  }
 }
 
 // Global database singleton

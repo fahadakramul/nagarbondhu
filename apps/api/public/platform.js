@@ -21,26 +21,29 @@ function showDeviceReceipts(){const box=document.getElementById('device-receipts
 function populateWardDropdown(){const select=document.getElementById('form-ward');select.innerHTML='<option value="">ওয়ার্ড অজানা / নিজে নির্বাচন করুন</option>'+RAJSHAHI_WARDS.map(w=>`<option value="${w.wardNumber}">${platformEscape(w.wardName)}</option>`).join('');}
 function onWardSelect(){document.getElementById('location-confirmed').checked=false;}
 function updateLocationFromLatLng(lat,lng,accuracy=null){platformLocationSource=accuracy?'GPS':'MAP_PIN';document.getElementById('coords-display').textContent=`${lat.toFixed(5)}, ${lng.toFixed(5)}${accuracy?' (±'+Math.round(accuracy)+'m)':''}`;document.getElementById('location-confirmed').checked=false;}
-async function runAiPreview(){
-  const text=document.getElementById('form-description').value.trim(),button=document.getElementById('btn-ai-preview');
+async function runAiPreview(allowFallback=false){
+  const title=document.getElementById('form-title').value.trim(),text=document.getElementById('form-description').value.trim(),button=document.getElementById('btn-ai-preview');
   if(text.length<5){setPlatformMessage('আগে বিস্তারিত বর্ণনা লিখুন।');return;}
+  document.getElementById('ai-preview-feedback').textContent='';document.getElementById('ai-preview-box').classList.add('hidden');assistantInput='';assistantCategory=null;
   button.disabled=true;button.textContent='বিশ্লেষণ চলছে…';
   try{
-    const result=await platformApi('/ai/analyze-complaint',{text}),d=result.data;
+    const result=await platformApi('/ai/analyze-complaint',{text,title,allowFallback}),d=result.data;
+    if(title!==document.getElementById('form-title').value.trim() || text!==document.getElementById('form-description').value.trim()){setPlatformMessage('বিবরণ বদলেছে; নতুন তথ্যের জন্য আবার Preview নিন।');return;}
+    setPlatformMessage(result.metadata.isFallback?'নিয়মভিত্তিক preview — Live AI নয়।':'Live AI-এর প্রস্তাব; নিজে পর্যালোচনা ও সংশোধন করুন।');
     document.getElementById('ai-preview-box').classList.remove('hidden');
     document.getElementById('ai-preview-category-badge').textContent=CATEGORY_NAMES_BN[d.category];
     document.getElementById('ai-preview-summary').textContent=d.summary;
     document.getElementById('ai-preview-severity').textContent=d.severity;
     document.getElementById('ai-preview-confidence').textContent=d.confidence==null?'অনির্ধারিত':Math.round(d.confidence*100);
     document.getElementById('ai-preview-reasons').innerHTML=(d.reasons||[]).map(r=>`<li>${platformEscape(r)}</li>`).join('');
-    assistantDescription=d.clearerDescription || d.summary;assistantCategory=d.category;assistantInput=text;
-    document.getElementById('assistant-details').innerHTML=`<p>${result.metadata.isFallback?'Live AI unavailable — নিয়ম-ভিত্তিক সহায়তা; confidence নির্ধারিত নয়।':'AI-এর অস্থায়ী প্রস্তাব; কারিগরি মূল্যায়ন নয়।'}</p><p>Keywords: ${platformEscape((d.keywords||[]).join(', '))}</p><p>মাঠপর্যায়ে যাচাই: ${d.fieldVerificationNecessary?'প্রয়োজন':'প্রয়োজন হতে পারে'}</p><ul>${(d.missing_information||[]).map(t=>`<li>• ${platformEscape(t)}</li>`).join('')}</ul><p>${platformEscape(assistantDescription)}</p><button type="button" class="${buttonClass}" onclick="document.getElementById('form-description').value=assistantDescription">খসড়া বর্ণনা নিন, তারপর সম্পাদনা করুন</button>`;
-  }catch(error){setPlatformMessage(error.message+' AI ছাড়া রিপোর্ট জমা দিতে পারেন।');}
+    assistantDescription=d.clearerDescription || d.summary;assistantCategory=d.category;assistantInput=document.getElementById('form-title').value.trim()+'\n'+text;
+    document.getElementById('assistant-details').innerHTML=`<p>${result.metadata.isFallback?'নিয়মভিত্তিক অস্থায়ী প্রস্তাব — Live AI নয়; confidence নির্ধারিত নয়।':'AI-এর অস্থায়ী প্রস্তাব; কারিগরি মূল্যায়ন নয়।'}</p><p>Keywords: ${platformEscape((d.keywords||[]).join(', '))}</p><p>মাঠপর্যায়ে যাচাই: ${d.fieldVerificationNecessary?'প্রয়োজন':'প্রয়োজন হতে পারে'}</p><ul>${(d.missing_information||[]).map(t=>`<li>• ${platformEscape(t)}</li>`).join('')}</ul><p>${platformEscape(assistantDescription)}</p><button type="button" class="${buttonClass}" onclick="document.getElementById('form-description').value=assistantDescription">খসড়া বর্ণনা নিন, তারপর সম্পাদনা করুন</button>`;
+  }catch(error){setPlatformMessage(error.message+' AI ছাড়া রিপোর্ট জমা দিতে পারেন।');document.getElementById('ai-preview-feedback').innerHTML=`<p role="alert">${platformEscape(error.message)}</p><button type="button" class="${buttonClass}" onclick="runAiPreview()">Live AI আবার চেষ্টা করুন</button><button type="button" class="${buttonClass}" onclick="runAiPreview(true)">নিয়মভিত্তিক preview নিন (Live AI নয়)</button>`;}
   finally{button.disabled=false;button.textContent='✨ AI Preview';}
 }
 async function checkDuplicatePreview(){
   const pin=pickerMarker?.getLatLng();if(!pin)throw new Error('মানচিত্রে স্থান নির্বাচন করুন।');
-  const input={title:document.getElementById('form-title').value.trim(),description:document.getElementById('form-description').value.trim(),category:userOverrideCategory || (assistantInput===document.getElementById('form-description').value.trim()?assistantCategory:null) || 'OTHER',latitude:pin.lat,longitude:pin.lng};
+  const input={title:document.getElementById('form-title').value.trim(),description:document.getElementById('form-description').value.trim(),category:userOverrideCategory || (assistantInput===document.getElementById('form-title').value.trim()+'\n'+document.getElementById('form-description').value.trim()?assistantCategory:null) || 'OTHER',latitude:pin.lat,longitude:pin.lng};
   if(input.category==='OTHER' && !userOverrideCategory){setPlatformMessage('সম্ভাব্য মিল দেখতে category নির্বাচন করুন, অথবা AI preview পর্যালোচনা করুন।');return [];}
   const result=await platformApi('/reports/duplicate-suggestions',input);
   const container=document.getElementById('duplicate-preview');
@@ -59,7 +62,7 @@ async function handleFormSubmit(event){
     let pending;try{pending=JSON.parse(sessionStorage.getItem('nagarbondhu-pending') || 'null');}catch{}
     if(!pending || pending.signature!==signature){
       const matches=await checkDuplicatePreview();
-      if(matches.length && !confirm('সম্ভাব্য মিল আছে। নতুন রিপোর্ট জমা দেওয়া চালিয়ে যেতে চান?'))return;
+      if(matches.length && !await mvpConfirm('সম্ভাব্য মিল আছে। নতুন রিপোর্ট জমা দেওয়া চালিয়ে যেতে চান?'))return;
       let imageUrl=document.getElementById('form-image')?.value.trim() || null;
       if(selectedImageDataUrl) imageUrl=(await platformApi('/reports/upload-image',{imageBase64:selectedImageDataUrl})).imageUrl;
       pending={signature,payload:{...base,imageUrl,idempotencyKey:uuid()}};sessionStorage.setItem('nagarbondhu-pending',JSON.stringify(pending));
@@ -70,14 +73,16 @@ async function handleFormSubmit(event){
     sessionStorage.removeItem('nagarbondhu-pending');
     setPlatformMessage('সার্ভারে সংরক্ষিত হয়েছে। Reference: '+result.report.id);
     document.getElementById('report-form').reset();clearSelectedImage();userOverrideCategory=null;document.getElementById('ai-preview-box').classList.add('hidden');
-    feedOffset=0;await loadData();switchTab('feed');openDetailModal(result.report.id);
+    document.getElementById('stats-source').value='citizen_report';feedOffset=0;await loadData();switchTab('feed');openDetailModal(result.report.id);
   }catch(error){setPlatformMessage(error.message+' একই তথ্য রেখে আবার চেষ্টা করুন; retry-তে দ্বিতীয় রিপোর্ট তৈরি হবে না।');}
   finally{platformSubmitBusy=false;button.disabled=false;button.textContent='রিপোর্ট জমা দিন';}
 }
+let detailRequestSequence=0;
 const originalOpenDetailModal=openDetailModal;
 openDetailModal=async function(id){
+  const sequence=++detailRequestSequence;
   try{
-    if(!allReports.some(r=>r.id===id)){const result=await platformApi('/reports/'+encodeURIComponent(id));allReports.push(result.report);}
+    const result=await platformApi('/reports/'+encodeURIComponent(id));if(sequence!==detailRequestSequence)return;const index=allReports.findIndex(r=>r.id===id);if(index>=0)allReports[index]=result.report;else allReports.push(result.report);
     originalOpenDetailModal(id);const assessment=selectedReport.priorityAssessment;document.getElementById('modal-prio-summary').innerHTML=platformEscape(assessment?.explanation?.summary || 'Priority assessment unavailable')+(assessment?.explanation?.factors||[]).map(f=>`<p class="mt-1">${platformEscape(f.name)}: ${f.value} • weight ${platformEscape(f.weight)} • ${platformEscape(f.note)}</p>`).join('');document.getElementById('public-tracking').textContent='Tracking লোড হচ্ছে…';
     const {data:d}=await platformApi('/reports/'+encodeURIComponent(id)+'/tracking');if(selectedReport?.id!==id)return;
     const a=d.assignment,token=readReceiptTokens()[id];
@@ -126,3 +131,8 @@ async function loadFeedbackQueue(){try{const {data}=await actionApi('/feedback')
 async function reviewFeedback(id,rows){const f=rows.find(r=>r.id===id),note=prompt('Review-এর কারণ (কমপক্ষে ১০ অক্ষর):');if(!note)return;const reopen=confirm('সমস্যাটি পুনরায় review-এর জন্য খুলবেন? Cancel দিলে শুধু acknowledge হবে।');try{const {data}=await actionApi('/reports/'+encodeURIComponent(f.reportId)+'/actions');await actionApi('/feedback/'+encodeURIComponent(id)+'/review',{decision:reopen?'REOPEN':'ACKNOWLEDGED',note,revision:data.plan?.revision||0},'POST');await loadFeedbackQueue();await loadActionDashboard();}catch(e){alert(e.message);}}
 async function requestMoreInformation(){const message=prompt('নাগরিকের জন্য প্রকাশ্য তথ্য-অনুরোধ লিখুন (ব্যক্তিগত তথ্য দেবেন না):');if(!message)return;try{await actionApi('/reports/'+encodeURIComponent(selectedReport.id)+'/request-information',{message},'POST');await openDetailModal(selectedReport.id);}catch(e){alert(e.message);}}
 async function activateOperatorSession(e){e.preventDefault();const message=document.getElementById('operator-message');try{const result=await platformApi('/auth/login',{email:document.getElementById('operator-email').value,password:document.getElementById('operator-password').value});document.getElementById('operator-password').value='';if(result.user.role==='CITIZEN'||result.user.id==='user-admin-01')throw new Error('Provisioned operator account required');authToken=result.token;actionDirectory=null;message.textContent='Operator session সক্রিয়।';await loadActionDashboard();await loadPlanningTools();}catch(error){message.textContent=error.message;}}
+
+const stabilitySwitch=switchTab;
+switchTab=function(tab){stabilitySwitch(tab);if(['home','dashboard','feed'].includes(tab))loadData();};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)loadData();});
+setInterval(()=>{if(!document.hidden)loadData();},60000);

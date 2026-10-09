@@ -1,17 +1,21 @@
 import { Router } from 'express';
 import { db } from '../db';
 import { InsightsService } from '../services/insights.service';
+import { dashboardSummary } from '../services/dashboard-summary';
+import { AnalyticsQuery } from './platform.routes';
 
 const router = Router();
 
 // GET /api/v1/dashboard/summary
 // Comprehensive live counts and aggregates derived from actual DB queries
-router.get('/summary', (req, res) => {
-  const summary = db.getDashboardSummary();
+router.get('/summary', (req, res, next) => {
+  try {
+  const summary = dashboardSummary(AnalyticsQuery.parse(req.query));
   res.json({
     success: true,
     data: summary,
   });
+  } catch(error) { next(error); }
 });
 
 // GET /api/v1/dashboard/categories

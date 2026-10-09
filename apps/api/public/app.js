@@ -482,40 +482,42 @@ function onUrlImageChanged(val) {
 }
 
 // Load Data from Backend REST API
+let dataRequestSequence=0;
+const statsIds=['stat-total','stat-open','stat-high','stat-resolved','stat-progress'];
+function statsSource(){return document.getElementById('stats-source')?.value || 'demo_seed';}
 async function loadData() {
-  try {
-    const [summaryRes, reportsRes] = await Promise.all([
-      fetch('/api/v1/dashboard/summary').then(r => r.json()).catch(() => ({ success: false })),
-      fetch('/api/v1/reports?limit=50&offset='+feedOffset).then(r => r.json()).catch(() => ({ success: false }))
-    ]);
-
-    if (summaryRes.success && summaryRes.data) {
-      dashboardData = summaryRes.data;
-      updateHomeStats(summaryRes.data);
-      renderDashboard(summaryRes.data);
-    }
-
-    if (reportsRes.success && reportsRes.reports) {
-      allReports = reportsRes.reports;
-      document.getElementById('feed-page').textContent = reportsRes.total ? `${Math.min(feedOffset+1,reportsRes.total)}–${Math.min(feedOffset+50,reportsRes.total)} / ${reportsRes.total}` : 'কোনো রিপোর্ট নেই';
-      renderReportsFeed(reportsRes.reports);
-      if (mainMap) renderMapMarkers();
-      if (dashboardData) renderDashboard(dashboardData);
-    }
-    if (!summaryRes.success) ['stat-total','stat-open','stat-high','stat-resolved'].forEach(id => document.getElementById(id).textContent = 'তথ্য অনুপলব্ধ');
-    if (!reportsRes.success) document.getElementById('reports-feed-container').textContent = 'রিপোর্ট লোড করা যায়নি। আবার চেষ্টা করুন।';
-    if (isAdminMode && authToken) loadActionDashboard();
-  } catch (err) {
-    console.error('Data load error:', err);
+  const sequence=++dataRequestSequence,source=statsSource();
+  document.getElementById('dashboard-source').value=source;document.getElementById('feed-source').value=source;
+  const label=source==='demo_seed'?'Demo Data — কাল্পনিক নমুনা তথ্য':'বাস্তব নাগরিক রিপোর্ট';
+  statsIds.forEach(id=>document.getElementById(id).textContent='লোড হচ্ছে…');
+  document.getElementById('stats-message').textContent=label+' • লোড হচ্ছে…';
+  document.getElementById('dashboard-data-message').textContent=label+' • লোড হচ্ছে…';
+  const sections=['dashboard-recommended-list','dashboard-category-bars','dashboard-hotspots-list','dashboard-duplicates-list','dashboard-distributions'];
+  sections.forEach(id=>document.getElementById(id).textContent='লোড হচ্ছে…');
+  const get=async path=>{const response=await fetch(path,{signal:AbortSignal.timeout(35000)});const result=await response.json();if(!response.ok || !result.success)throw new Error('তথ্য লোড করা যায়নি');return result;};
+  const results=await Promise.allSettled([get('/api/v1/dashboard/summary?source='+source),get('/api/v1/reports?source='+source+'&limit=50&offset='+feedOffset)]);
+  if(sequence!==dataRequestSequence)return;
+  const summary=results[0],reports=results[1];
+  if(summary.status==='fulfilled' && summary.value.data && statsIds.every((_,i)=>Number.isFinite([summary.value.data.totalReports,summary.value.data.openReports,summary.value.data.highPriorityReports,summary.value.data.resolvedReports,summary.value.data.inProgressReports][i]))) {
+    dashboardData=summary.value.data;updateHomeStats(dashboardData);renderDashboard(dashboardData);
+    const message=label+' • '+(dashboardData.totalReports?dashboardData.totalReports+' রিপোর্ট থেকে গণনা হয়েছে।':'এই উৎসে কোনো রিপোর্ট নেই।')+' সর্বশেষ: '+new Date().toLocaleTimeString('bn-BD');
+    document.getElementById('stats-message').textContent=message;document.getElementById('dashboard-data-message').textContent=message;
+  } else {
+    dashboardData=null;statsIds.forEach(id=>document.getElementById(id).textContent='অনুপলব্ধ');
+    const message=label+' • API থেকে তথ্য পাওয়া যায়নি। Refresh / আবার চেষ্টা করুন।';
+    document.getElementById('stats-message').textContent=message;document.getElementById('dashboard-data-message').textContent=message;
+    sections.forEach(id=>document.getElementById(id).textContent='তথ্য অনুপলব্ধ — আবার চেষ্টা করুন।');
   }
+  if(reports.status==='fulfilled' && Array.isArray(reports.value.reports)){
+    const data=reports.value;allReports=data.reports;
+    document.getElementById('feed-page').textContent=label+' • '+(data.total?`${Math.min(feedOffset+1,data.total)}–${Math.min(feedOffset+50,data.total)} / ${data.total}`:'কোনো রিপোর্ট নেই');
+    renderReportsFeed(allReports);
+  }else{allReports=[];document.getElementById('feed-page').textContent='তথ্য অনুপলব্ধ';document.getElementById('reports-feed-container').innerHTML='<p>রিপোর্ট লোড করা যায়নি।</p><button class="border rounded p-2" onclick="loadData()">আবার চেষ্টা করুন</button>';}
+  if(isAdminMode && authToken)loadActionDashboard();
 }
-
-// Update Home KPI Cards
 function updateHomeStats(data) {
-  document.getElementById('stat-total').textContent = data.totalReports || 0;
-  document.getElementById('stat-open').textContent = data.openReports || 0;
-  document.getElementById('stat-high').textContent = (data.highPriorityReports || 0) + (data.criticalPriorityReports || 0);
-  document.getElementById('stat-resolved').textContent = data.resolvedReports || 0;
+  const values=[data.totalReports,data.openReports,data.highPriorityReports+data.criticalPriorityReports,data.resolvedReports,data.inProgressReports];
+  statsIds.forEach((id,i)=>document.getElementById(id).textContent=String(values[i]));
 }
 
 // Render Reports Feed
@@ -575,7 +577,7 @@ function renderDashboard(data) {
         <p class="text-[11px] text-rose-700 mt-0.5">💡 ${escapeHtml(rec.reason)}</p>
         <span class="text-[10px] text-rose-600">📍 ${escapeHtml(rec.location)}</span>
       </div>
-      <span class="text-xs font-extrabold text-rose-700 bg-rose-200/60 px-2 py-1 rounded">স্কোর ${rec.score}</span>
+      <span class="text-xs font-extrabold text-rose-700 bg-rose-200/60 px-2 py-1 rounded">স্কোর ${rec.score ?? 'অনুপলব্ধ'}</span>
     `;
     recContainer.appendChild(item);
   });
@@ -593,7 +595,7 @@ function renderDashboard(data) {
         <span>${cat.count}টি (${cat.percentage}%)</span>
       </div>
       <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-        <div style="width: ${Math.max(5, cat.percentage)}%; background-color: ${color};" class="h-full rounded-full"></div>
+        <div style="width: ${cat.percentage}%; background-color: ${color};" class="h-full rounded-full"></div>
       </div>
     `;
     catBars.appendChild(div);
@@ -618,31 +620,14 @@ function renderDashboard(data) {
   // Duplicates Queue
   const dupList = document.getElementById('dashboard-duplicates-list');
   dupList.innerHTML = '';
-  const dups = allReports.filter(r => r.possibleDuplicates && r.possibleDuplicates.length > 0);
-  if (dups.length === 0) {
-    dupList.innerHTML = `<p class="text-xs text-slate-400">বর্তমানে কোনো অমীমাংসিত ডুপ্লিকেট নেই।</p>`;
-  } else {
-    dups.forEach(r => {
-      r.possibleDuplicates.forEach(d => {
-        const div = document.createElement('div');
-        div.className = 'bg-purple-50 p-3 rounded-xl border border-purple-200 space-y-1.5';
-        div.innerHTML = `
-          <div class="flex justify-between items-center text-xs font-bold text-purple-900">
-            <span>${escapeHtml(r.title)}</span>
-            <span class="bg-purple-200 text-purple-800 px-2 py-0.5 rounded text-[10px]">সাদৃশ্য ${Math.round(d.similarityScore * 100)}%</span>
-          </div>
-          <p class="text-[11px] text-purple-800">${escapeHtml(d.matchingReasons.distanceExplanation)} | ${escapeHtml(d.matchingReasons.textMatchExplanation)}</p>
-          ${isAdminMode && d.reviewStatus === 'PENDING' ? `
-            <div class="flex gap-2 pt-1">
-              <button onclick="reviewDuplicate('${d.id}', 'CONFIRMED_DUPLICATE')" class="bg-emerald-600 text-white text-[10px] font-bold px-2.5 py-1 rounded hover:bg-emerald-700">✓ ডুপ্লিকেট নিশ্চিত</button>
-              <button onclick="reviewDuplicate('${d.id}', 'DISMISSED')" class="bg-rose-600 text-white text-[10px] font-bold px-2.5 py-1 rounded hover:bg-rose-700">✕ বাতিল</button>
-            </div>
-          ` : `<span class="text-[10px] text-purple-700 font-semibold">স্ট্যাটাস: ${d.reviewStatus}</span>`}
-        `;
-        dupList.appendChild(div);
-      });
-    });
-  }
+  dupList.innerHTML=(data.duplicates || []).map(d=>`<div class="bg-purple-50 p-3 rounded-xl border border-purple-200 space-y-2"><p class="text-xs font-bold">${escapeHtml(d.title)} ↔ ${escapeHtml(d.candidateTitle)}</p><p class="text-xs">সম্ভাব্য মিল ${Math.round(d.similarityScore*100)}% — নিশ্চিত duplicate নয়। ${escapeHtml(d.matchingReasons.distanceExplanation)} ${escapeHtml(d.matchingReasons.textMatchExplanation)}</p><button class="text-xs underline" data-dup-report="${escapeHtml(d.reportId)}">প্রথম রিপোর্ট দেখুন</button><button class="text-xs underline" data-dup-report="${escapeHtml(d.candidateReportId)}">অন্য রিপোর্ট দেখুন</button>${isAdminMode && actionDirectory && !actionDirectory.readOnly?`<button class="text-xs border p-1 rounded" data-dup-confirm="${escapeHtml(d.id)}">মিল নিশ্চিত করুন</button><button class="text-xs border p-1 rounded" data-dup-dismiss="${escapeHtml(d.id)}">বাতিল করুন</button>`:''}</div>`).join('') || '<p class="text-xs">এই উৎসে pending duplicate pair নেই।</p>';
+  dupList.querySelectorAll('[data-dup-report]').forEach(b=>b.onclick=()=>openDetailModal(b.dataset.dupReport));
+  dupList.querySelectorAll('[data-dup-confirm]').forEach(b=>b.onclick=()=>reviewDuplicate(b.dataset.dupConfirm,'CONFIRMED_DUPLICATE'));
+  dupList.querySelectorAll('[data-dup-dismiss]').forEach(b=>b.onclick=()=>reviewDuplicate(b.dataset.dupDismiss,'DISMISSED'));
+  if(!data.recommendedActions.length)recContainer.textContent='এই উৎসে অসম্পন্ন রিপোর্ট নেই।';
+  if(!data.hotspots.length)hotspotsList.textContent='স্থানাঙ্কসহ সম্পর্কিত রিপোর্টের যথেষ্ট তথ্য নেই।';
+  document.getElementById('dashboard-distributions').innerHTML=[['অবস্থা',data.byStatus],['অগ্রাধিকার',data.byPriority]].map(([label,counts])=>`<div><h4 class="font-bold">${label}</h4>${Object.entries(counts || {}).map(([key,count])=>`<p>${escapeHtml(ACTION_LABELS[key] || key)}: ${count}</p>`).join('') || 'কোনো রিপোর্ট নেই'}</div>`).join('')+`<p>লক্ষ্য তারিখ পেরিয়েছে: ${data.overdue} • নির্ধারিত action plan-এর ভিত্তিতে</p>`;
+
 }
 
 // Live AI Analysis Preview
@@ -791,6 +776,7 @@ function openDetailModal(reportId) {
   }
 
   // AI Box
+  document.getElementById('modal-ai-provider').textContent=r.aiAnalysis ? (r.sourceType==='demo_seed'?'Demo Data — কাল্পনিক নমুনা তথ্য • ':'')+(/rule|fallback|demo/i.test(r.aiAnalysis.provider)?'নিয়মভিত্তিক / নমুনা বিশ্লেষণ — Live AI নয়':'সংরক্ষিত AI-এর অস্থায়ী প্রস্তাব')+' • '+r.aiAnalysis.provider : 'বিশ্লেষণ অনুপলব্ধ';
   document.getElementById('modal-ai-summary').textContent = 'বিশ্লেষণ পাওয়া যায়নি';
   document.getElementById('modal-ai-severity').textContent = 'অনুপলব্ধ';
   document.getElementById('modal-ai-reasons').textContent = '';

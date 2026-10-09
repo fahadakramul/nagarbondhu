@@ -124,7 +124,7 @@
             নাগরিক সমস্যা সমাধান ও কৃত্রিম বুদ্ধিমত্তা চালিত নগর পরিকল্পনা
           </h2>
           <p class="text-sm sm:text-base text-teal-100 leading-relaxed">
-            রাজশাহী শহরের ভাঙা সড়ক, জলাবদ্ধতা, উন্মুক্ত বর্জ্য, নষ্ট ড্রেন ও সড়কবাতির অভিযোগ বাংলায় লিখুন। এআই স্বয়ংক্রিয়ভাবে ক্যাটাগরি বিশ্লেষণ, প্রায়োরিটি নির্ধারণ ও ডুপ্লিকেট সনাক্ত করে দ্রুত সিদ্ধান্ত গ্রহণে সহায়তা করে।
+            রাজশাহী শহরের ভাঙা সড়ক, জলাবদ্ধতা, উন্মুক্ত বর্জ্য, নষ্ট ড্রেন ও সড়কবাতির অভিযোগ বাংলায় লিখুন। রিপোর্টের শ্রেণিবিন্যাস, ব্যাখ্যাসহ অগ্রাধিকার ও সম্ভাব্য মিল পর্যালোচনা করে সিদ্ধান্ত নিতে সহায়তা করে। Live AI উপলব্ধ হলে AI Preview পাওয়া যায়; AI ছাড়াও রিপোর্ট জমা দেওয়া যায়।
           </p>
           <div class="pt-2 flex flex-wrap gap-3">
             <button onclick="switchTab('report')" class="bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold text-sm px-5 py-2.5 rounded-xl shadow-md transition flex items-center gap-2">
@@ -138,31 +138,37 @@
       </div>
 
       <!-- REAL-TIME KPI STATS -->
+      <div class="flex flex-wrap items-center gap-3 text-xs">
+        <label>পরিসংখ্যান ও তালিকার উৎস<select id="stats-source" class="border rounded p-2 ml-2" onchange="feedOffset=0;loadData()"><option value="demo_seed">কাল্পনিক DEMO</option><option value="citizen_report">বাস্তব নাগরিক রিপোর্ট</option></select></label>
+        <button type="button" class="border rounded px-3 py-2" onclick="loadData()">তথ্য refresh / আবার চেষ্টা করুন</button>
+        <p id="stats-message" role="status" class="w-full"></p>
+      </div>
       <div>
         <h3 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
-          <i class="fa-solid fa-chart-line text-civic-600"></i> উপলব্ধ রিপোর্টের পরিসংখ্যান (বাস্তব + DEMO)
+          <i class="fa-solid fa-chart-line text-civic-600"></i> উপলব্ধ রিপোর্টের পরিসংখ্যান
         </h3>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
           <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
             <span class="text-xs font-semibold text-slate-500">মোট রিপোর্ট</span>
             <span id="stat-total" class="text-3xl font-extrabold text-civic-700 mt-1">লোড হচ্ছে</span>
             <span class="text-[11px] text-teal-600 mt-0.5">উপলব্ধ রিপোর্ট</span>
           </div>
           <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
-            <span class="text-xs font-semibold text-slate-500">উন্মুক্ত / কাজ চলছে</span>
+            <span class="text-xs font-semibold text-slate-500">অসম্পন্ন রিপোর্ট</span>
             <span id="stat-open" class="text-3xl font-extrabold text-amber-600 mt-1">লোড হচ্ছে</span>
             <span class="text-[11px] text-amber-600 mt-0.5">পর্যালোচনাধীন</span>
           </div>
           <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
             <span class="text-xs font-semibold text-slate-500">উচ্চ ও জরুরি অগ্রাধিকার</span>
             <span id="stat-high" class="text-3xl font-extrabold text-rose-600 mt-1">লোড হচ্ছে</span>
-            <span class="text-[11px] text-rose-500 mt-0.5">তাৎক্ষণিক নজরদারি</span>
+            <span class="text-[11px] text-rose-500 mt-0.5">অসম্পন্ন রিপোর্টের মধ্যে</span>
           </div>
           <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
             <span class="text-xs font-semibold text-slate-500">সমাধান রিপোর্ট হয়েছে</span>
             <span id="stat-resolved" class="text-3xl font-extrabold text-emerald-600 mt-1">লোড হচ্ছে</span>
             <span class="text-[11px] text-emerald-600 mt-0.5">Reported resolution • যাচাই অবস্থা details-এ দেখুন</span>
           </div>
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center"><span class="text-xs font-semibold text-slate-500">কাজ চলছে</span><span id="stat-progress" class="text-3xl font-extrabold text-blue-700 mt-1">লোড হচ্ছে</span><span class="text-[11px] text-slate-500">IN_PROGRESS</span></div>
         </div>
       </div>
 
@@ -235,7 +241,7 @@
             <i class="fa-solid fa-bullhorn text-civic-600"></i> নাগরিক সমস্যা রিপোর্ট করুন
           </h2>
           <p class="text-xs text-slate-500 mt-1">
-            সমস্যার বিবরণ বাংলায় লিখুন; আমাদের এআই স্বয়ংক্রিয়ভাবে ক্যাটাগরি, তীব্রতা এবং যুক্তি বের করবে।
+            সমস্যার বিবরণ বাংলা বা ইংরেজিতে লিখুন। Live AI Preview উপলব্ধ হলে প্রস্তাব দেখুন; নিজের category নির্বাচন করে AI ছাড়াও জমা দিতে পারেন।
           </p>
         </div>
 
@@ -254,6 +260,7 @@
             <span class="text-xs text-slate-400">জমা দেওয়ার আগে এআই ক্যাটাগরি ও তীব্রতা দেখুন</span>
           </div>
 
+          <div id="ai-preview-feedback" class="text-xs space-y-2" role="status" aria-live="polite"></div>
           <!-- AI ANALYSIS PREVIEW CARD -->
           <label class="block text-xs font-bold">সমস্যার category (AI ছাড়া নির্বাচন করা যায়)<select id="citizen-category" class="w-full p-2 border rounded-lg" onchange="userOverrideCategory=this.value||null"><option value="">নিশ্চিত নই</option><option value="ROAD_DAMAGE">সড়ক ক্ষতি</option><option value="WATERLOGGING">জলাবদ্ধতা</option><option value="DRAINAGE">ড্রেনেজ</option><option value="WASTE">বর্জ্য</option><option value="FOOTPATH">ফুটপাথ</option><option value="STREETLIGHT">সড়কবাতি</option><option value="OTHER">অন্যান্য</option></select></label><div id="submission-message" class="text-xs text-teal-800" role="status" aria-live="polite"></div>
           <div id="ai-preview-box" class="hidden bg-purple-50 border border-purple-200 rounded-xl p-4 space-y-3">
@@ -442,7 +449,7 @@
     </section>
 
     <!-- ==================== TAB 4: REPORTS FEED & DETAILS ==================== -->
-    <section id="section-feed" class="tab-content hidden space-y-4">
+    <section id="section-feed" class="tab-content hidden space-y-4"><label class="block text-xs">তালিকার ডাটার উৎস<select id="feed-source" class="border rounded p-2 ml-2" onchange="document.getElementById('stats-source').value=this.value;feedOffset=0;loadData()"><option value="demo_seed">কাল্পনিক DEMO</option><option value="citizen_report">বাস্তব নাগরিক রিপোর্ট</option></select></label>
       <div class="flex justify-between items-center">
         <div>
           <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -461,6 +468,7 @@
 
     <!-- ==================== TAB 5: URBAN PLANNING DASHBOARD ==================== -->
     <section id="section-dashboard" class="tab-content hidden space-y-6">
+      <div class="bg-white border rounded-xl p-3 text-xs space-y-2"><label>Dashboard data source<select id="dashboard-source" class="border rounded p-2 ml-2" onchange="document.getElementById('stats-source').value=this.value;feedOffset=0;loadData()"><option value="demo_seed">কাল্পনিক DEMO</option><option value="citizen_report">বাস্তব নাগরিক রিপোর্ট</option></select></label><button class="border rounded px-3 py-2" onclick="loadData()">Refresh / আবার চেষ্টা করুন</button><p id="dashboard-data-message" role="status"></p><div id="dashboard-distributions" class="flex flex-wrap gap-4"></div></div>
       <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-md">
         <span class="text-[11px] font-bold text-teal-400 uppercase tracking-widest">Urban Problem Intelligence</span>
         <h2 class="text-xl sm:text-2xl font-extrabold mt-1">রাজশাহী আরবান প্ল্যানিং সাপোর্ট ড্যাশবোর্ড</h2>
@@ -563,7 +571,7 @@
         <h4 class="text-xs font-bold text-purple-900 flex items-center gap-1.5">
           <i class="fa-solid fa-robot"></i> এআই বিশ্লেষণ ও কারণসমূহ
         </h4>
-        <p id="modal-ai-summary" class="text-xs text-purple-800 font-medium">--</p>
+        <p id="modal-ai-provider" class="text-xs text-purple-800"></p><p id="modal-ai-summary" class="text-xs text-purple-800 font-medium">--</p>
         <p class="text-xs text-purple-900">তীব্রতা (Severity): <strong id="modal-ai-severity" class="text-rose-600 font-bold">--</strong> / ৫</p>
         <ul id="modal-ai-reasons" class="list-disc list-inside text-xs text-purple-800 space-y-0.5"></ul>
       </div>
@@ -594,7 +602,7 @@
       <div class="pt-4 space-y-2 leading-relaxed text-slate-300">
         <p>Developed by: <strong class="text-white">Fahad MD Akramul Islam</strong></p>
         <p>Ideation &amp; Supported By: <strong class="text-white">Tashika Hossain</strong></p>
-        <p class="max-w-xl mx-auto">Both are RUET, Department of Urban &amp; Regional Planning (URP), 24 Series students.</p>
+        <p class="max-w-xl mx-auto">Department of Urban &amp; Regional Planning (URP), RUET — Both are 24 Series students.</p>
       </div>
     </div>
   </footer>

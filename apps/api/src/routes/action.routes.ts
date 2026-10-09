@@ -44,7 +44,7 @@ router.patch('/officers/:id', (req,res,next) => {
 });
 router.get('/actions/dashboard', (req,res,next) => {
   try {
-    const filters = z.object({ wardId:z.string().optional(),category:z.enum(['ROAD_DAMAGE','WATERLOGGING','DRAINAGE','WASTE','FOOTPATH','STREETLIGHT','OTHER']).optional(),priority:prioritySchema.optional(),status:z.enum(ACTION_STATUSES).optional(),departmentId:z.string().optional(),officerId:z.string().optional(),overdue:z.enum(['true','false']).optional(),from:z.string().date().optional(),to:z.string().date().optional(),limit:z.string().regex(/^[0-9]+$/).refine(v=>Number(v)>=1&&Number(v)<=100).optional(),offset:z.string().regex(/^[0-9]+$/).optional() }).strict().refine(q=>!q.from || !q.to || q.from<=q.to,'Invalid date range').parse(req.query);
+    const filters = z.object({ source:z.enum(['all','demo_seed','citizen_report']).optional(),wardId:z.string().optional(),category:z.enum(['ROAD_DAMAGE','WATERLOGGING','DRAINAGE','WASTE','FOOTPATH','STREETLIGHT','OTHER']).optional(),priority:prioritySchema.optional(),status:z.enum(ACTION_STATUSES).optional(),departmentId:z.string().optional(),officerId:z.string().optional(),overdue:z.enum(['true','false']).optional(),from:z.string().date().optional(),to:z.string().date().optional(),limit:z.string().regex(/^[0-9]+$/).refine(v=>Number(v)>=1&&Number(v)<=100).optional(),offset:z.string().regex(/^[0-9]+$/).optional() }).strict().refine(q=>!q.from || !q.to || q.from<=q.to,'Invalid date range').parse(req.query);
     res.json({success:true,data:actionDashboard(filters),persistence:persistenceState});
   } catch(e) { next(e); }
 });

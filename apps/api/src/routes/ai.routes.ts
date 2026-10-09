@@ -10,14 +10,16 @@ const router = Router();
 
 const AnalyzeTextSchema = z.object({
   text: z.string().min(3, 'Complaint text must be at least 3 characters').max(6000),
-});
+  title: z.string().trim().max(300).optional(),
+  allowFallback: z.boolean().default(false),
+}).strict();
 
 // POST /api/v1/ai/analyze-complaint
 // Real-time analysis for citizen before final submission
 router.post('/analyze-complaint', async (req, res, next) => {
   try {
-    const { text } = AnalyzeTextSchema.parse(req.body);
-    const result = await analyzeBengaliComplaint(text);
+    const { text, title, allowFallback } = AnalyzeTextSchema.parse(req.body);
+    const result = await analyzeBengaliComplaint((title ? title+'\n' : '')+text, allowFallback);
 
     res.json({
       success: true,

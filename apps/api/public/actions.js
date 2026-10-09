@@ -137,7 +137,7 @@ function useActionDraft() {
 async function actionCommand(buttonId,messageId,run) {
   const button=document.getElementById(buttonId), message=document.getElementById(messageId), reportId=selectedReport?.id;
   button.disabled=true; message.textContent='সংরক্ষণ/প্রসেসিং হচ্ছে…';
-  try { await run(reportId); if (selectedReport?.id===reportId) await loadReportActions(reportId); await loadData(); }
+  try { await run(reportId); if (selectedReport?.id===reportId) await loadReportActions(reportId); await loadData(); if(selectedReport?.id===reportId)await openDetailModal(reportId); }
   catch(error) { if (selectedReport?.id===reportId) message.textContent=error.message; }
   finally { if (button.isConnected) button.disabled=false; }
 }
@@ -180,10 +180,10 @@ async function loadActionDashboard() {
     await ensureActionDirectory();
     if (!document.getElementById('action-filter-wardId')) renderActionFilters();
     const query=new URLSearchParams(); ['wardId','category','priority','status','departmentId','officerId','overdue','from','to'].forEach(key=>{const value=document.getElementById(`action-filter-${key}`)?.value;if(value)query.set(key,value);});
-    query.set('limit','50');query.set('offset',String(queueOffset));
+    query.set('source',statsSource());query.set('limit','50');query.set('offset',String(queueOffset));
     const result=await actionApi(`/actions/dashboard?${query}`); if(sequence!==dashboardRequestSequence || !isAdminMode)return;
     document.getElementById('action-storage-status').textContent=storageMessage(result.persistence);
-    document.getElementById('queue-page').textContent=`${queueOffset+1}–${Math.min(queueOffset+50,result.data.total)} / ${result.data.total}`;
+    document.getElementById('queue-page').textContent=(statsSource()==='demo_seed'?'Demo Data — কাল্পনিক নমুনা তথ্য • ':'বাস্তব নাগরিক রিপোর্ট • ')+`${result.data.total?queueOffset+1:0}–${Math.min(queueOffset+50,result.data.total)} / ${result.data.total}`;
     const labels={totalReports:'মোট রিপোর্ট',closed:'যাচাই শেষে বন্ধ',unassigned:'দায়িত্বহীন রিপোর্ট',awaitingVerification:'মাঠে যাচাই প্রয়োজন',assigned:'দায়িত্ব অর্পিত',inProgress:'কাজ চলছে',overdue:'লক্ষ্য তারিখ পেরিয়েছে',resolvedAwaitingVerification:'সমাধান যাচাই বাকি',highPriorityUnresolved:'উচ্চ অগ্রাধিকারে অসম্পন্ন'};
     document.getElementById('action-dashboard-cards').innerHTML=Object.entries(labels).map(([key,label])=>`<div class="rounded-xl bg-teal-50 p-3"><p class="text-xs">${label}</p><p class="text-xl font-bold text-teal-800">${result.data.summary[key]}</p></div>`).join('');
     list.innerHTML=result.data.rows.map(row=>`<div class="border border-slate-200 rounded-xl p-3 space-y-1 text-xs">

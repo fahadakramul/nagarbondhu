@@ -14,14 +14,15 @@ import {
 
 import { createHmac } from 'crypto';
 import { hash, duplicateSuggestions } from '../services/citizen.service';
+import { workflowStatus } from '../services/action.service';
 import { publicText } from '../services/privacy';
 const router = Router();
-const publicReport = (report: Report) => ({ ...report, reporterId: undefined, reporterName: undefined,
+const publicReport = (report: Report) => ({ ...report, actionStatus:workflowStatus(report), reporterId: undefined, reporterName: undefined,
   aiAnalysis:report.aiAnalysis?{...report.aiAnalysis,summary:publicText(report.aiAnalysis.summary),reasons:report.aiAnalysis.reasons.map(publicText)}:null,
   title:publicText(report.title),description:publicText(report.description),addressLabel:publicText(report.addressLabel || ''),
   statusHistory:report.statusHistory?.map(h=>({createdAt:h.createdAt,previousStatus:h.previousStatus,newStatus:h.newStatus})),
   priorityAssessment:report.priorityAssessment ? {...report.priorityAssessment,overriddenBy:undefined,overrideReason:undefined} : null,
-  possibleDuplicates: report.possibleDuplicates?.map(duplicate => ({...duplicate, reviewedBy:undefined, candidateReport: duplicate.candidateReport ? {...duplicate.candidateReport, reporterId: undefined, reporterName: undefined} : undefined})),
+  possibleDuplicates: report.possibleDuplicates?.map(duplicate => ({...duplicate, reviewedBy:undefined, candidateReport: duplicate.candidateReport ? {id:duplicate.candidateReport.id,title:publicText(duplicate.candidateReport.title || ''),category:duplicate.candidateReport.category,createdAt:duplicate.candidateReport.createdAt} : undefined})),
 });
 
 const CreateReportSchema = z.object({
@@ -124,7 +125,7 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
     const reporterName = req.user?.displayName || 'সচেতন নাগরিক';
 
     // 1. Run AI Analysis on Bengali complaint text
-    const aiResult = await analyzeBengaliComplaint(input.description);
+    const aiResult = await analyzeBengaliComplaint(input.title+'\n'+input.description);
     const finalCategory: ReportCategory = input.userCategory || input.category || aiResult.data.category;
 
     // Resolve Ward if not provided, by nearest ward center
@@ -194,7 +195,7 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
       previousStatus: 'SUBMITTED',
       newStatus: 'SUBMITTED',
       changedBy: 'নগরবন্ধু এআই ইঞ্জিন',
-      note: 'অভিযোগ সফলভাবে গ্রহণ এবং এআই ক্যাটাগরি বিশ্লেষণ সম্পন্ন হয়েছে।',
+      note: aiResult.isFallback ? 'অভিযোগ গ্রহণ হয়েছে; নিয়মভিত্তিক অস্থায়ী শ্রেণিবিন্যাস, live AI নয়।' : 'অভিযোগ গ্রহণ এবং AI-এর অস্থায়ী শ্রেণিবিন্যাস সম্পন্ন হয়েছে।',
       createdAt: new Date().toISOString(),
     });
 
@@ -221,12 +222,13 @@ router.post('/duplicate-suggestions', (req,res,next)=>{
 // Public report feed with filters and sanitized reporter privacy
 router.get('/', (req, res, next) => {
   try {
-  const { category, status, priority, wardId, limit, offset } = z.object({category:CreateReportSchema.shape.category,status:z.enum(['SUBMITTED','AI_ANALYZED','UNDER_REVIEW','IN_PROGRESS','RESOLVED','REJECTED']).optional(),priority:z.enum(['LOW','MEDIUM','HIGH','CRITICAL']).optional(),wardId:z.string().max(100).optional(),limit:z.coerce.number().int().min(1).max(100).default(50),offset:z.coerce.number().int().min(0).default(0)}).strict().parse(req.query);
+  const { category, status, priority, wardId, limit, offset, source } = z.object({category:CreateReportSchema.shape.category,status:z.enum(['SUBMITTED','AI_ANALYZED','UNDER_REVIEW','IN_PROGRESS','RESOLVED','REJECTED']).optional(),priority:z.enum(['LOW','MEDIUM','HIGH','CRITICAL']).optional(),wardId:z.string().max(100).optional(),limit:z.coerce.number().int().min(1).max(100).default(50),source:z.enum(['all','demo_seed','citizen_report']).optional(),offset:z.coerce.number().int().min(0).default(0)}).strict().parse(req.query);
 
   const results = db.findReports({
     category: category as ReportCategory,
     status: status as ReportStatus,
     priority,
+    source,
     wardId: wardId as string,
     limit,
     offset,

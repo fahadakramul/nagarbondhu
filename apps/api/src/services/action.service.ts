@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
 import { db } from '../db';
+import { PriorityService } from './priority.service';
 import { ActionPlan, ActionStatus, ACTION_STATUSES, Report, calculateHaversineDistanceMeters } from '@nagarbondhu/shared';
 
 export const urgencySchema = z.enum(['ROUTINE','SOON','URGENT','IMMEDIATE']);
@@ -93,6 +94,7 @@ export function transition(reportId: string, body: unknown, actorId: string) {
   }
   const status = ['SUBMITTED','IN_PROGRESS','RESOLVED','REJECTED'].includes(input.status) ? input.status as Report['status'] : input.status === 'CLOSED' ? 'RESOLVED' : 'UNDER_REVIEW';
   db.updateReport(reportId, { actionStatus: input.status, status, resolvedAt: input.status === 'RESOLVED' || input.status === 'CLOSED' ? (report.resolvedAt || now) : null });
+  if(report.sourceType==='citizen_report') PriorityService.assessReportPriority(reportId);
   db.addStatusHistory({ id: randomUUID(), reportId, previousStatus: report.status, newStatus: status, changedBy: actorId, note: `${current} → ${input.status}: ${input.note}`, createdAt: now });
   event(reportId, actorId, input.status === 'RESOLVED' ? 'RESOLUTION_SUBMITTED' : 'STATUS_CHANGED', input.note, { previousStatus: current, status: input.status });
   return getPlan(reportId);
@@ -122,7 +124,7 @@ export function actionDashboard(filters: Record<string, string | undefined>, now
       createdAt:r.createdAt, updatedAt:plan?.updatedAt || r.updatedAt, latestUpdate:Array.from(db.progressUpdates.values()).filter(p=>p.planId===plan?.id).sort((a,b)=>b.createdAt.localeCompare(a.createdAt))[0]?.note || null,
       targetDate: plan?.targetDate || null, overdue: isOverdue(plan,now), verificationStatus: plan?.verificationStatus || null,
     };
-  }).filter(row => Object.entries(filters).every(([key,value]) => !value || ['limit','offset'].includes(key) || (key==='from'?Date.parse(row.createdAt)>=Date.parse(value+'T00:00:00+06:00'):key==='to'?Date.parse(row.createdAt)<=Date.parse(value+'T23:59:59.999+06:00'):key === 'overdue' ? row.overdue === (value === 'true') : (row as any)[key] === value)));
+  }).filter(row => Object.entries(filters).every(([key,value]) => !value || ['limit','offset'].includes(key) || (key==='source'?value==='all'||row.sourceType===value:key==='from'?Date.parse(row.createdAt)>=Date.parse(value+'T00:00:00+06:00'):key==='to'?Date.parse(row.createdAt)<=Date.parse(value+'T23:59:59.999+06:00'):key === 'overdue' ? row.overdue === (value === 'true') : (row as any)[key] === value)));
   const count = (fn: (row: typeof rows[number]) => boolean) => rows.filter(fn).length;
   return { summary: {
     totalReports: rows.length, closed: count(r=>r.status==='CLOSED'), unassigned: count(r => !r.departmentId && !['RESOLVED','CLOSED','REJECTED'].includes(r.status)),

@@ -74,7 +74,14 @@ export async function readImage(id: string) { return client ? client.uploadedIma
 // This cache preserves the existing synchronous repository API; deploy one API instance.
 export const persistMutations: RequestHandler = (req, res, next) => {
   if (!req.path.startsWith('/api/')) return next();
-  if (['GET','HEAD','OPTIONS'].includes(req.method)) { writeQueue.then(() => next(), next); return; }
+  if (['GET','HEAD','OPTIONS'].includes(req.method)) {
+    writeQueue.then(async () => {
+      // Do not present the cached counts as available while PostgreSQL is unreachable.
+      if(client && req.method!=='OPTIONS') await client.$queryRaw`SELECT 1`;
+      next();
+    }).catch(() => next(Object.assign(new Error('Database unavailable — তথ্য এখন পাওয়া যাচ্ছে না। আবার চেষ্টা করুন।'),{statusCode:503})));
+    return;
+  }
   const previous = writeQueue;
   let release!: () => void;
   writeQueue = new Promise<void>(resolve => { release = resolve; });

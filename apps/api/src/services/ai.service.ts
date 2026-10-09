@@ -17,7 +17,7 @@ export const AiAnalysisSchema = z.object({
   summary: z.string().min(5).max(1500),
   severity: z.number().int().min(1).max(5),
   confidence: z.number().min(0).max(1).optional().nullable(),
-  reasons: z.array(z.string()).min(1),
+  reasons: z.array(z.string().min(1).max(1000)).min(1).max(12),
   missing_information: z.array(z.string().max(500)).max(12).default([]),
   keywords: z.array(z.string().max(100)).max(15).default([]),
   clearerDescription: z.string().max(6000).optional(),
@@ -96,12 +96,17 @@ function analyzeWithRuleFallback(text: string): AiAnalysisData {
  * Analyzes Bengali civic complaint using Google Gemini API
  * Returns validated structured data.
  */
-export async function analyzeBengaliComplaint(complaintText: string): Promise<AiServiceResult> {
+export class AiUnavailableError extends Error {
+  statusCode = 503;
+  constructor() { super('Live AI এখন উপলব্ধ নয়। আবার চেষ্টা করুন, অথবা স্পষ্টভাবে চিহ্নিত নিয়মভিত্তিক preview নিন। AI ছাড়াও রিপোর্ট জমা দেওয়া যায়।'); }
+}
+export async function analyzeBengaliComplaint(complaintText: string, allowFallback = true): Promise<AiServiceResult> {
   complaintText=complaintText.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,'[email removed]').replace(/(?:\+?880|0)1[3-9][0-9]{8}/g,'[phone removed]');
   complaintText=publicText(complaintText);
   const apiKey = CONFIG.GEMINI_API_KEY;
 
   if (!apiKey) {
+    if (!allowFallback) throw new AiUnavailableError();
     // Transparent fallback when key is not configured
     const fallbackData = analyzeWithRuleFallback(complaintText);
     return {
@@ -179,6 +184,7 @@ Complaint Text:
       isFallback: false,
     };
   } catch (error: any) {
+    if (!allowFallback) throw new AiUnavailableError();
     console.warn('[AI Service] Live provider unavailable; using labelled heuristic fallback.');
     const fallbackData = analyzeWithRuleFallback(complaintText);
     return {

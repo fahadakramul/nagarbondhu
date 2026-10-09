@@ -9,9 +9,8 @@ import {
   ReviewStatus,
 } from '@nagarbondhu/shared';
 
-// App server URL tunneling via ngrok
-export const APP_SERVER_BASE_URL = 'https://enclose-lyricism-punctured.ngrok-free.dev';
-export const API_BASE_URL = `${APP_SERVER_BASE_URL}/api/v1`;
+import { APP_SERVER_BASE_URL, API_BASE_URL } from '../config';
+export { APP_SERVER_BASE_URL, API_BASE_URL } from '../config';
 
 // Fallback seed reports if device cannot reach port 5000 (firewall / router isolation)
 const FALLBACK_REPORTS: Report[] = [

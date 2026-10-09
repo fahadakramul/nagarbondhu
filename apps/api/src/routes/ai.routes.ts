@@ -4,11 +4,12 @@ import { analyzeBengaliComplaint } from '../services/ai.service';
 import { PriorityService } from '../services/priority.service';
 import { db } from '../db';
 import { AiAnalysisRecord } from '@nagarbondhu/shared';
+import { authenticate, requireRole } from '../middleware/auth';
 
 const router = Router();
 
 const AnalyzeTextSchema = z.object({
-  text: z.string().min(3, 'Complaint text must be at least 3 characters'),
+  text: z.string().min(3, 'Complaint text must be at least 3 characters').max(6000),
 });
 
 // POST /api/v1/ai/analyze-complaint
@@ -35,7 +36,7 @@ router.post('/analyze-complaint', async (req, res, next) => {
 
 // POST /api/v1/reports/:id/analyze
 // Re-analyze an existing report
-router.post('/reports/:id/analyze', async (req, res, next) => {
+router.post('/reports/:id/analyze', authenticate, requireRole(['ADMIN','URBAN_PLANNER']), async (req, res, next) => {
   try {
     const report = db.findReportById(req.params.id);
     if (!report) {
@@ -45,7 +46,7 @@ router.post('/reports/:id/analyze', async (req, res, next) => {
     const result = await analyzeBengaliComplaint(report.description);
 
     const aiRecord: AiAnalysisRecord = {
-      id: `ai-${report.id}-${Date.now()}`,
+      id: report.aiAnalysis?.id || `ai-${report.id}`,
       reportId: report.id,
       provider: result.provider,
       modelName: result.modelName,

@@ -12,14 +12,21 @@ import {
   ReportStatus,
 } from '@nagarbondhu/shared';
 
+import { createHmac } from 'crypto';
+import { hash, duplicateSuggestions } from '../services/citizen.service';
+import { publicText } from '../services/privacy';
 const router = Router();
 const publicReport = (report: Report) => ({ ...report, reporterId: undefined, reporterName: undefined,
-  possibleDuplicates: report.possibleDuplicates?.map(duplicate => ({...duplicate, candidateReport: duplicate.candidateReport ? {...duplicate.candidateReport, reporterId: undefined, reporterName: undefined} : undefined})),
+  aiAnalysis:report.aiAnalysis?{...report.aiAnalysis,summary:publicText(report.aiAnalysis.summary),reasons:report.aiAnalysis.reasons.map(publicText)}:null,
+  title:publicText(report.title),description:publicText(report.description),addressLabel:publicText(report.addressLabel || ''),
+  statusHistory:report.statusHistory?.map(h=>({createdAt:h.createdAt,previousStatus:h.previousStatus,newStatus:h.newStatus})),
+  priorityAssessment:report.priorityAssessment ? {...report.priorityAssessment,overriddenBy:undefined,overrideReason:undefined} : null,
+  possibleDuplicates: report.possibleDuplicates?.map(duplicate => ({...duplicate, reviewedBy:undefined, candidateReport: duplicate.candidateReport ? {...duplicate.candidateReport, reporterId: undefined, reporterName: undefined} : undefined})),
 });
 
 const CreateReportSchema = z.object({
-  title: z.string().min(3, 'Title is required'),
-  description: z.string().min(5, 'Description must be at least 5 characters'),
+  title: z.string().trim().min(3, 'Title is required').max(200),
+  description: z.string().trim().min(5, 'Description must be at least 5 characters').max(6000),
   category: z.enum([
     'ROAD_DAMAGE',
     'WATERLOGGING',
@@ -40,9 +47,12 @@ const CreateReportSchema = z.object({
   ]).optional(),
   latitude: z.number().min(20).max(28),
   longitude: z.number().min(85).max(95),
-  addressLabel: z.string().optional(),
+  addressLabel: z.string().trim().max(300).optional(),
   wardId: z.string().optional(),
   imageUrl: z.string().optional().nullable().or(z.literal('')),
+  idempotencyKey: z.string().uuid().optional(),
+  locationConfirmed: z.boolean().optional(),
+  locationSource: z.enum(['GPS','MAP_PIN','MANUAL']).default('MAP_PIN'),
 });
 
 import fs from 'fs';
@@ -100,7 +110,16 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
     const input = CreateReportSchema.parse(req.body);
     if (input.wardId && !db.wards.has(input.wardId)) fail('Unknown ward; select an available ward.');
     if (input.imageUrl) photoSchema.parse(input.imageUrl);
-    const reportId = `rep-${Date.now()}`;
+    if (input.locationConfirmed === false) fail('Confirm the selected location before submitting.');
+    const key = input.idempotencyKey || randomUUID();
+    const fingerprint = hash(JSON.stringify(input));
+    const trackingToken = createHmac('sha256', CONFIG.JWT_SECRET).update('tracking:'+key).digest('hex');
+    const existing = db.submissionReceipts.get(key);
+    if (existing) {
+      if (existing.fingerprint !== fingerprint) fail('Submission key was already used with different content.',409);
+      return res.json({success:true,report:publicReport(db.findReportById(existing.reportId)!),trackingToken,replayed:true});
+    }
+    const reportId = `rep-${randomUUID()}`;
     const reporterId = req.user?.id || null;
     const reporterName = req.user?.displayName || 'সচেতন নাগরিক';
 
@@ -114,22 +133,6 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
     if (wardId) {
       const ward = db.findWardById(wardId);
       wardName = ward?.wardName || null;
-    } else {
-      // Find closest ward from Rajshahi wards
-      const allWards = db.getAllWards();
-      if (allWards.length > 0) {
-        let closest = allWards[0];
-        let minDiff = 999;
-        allWards.forEach((w) => {
-          const diff = Math.hypot(w.centerLatitude - input.latitude, w.centerLongitude - input.longitude);
-          if (diff < minDiff) {
-            minDiff = diff;
-            closest = w;
-          }
-        });
-        wardId = closest.id;
-        wardName = closest.wardName;
-      }
     }
 
     // 2. Create Base Report
@@ -147,7 +150,8 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
       wardId,
       wardName,
       imageUrl: input.imageUrl || null,
-      status: 'AI_ANALYZED',
+      status: 'SUBMITTED',
+      actionStatus: 'SUBMITTED',
       sourceType: 'citizen_report',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -188,15 +192,17 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
       id: `hist-${reportId}-1`,
       reportId,
       previousStatus: 'SUBMITTED',
-      newStatus: 'AI_ANALYZED',
+      newStatus: 'SUBMITTED',
       changedBy: 'নগরবন্ধু এআই ইঞ্জিন',
       note: 'অভিযোগ সফলভাবে গ্রহণ এবং এআই ক্যাটাগরি বিশ্লেষণ সম্পন্ন হয়েছে।',
       createdAt: new Date().toISOString(),
     });
 
+    db.submissionReceipts.set(key,{id:key,reportId,fingerprint,capabilityHash:hash(trackingToken),locationConfirmed:input.locationConfirmed===true,locationSource:input.locationSource,createdAt:newReport.createdAt});
     res.status(201).json({
       success: true,
-      report: newReport,
+      report: publicReport(newReport),
+      trackingToken,
       flaggedDuplicateCount: duplicates.length,
     });
   } catch (err) {
@@ -204,17 +210,26 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
   }
 });
 
+router.post('/duplicate-suggestions', (req,res,next)=>{
+  try {
+    const input=CreateReportSchema.pick({title:true,description:true,category:true,latitude:true,longitude:true}).extend({category:CreateReportSchema.shape.category.unwrap()}).strict().parse(req.body);
+    res.json({success:true,data:duplicateSuggestions(input)});
+  } catch(error) {next(error);}
+});
+
 // GET /api/v1/reports
 // Public report feed with filters and sanitized reporter privacy
-router.get('/', (req, res) => {
-  const { category, status, priority, wardId, limit, offset } = req.query;
+router.get('/', (req, res, next) => {
+  try {
+  const { category, status, priority, wardId, limit, offset } = z.object({category:CreateReportSchema.shape.category,status:z.enum(['SUBMITTED','AI_ANALYZED','UNDER_REVIEW','IN_PROGRESS','RESOLVED','REJECTED']).optional(),priority:z.enum(['LOW','MEDIUM','HIGH','CRITICAL']).optional(),wardId:z.string().max(100).optional(),limit:z.coerce.number().int().min(1).max(100).default(50),offset:z.coerce.number().int().min(0).default(0)}).strict().parse(req.query);
 
   const results = db.findReports({
     category: category as ReportCategory,
     status: status as ReportStatus,
+    priority,
     wardId: wardId as string,
-    limit: limit ? parseInt(limit as string, 10) : 50,
-    offset: offset ? parseInt(offset as string, 10) : 0,
+    limit,
+    offset,
   });
 
   // Sanitize reports (strip private reporter ids)
@@ -225,6 +240,7 @@ router.get('/', (req, res) => {
     total: results.total,
     reports: sanitized,
   });
+  } catch(error) { next(error); }
 });
 
 // GET /api/v1/users/me/reports

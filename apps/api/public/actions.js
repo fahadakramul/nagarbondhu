@@ -18,6 +18,7 @@ function actionOptions(rows, value, placeholder) {
   return `<option value="">${actionEscape(placeholder)}</option>` + rows.map(row => `<option value="${actionEscape(row.id)}" ${row.id===value?'selected':''}>${actionEscape(row.wardName || directoryLabel(row))}</option>`).join('');
 }
 async function actionApi(path, body, method='GET') {
+  if (method!=='GET' && !path.startsWith('/copilot') && !confirm('এই পরিবর্তন সার্ভারে নথিভুক্ত হবে। নিশ্চিত করুন।')) throw new Error('পরিবর্তন বাতিল করেছেন।');
   if (!authToken) throw new Error('অ্যাডমিন demo session পাওয়া যায়নি। আবার role পরিবর্তন করে চেষ্টা করুন।');
   const response=await fetch(`/api/v1/admin${path}`,{method,headers:{'Content-Type':'application/json',Authorization:`Bearer ${authToken}`}, ...(body===undefined?{}:{body:JSON.stringify(body)})});
   const result=await response.json();
@@ -116,6 +117,8 @@ function renderActionWorkspace(data,directory) {
       ${data.reportHistory?.map(h=>`<p class="text-xs text-slate-500">রিপোর্ট: ${actionEscape(h.previousStatus)} → ${actionEscape(h.newStatus)} • ${actionDate(h.createdAt)} • ${actionEscape(h.note || '')}</p>`).join('') || ''}
     </div></details>`;
   updatePlanOfficerOptions(plan?.officerId);
+  if(directory.readOnly){document.getElementById('report-action-workspace').querySelectorAll('button,input,textarea,select').forEach(el=>el.disabled=true);document.getElementById('action-ai-message').textContent='Read-only demo: পরিবর্তন করতে provisioned operator session প্রয়োজন।';}
+  document.getElementById('request-information-button').disabled=!!directory.readOnly;
 }
 function updatePlanOfficerOptions(selected=null) {
   const ward=document.getElementById('plan-ward').value, department=document.getElementById('plan-department').value;
@@ -176,10 +179,12 @@ async function loadActionDashboard() {
   try {
     await ensureActionDirectory();
     if (!document.getElementById('action-filter-wardId')) renderActionFilters();
-    const query=new URLSearchParams(); ['wardId','category','priority','status','departmentId','officerId','overdue'].forEach(key=>{const value=document.getElementById(`action-filter-${key}`)?.value;if(value)query.set(key,value);});
+    const query=new URLSearchParams(); ['wardId','category','priority','status','departmentId','officerId','overdue','from','to'].forEach(key=>{const value=document.getElementById(`action-filter-${key}`)?.value;if(value)query.set(key,value);});
+    query.set('limit','50');query.set('offset',String(queueOffset));
     const result=await actionApi(`/actions/dashboard?${query}`); if(sequence!==dashboardRequestSequence || !isAdminMode)return;
     document.getElementById('action-storage-status').textContent=storageMessage(result.persistence);
-    const labels={unassigned:'দায়িত্বহীন রিপোর্ট',awaitingVerification:'মাঠে যাচাই প্রয়োজন',assigned:'দায়িত্ব অর্পিত',inProgress:'কাজ চলছে',overdue:'লক্ষ্য তারিখ পেরিয়েছে',resolvedAwaitingVerification:'সমাধান যাচাই বাকি',highPriorityUnresolved:'উচ্চ অগ্রাধিকারে অসম্পন্ন'};
+    document.getElementById('queue-page').textContent=`${queueOffset+1}–${Math.min(queueOffset+50,result.data.total)} / ${result.data.total}`;
+    const labels={totalReports:'মোট রিপোর্ট',closed:'যাচাই শেষে বন্ধ',unassigned:'দায়িত্বহীন রিপোর্ট',awaitingVerification:'মাঠে যাচাই প্রয়োজন',assigned:'দায়িত্ব অর্পিত',inProgress:'কাজ চলছে',overdue:'লক্ষ্য তারিখ পেরিয়েছে',resolvedAwaitingVerification:'সমাধান যাচাই বাকি',highPriorityUnresolved:'উচ্চ অগ্রাধিকারে অসম্পন্ন'};
     document.getElementById('action-dashboard-cards').innerHTML=Object.entries(labels).map(([key,label])=>`<div class="rounded-xl bg-teal-50 p-3"><p class="text-xs">${label}</p><p class="text-xl font-bold text-teal-800">${result.data.summary[key]}</p></div>`).join('');
     list.innerHTML=result.data.rows.map(row=>`<div class="border border-slate-200 rounded-xl p-3 space-y-1 text-xs">
       <button class="font-bold text-left text-teal-800 hover:underline" data-open-action-report="${actionEscape(row.reportId)}">${actionEscape(row.title)}</button><span class="text-slate-500"> • ${actionEscape(row.reportId)}${row.sourceType==='demo_seed'?' • DEMO':''}</span>
@@ -187,19 +192,21 @@ async function loadActionDashboard() {
       <p><strong>AI/খসড়া:</strong> ${actionEscape(row.recommendedAction || 'এখনও তৈরি হয়নি')}</p>
       ${row.confirmedAction?`<p><strong>অ্যাডমিন নিশ্চিত:</strong> ${actionEscape(row.confirmedAction)}</p>`:''}
       <p>${actionEscape(row.priority)} • ${actionEscape(ACTION_LABELS[row.status])} • ${actionEscape(row.officerName || row.departmentName || 'দায়িত্ব দেওয়া হয়নি')}</p>
-      <p>লক্ষ্য: ${actionDate(row.targetDate)} ${row.overdue?'<strong class="text-rose-700">— সময় পেরিয়েছে</strong>':''}</p></div>`).join('') || '<p class="text-xs">এই filters অনুযায়ী কোনো রিপোর্ট নেই।</p>';
+      <p>সর্বশেষ update: ${actionEscape(row.latestUpdate || "Progress নেই")} • ${actionDate(row.updatedAt)}</p><p>লক্ষ্য: ${actionDate(row.targetDate)} ${row.overdue?'<strong class="text-rose-700">— সময় পেরিয়েছে: দায়িত্বপ্রাপ্ত দলের follow-up ও escalation review প্রয়োজন; স্বয়ংক্রিয় নির্দেশ নয়</strong>':''}</p></div>`).join('') || '<p class="text-xs">এই filters অনুযায়ী কোনো রিপোর্ট নেই।</p>';
     list.querySelectorAll('[data-open-action-report]').forEach(button=>button.addEventListener('click',async()=>{
       const id=button.dataset.openActionReport;
       if (!allReports.some(r=>r.id===id)) { const response=await fetch(`/api/v1/reports/${encodeURIComponent(id)}`);const result=await response.json();if(result.report)allReports.push(result.report); }
       openDetailModal(id);
     }));
-    if(!document.getElementById('directory-person-form'))renderDirectoryEditor();
+    renderDirectoryEditor();
+    if(actionDirectory.readOnly)document.getElementById('dashboard-duplicates-list').querySelectorAll('button').forEach(b=>b.disabled=true);
+    loadPlanningTools().catch(error=>document.getElementById('planning-tools').textContent=error.message);
   } catch(error) { if(sequence!==dashboardRequestSequence)return;list.innerHTML=`<p class="text-xs text-rose-700">${actionEscape(error.message)}</p><button class="${buttonClass}" onclick="loadActionDashboard()">আবার চেষ্টা করুন</button>`; document.getElementById('action-dashboard-cards').textContent='তথ্য অনুপলব্ধ'; }
 }
 function renderActionFilters() {
   const generic=(values)=>values.map(([id,displayName])=>({id,displayName,active:true,verificationStatus:''}));
   const filters=[['wardId','ওয়ার্ড',actionDirectory.wards],['category','সমস্যা',generic(Object.entries(CATEGORY_NAMES_BN))],['priority','অগ্রাধিকার',generic(['LOW','MEDIUM','HIGH','CRITICAL'].map(p=>[p,p]))],['status','অবস্থা',generic(Object.entries(ACTION_LABELS))],['departmentId','বিভাগ',actionDirectory.departments],['officerId','কর্মকর্তা',actionDirectory.officers],['overdue','লক্ষ্য তারিখ',generic([['true','সময় পেরিয়েছে'],['false','সময় পেরোয়নি']])]];
-  document.getElementById('action-dashboard-filters').innerHTML=filters.map(([key,label,rows])=>`<label class="text-xs">${label}<select id="action-filter-${key}" onchange="loadActionDashboard()" class="${inputClass}">${actionOptions(rows,null,'সব')}</select></label>`).join('');
+  document.getElementById('action-dashboard-filters').innerHTML=filters.map(([key,label,rows])=>`<label class="text-xs">${label}<select id="action-filter-${key}" onchange="queueOffset=0;loadActionDashboard()" class="${inputClass}">${actionOptions(rows,null,'সব')}</select></label>`).join('')+['from','to'].map((key,i)=>`<label class="text-xs">${i?'শেষ':'শুরু'}<input id="action-filter-${key}" type="date" class="${inputClass}" onchange="queueOffset=0;loadActionDashboard()"></label>`).join('');
 }
 function renderDirectoryEditor() {
   document.getElementById('action-directory-editor').innerHTML=`<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -220,6 +227,7 @@ function renderDirectoryEditor() {
       <label class="block text-xs">প্রদত্ত যোগাযোগ (ঐচ্ছিক; DEMO-তে নয়)<input id="directory-person-contact" class="${inputClass}"></label>
       <label class="text-xs"><input id="directory-person-active" type="checkbox" checked> সক্রিয়</label><button class="${buttonClass}">সংরক্ষণ</button></form>
     </div><p id="directory-save-message" class="text-xs mt-2" role="status"></p>`;
+  if(actionDirectory.readOnly){document.getElementById('action-directory-editor').querySelectorAll('button,input,textarea,select').forEach(el=>el.disabled=true);document.getElementById('directory-save-message').textContent='Read-only demo directory';}
 }
 function editDirectoryEntry(type,id) {
   const row=(type==='department'?actionDirectory.departments:actionDirectory.officers).find(r=>r.id===id), prefix=`directory-${type}`;

@@ -2,6 +2,7 @@ import { app } from './app';
 import { CONFIG } from './config';
 import fs from 'fs';
 import { initializeDatabase, disconnectDatabase } from './persistence';
+import { provisionOperator } from './services/operator.service';
 
 // Ensure uploads folder exists
 if (!fs.existsSync(CONFIG.UPLOAD_DIR)) {
@@ -10,6 +11,7 @@ if (!fs.existsSync(CONFIG.UPLOAD_DIR)) {
 
 async function start() {
  await initializeDatabase();
+ await provisionOperator();
  const server = app.listen(CONFIG.PORT, () => {
   console.log(`====================================================`);
   console.log(`  NagarBondhu AI Backend Server Running!`);

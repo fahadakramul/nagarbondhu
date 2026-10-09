@@ -41,7 +41,7 @@ export class AuthService {
       displayName: data.displayName,
       email: data.email || null,
       phone: data.phone || null,
-      role: data.role || 'CITIZEN',
+      role: 'CITIZEN',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

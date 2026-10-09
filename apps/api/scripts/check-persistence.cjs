@@ -37,12 +37,25 @@ async function main() {
   const request=require('supertest'),{app}=require('../dist/src/app');
   const auth=await request(app).post('/api/v1/auth/login').send({email:'admin@nagarbondhu.gov.bd',password:'DemoAdmin123!'});
   assert.equal(auth.status,200);
+  const citizen=await request(app).post('/api/v1/reports').send({title:'Postgres citizen tracking smoke',description:'Drain blockage persistence verification in isolated test schema.',category:'DRAINAGE',latitude:24.36,longitude:88.62,locationConfirmed:true,locationSource:'MAP_PIN',idempotencyKey:'2f93c6ee-90a7-4d19-bab8-227143f47bf2'});
+  assert.ok([200,201].includes(citizen.status));
+  const citizenId=citizen.body.report.id;
+  db.updateReport(citizenId,{status:'RESOLVED',actionStatus:'RESOLVED'});
+  await require('../dist/src/persistence').flushDatabase();
+  const feedback=await request(app).post(`/api/v1/reports/${citizenId}/feedback`).send({trackingToken:citizen.body.trackingToken,verdict:'PERSISTS',comment:'Isolated persistence test feedback'});
+  assert.equal(feedback.status,201);
+  const notice=await request(app).post(`/api/v1/admin/reports/${citizenId}/request-information`).set('Authorization','Bearer '+auth.body.token).send({message:'Please verify the condition at the selected test location.'});
+  assert.equal(notice.status,201);
+  await disconnectDatabase();db.submissionReceipts.clear();db.feedback.clear();db.notices.clear();await initializeDatabase();
+  assert.equal(db.submissionReceipts.get('2f93c6ee-90a7-4d19-bab8-227143f47bf2').reportId,citizenId);
+  assert.equal(db.feedback.get(feedback.body.data.id).comment,'Isolated persistence test feedback');
+  assert.ok(Array.from(db.notices.values()).some(n=>n.reportId===citizenId));
   const baseline=db.snapshot();
   // A nonexistent actor deliberately violates the FK inside a real transaction.
   db.actionEvents.set('bad-event',{id:'bad-event',reportId:'rep-001',planId:getPlan('rep-001').id,actorId:'missing-user',type:'TEST',note:'rollback test',details:{},createdAt:new Date().toISOString()});
   await assert.rejects(require('../dist/src/persistence').flushDatabase());
   db.restore(baseline);
   await disconnectDatabase();
-  console.log('PASS PostgreSQL migration, draft/assignment/audit persistence, reconnect, photo storage and transactional FK rollback (isolated workflow_smoke_test schema).');
+  console.log('PASS PostgreSQL additive migration, existing workflow, submission receipt, feedback, information notice, reconnect, photo storage and transactional FK rollback (isolated workflow_smoke_test schema).');
 }
 main().catch(error=>{console.error(String(error.message).replace(/postgres(?:ql)?:\/\/[^\s"']+/g,'[private database URL]').slice(0,2500));process.exit(1);});

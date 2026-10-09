@@ -14,6 +14,7 @@ import {
 } from '@nagarbondhu/shared';
 import { RAJSHAHI_WARDS, calculateHaversineDistanceMeters } from '@nagarbondhu/shared';
 import bcrypt from 'bcryptjs';
+import { publicText } from './services/privacy';
 import { Department, ResponsiblePerson, ActionRecommendation, ActionPlan, ActionEvent, ProgressUpdate } from '@nagarbondhu/shared';
 
 /**
@@ -35,6 +36,9 @@ export class DatabaseRepository {
   actionPlans = new Map<string, ActionPlan>();
   actionEvents = new Map<string, ActionEvent>();
   progressUpdates = new Map<string, ProgressUpdate>();
+  submissionReceipts = new Map<string, import('./services/citizen.service').SubmissionReceipt>();
+  feedback = new Map<string, import('./services/citizen.service').CitizenFeedback>();
+  notices = new Map<string, import('./services/citizen.service').ReportNotice>();
 
   constructor() {
     this.seedDefaultData();
@@ -45,7 +49,7 @@ export class DatabaseRepository {
   }
 
   snapshot(): Record<string, any[]> {
-    const names = ['users', 'wards', 'reports', 'aiAnalyses', 'priorityAssessments', 'possibleDuplicates', 'departments', 'officers', 'recommendations', 'actionPlans', 'actionEvents', 'progressUpdates'] as const;
+    const names = ['users', 'wards', 'reports', 'aiAnalyses', 'priorityAssessments', 'possibleDuplicates', 'departments', 'officers', 'recommendations', 'actionPlans', 'actionEvents', 'progressUpdates', 'submissionReceipts', 'feedback', 'notices'] as const;
     const snapshot: Record<string, any[]> = { statusHistories: this.statusHistories };
     for (const name of names) snapshot[name] = Array.from((this[name] as Map<string, unknown>).values());
     return JSON.parse(JSON.stringify(snapshot));
@@ -389,7 +393,7 @@ export class DatabaseRepository {
         id: r.id,
         reporterId: r.reporterId,
         reporterName: r.reporterName,
-        title: r.title,
+        title: publicText(r.title),
         description: r.description,
         category: r.category,
         userCategory: r.category,
@@ -720,32 +724,13 @@ export class DatabaseRepository {
     });
 
     // Hotspots identification
-    const hotspots = [
-      {
-        areaName: 'সাহেব বাজার জিরো পয়েন্ট (বাণিজ্যিক এলাকা)',
-        latitude: 24.3636,
-        longitude: 88.6241,
-        reportCount: allReports.filter((r) => r.wardId === 'ward-12').length,
-        primaryCategory: 'ROAD_DAMAGE' as ReportCategory,
-        topSeverity: 4,
-      },
-      {
-        areaName: 'তালাইমারী শহীদ মিনার সংলগ্ন জংশন',
-        latitude: 24.3708,
-        longitude: 88.6368,
-        reportCount: allReports.filter((r) => r.wardId === 'ward-25').length,
-        primaryCategory: 'WATERLOGGING' as ReportCategory,
-        topSeverity: 5,
-      },
-      {
-        areaName: 'কাজীহাটা মোড় ও কোর্ট এলাকা',
-        latitude: 24.3820,
-        longitude: 88.5895,
-        reportCount: allReports.filter((r) => r.wardId === 'ward-1').length,
-        primaryCategory: 'FOOTPATH' as ReportCategory,
-        topSeverity: 5,
-      },
-    ];
+    const hotspots = Array.from(wardMap.entries()).filter(([,stats])=>stats.count>=2).map(([wardId,stats])=>{
+      const records=allReports.filter(r=>(r.wardId || 'unassigned')===wardId);
+      const frequencies=records.reduce<Record<string,number>>((acc,r)=>{acc[r.category]=(acc[r.category]||0)+1;return acc;},{});
+      const category=Object.keys(frequencies).sort((a,b)=>frequencies[b]-frequencies[a])[0] as ReportCategory;
+      return {areaName:(this.wards.get(wardId)?.wardName || 'ওয়ার্ড অজানা')+' — রিপোর্টের ঘনত্ব, নিশ্চিত hazard নয়',latitude:records.reduce((n,r)=>n+r.latitude,0)/records.length,longitude:records.reduce((n,r)=>n+r.longitude,0)/records.length,reportCount:stats.count,primaryCategory:category,topSeverity:Math.max(...records.map(r=>this.findAiAnalysisByReportId(r.id)?.severity || 0))};
+    }).sort((a,b)=>b.reportCount-a.reportCount);
+
 
     // Recent activity
     const recentActivity = allReports
@@ -756,7 +741,7 @@ export class DatabaseRepository {
         const p = this.findPriorityAssessmentByReportId(r.id);
         return {
           reportId: r.id,
-          title: r.title,
+          title: publicText(r.title),
           category: r.category,
           status: r.status,
           priorityLevel: p?.priorityLevel,
@@ -772,7 +757,7 @@ export class DatabaseRepository {
         const p = this.findPriorityAssessmentByReportId(r.id);
         return {
           reportId: r.id,
-          title: r.title,
+          title: publicText(r.title),
           category: r.category,
           score: p?.score || 50,
           priorityLevel: p?.priorityLevel || ('MEDIUM' as PriorityLevel),

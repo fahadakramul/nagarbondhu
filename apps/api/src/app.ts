@@ -13,6 +13,7 @@ import duplicateRoutes from './routes/duplicate.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import adminRoutes from './routes/admin.routes';
 import actionRoutes from './routes/action.routes';
+import platformRoutes from './routes/platform.routes';
 
 export const app = express();
 
@@ -48,6 +49,7 @@ app.get('/api/v1/health', (req, res) => {
 
 // Mount Routes
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1', platformRoutes);
 app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/ai', aiRoutes);
 app.use('/api/v1/map', mapRoutes);

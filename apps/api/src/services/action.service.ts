@@ -115,19 +115,20 @@ export function actionDashboard(filters: Record<string, string | undefined>, now
     const recommendations = Array.from(db.recommendations.values()).filter(rec => rec.reportId === r.id).sort((a,b) => b.createdAt.localeCompare(a.createdAt));
     return { reportId: r.id, title: r.title, category: r.category, sourceType: r.sourceType, location: r.addressLabel,
       wardId: plan?.wardId || r.wardId || null, wardName: db.findWardById(plan?.wardId || r.wardId || '')?.wardName || null,
-      priority: plan?.priority || report.priorityAssessment?.priorityLevel || 'MEDIUM', status: workflowStatus(report),
+      priority: plan?.priority || report.priorityAssessment?.priorityLevel || 'UNKNOWN', status: workflowStatus(report),
       departmentId: plan?.departmentId || null, departmentName: db.departments.get(plan?.departmentId || '')?.displayName || null,
       officerId: plan?.officerId || null, officerName: db.officers.get(plan?.officerId || '')?.displayName || null,
       recommendedAction: recommendations[0]?.data.nextAction || null, confirmedAction: plan?.actionDescription || null,
+      createdAt:r.createdAt, updatedAt:plan?.updatedAt || r.updatedAt, latestUpdate:Array.from(db.progressUpdates.values()).filter(p=>p.planId===plan?.id).sort((a,b)=>b.createdAt.localeCompare(a.createdAt))[0]?.note || null,
       targetDate: plan?.targetDate || null, overdue: isOverdue(plan,now), verificationStatus: plan?.verificationStatus || null,
     };
-  }).filter(row => Object.entries(filters).every(([key,value]) => !value || (key === 'overdue' ? row.overdue === (value === 'true') : (row as any)[key] === value)));
+  }).filter(row => Object.entries(filters).every(([key,value]) => !value || ['limit','offset'].includes(key) || (key==='from'?Date.parse(row.createdAt)>=Date.parse(value+'T00:00:00+06:00'):key==='to'?Date.parse(row.createdAt)<=Date.parse(value+'T23:59:59.999+06:00'):key === 'overdue' ? row.overdue === (value === 'true') : (row as any)[key] === value)));
   const count = (fn: (row: typeof rows[number]) => boolean) => rows.filter(fn).length;
   return { summary: {
-    totalReports: rows.length, unassigned: count(r => !r.departmentId && !['RESOLVED','CLOSED','REJECTED'].includes(r.status)),
+    totalReports: rows.length, closed: count(r=>r.status==='CLOSED'), unassigned: count(r => !r.departmentId && !['RESOLVED','CLOSED','REJECTED'].includes(r.status)),
     awaitingVerification: count(r => r.status === 'AWAITING_FIELD_VERIFICATION'), assigned: count(r => r.status === 'ASSIGNED'),
     inProgress: count(r => r.status === 'IN_PROGRESS'), overdue: count(r => r.overdue),
     resolvedAwaitingVerification: count(r => r.status === 'RESOLVED' && r.verificationStatus !== 'VERIFIED'),
     highPriorityUnresolved: count(r => ['HIGH','CRITICAL'].includes(r.priority) && !['RESOLVED','CLOSED','REJECTED'].includes(r.status)),
-  }, rows };
+  }, total:rows.length, rows:rows.sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt)).slice(Number(filters.offset||0),Number(filters.offset||0)+Number(filters.limit||50)) };
 }

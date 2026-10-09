@@ -1,0 +1,1 @@
+export const publicText=(text:string)=>text.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,'[email removed]').replace(/(?:\+?880|0)1[3-9][0-9]{8}/g,'[phone removed]').replace(/(?:\+?৮৮০|০)১[৩-৯][০-৯]{৮}/g,'[ফোন অপসারিত]');

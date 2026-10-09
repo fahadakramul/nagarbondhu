@@ -27,7 +27,7 @@ All new paths begin `/api/v1/admin` and enforce existing JWT ADMIN/URBAN_PLANNER
 | POST | `/reports/:id/progress` | Progress and optional photo |
 | POST | `/reports/:id/resolution-verification` | Verified/rejected verdict and note |
 
-Legacy status routes cannot bypass assignment/evidence requirements. The existing public demo role toggle is preserved; role checks do not make this secure production admin access. Separate login, notifications, image AI and verified ward boundaries remain future work.
+Legacy status routes cannot bypass assignment/evidence requirements. The existing role toggle is preserved as a read-only demo in production. Administrative writes require a provisioned operator session; registration cannot grant admin roles. See [full platform upgrade](full-platform-upgrade.md) for operator setup, citizen feedback and in-app timelines. Separate login screens, external notifications, image AI and verified ward boundaries remain deferred.
 
 ## Setup and implementation
 

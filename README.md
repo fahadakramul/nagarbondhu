@@ -194,3 +194,5 @@ The seed database comes preloaded with illustrative Rajshahi sample data:
 - `GET /api/v1/dashboard/insights` — Synthesized planning intelligence
 - `PATCH /api/v1/admin/reports/:id/status` — Status transition with audit trail
 - `PATCH /api/v1/admin/reports/:id/priority` — Priority override with audit reason
+
+Citizen tracking, protected operations, GIS/Copilot and planning exports: [implementation and operator setup](docs/full-platform-upgrade.md).

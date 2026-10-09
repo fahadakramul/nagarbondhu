@@ -7,12 +7,14 @@ import { generateActionRecommendation } from '../services/action-ai.service';
 import { ACTION_STATUSES, ResponsiblePerson } from '@nagarbondhu/shared';
 import { getReport, getPlan, workflowStatus, TRANSITIONS, event, fail, confirmPlan, transition, verifyResolution, actionDashboard, photoSchema, prioritySchema } from '../services/action.service';
 import { persistenceState } from '../persistence';
+import { CONFIG } from '../config';
 
 const router = Router();
 router.use(authenticate, requireRole(['ADMIN','URBAN_PLANNER']));
 router.get('/action-directory', (req,res) => res.json({ success: true, data: {
-  wards: db.getAllWards(), departments: Array.from(db.departments.values()), officers: Array.from(db.officers.values()),
+  wards: db.getAllWards(), departments: Array.from(db.departments.values()), officers: Array.from(db.officers.values()).map(o=>CONFIG.NODE_ENV==='production' && req.user?.id==='user-admin-01'?{...o,contact:null}:o),
   wardBoundaryAvailable: false, persistence: persistenceState,
+  readOnly:CONFIG.NODE_ENV==='production' && req.user?.id==='user-admin-01',
 } }));
 const DirectorySchema = z.object({
   displayName: z.string().trim().min(3).max(200), active: z.boolean().default(true),
@@ -42,18 +44,19 @@ router.patch('/officers/:id', (req,res,next) => {
 });
 router.get('/actions/dashboard', (req,res,next) => {
   try {
-    const filters = z.object({ wardId:z.string().optional(),category:z.enum(['ROAD_DAMAGE','WATERLOGGING','DRAINAGE','WASTE','FOOTPATH','STREETLIGHT','OTHER']).optional(),priority:prioritySchema.optional(),status:z.enum(ACTION_STATUSES).optional(),departmentId:z.string().optional(),officerId:z.string().optional(),overdue:z.enum(['true','false']).optional() }).strict().parse(req.query);
+    const filters = z.object({ wardId:z.string().optional(),category:z.enum(['ROAD_DAMAGE','WATERLOGGING','DRAINAGE','WASTE','FOOTPATH','STREETLIGHT','OTHER']).optional(),priority:prioritySchema.optional(),status:z.enum(ACTION_STATUSES).optional(),departmentId:z.string().optional(),officerId:z.string().optional(),overdue:z.enum(['true','false']).optional(),from:z.string().date().optional(),to:z.string().date().optional(),limit:z.string().regex(/^[0-9]+$/).refine(v=>Number(v)>=1&&Number(v)<=100).optional(),offset:z.string().regex(/^[0-9]+$/).optional() }).strict().refine(q=>!q.from || !q.to || q.from<=q.to,'Invalid date range').parse(req.query);
     res.json({success:true,data:actionDashboard(filters),persistence:persistenceState});
   } catch(e) { next(e); }
 });
 router.get('/reports/:id/actions', (req,res,next) => {
   try {
     const report=getReport(req.params.id), plan=getPlan(report.id);
-    res.json({success:true,data:{ plan,status:workflowStatus(report),allowedTransitions:TRANSITIONS[workflowStatus(report)],
+    const demoRead=CONFIG.NODE_ENV==='production' && req.user?.id==='user-admin-01';
+    res.json({success:true,data:{ plan:demoRead && plan?{...plan,adminNotes:'Operator session required',assignmentNote:'Operator session required',wardVerificationNote:'Operator session required',locationOverrideReason:null,createdBy:undefined,updatedBy:undefined,verifiedBy:undefined,verificationNote:null}:plan,status:workflowStatus(report),allowedTransitions:TRANSITIONS[workflowStatus(report)],
       recommendations:Array.from(db.recommendations.values()).filter(r=>r.reportId===report.id).sort((a,b)=>b.createdAt.localeCompare(a.createdAt)),
       progress:Array.from(db.progressUpdates.values()).filter(p=>p.planId===plan?.id).sort((a,b)=>a.createdAt.localeCompare(b.createdAt)),
-      history:Array.from(db.actionEvents.values()).filter(e=>e.reportId===report.id).sort((a,b)=>a.createdAt.localeCompare(b.createdAt)),
-      reportHistory:report.statusHistory, persistence:persistenceState,
+      history:demoRead?[]:Array.from(db.actionEvents.values()).filter(e=>e.reportId===report.id).sort((a,b)=>a.createdAt.localeCompare(b.createdAt)),
+      reportHistory:demoRead?[]:report.statusHistory, persistence:persistenceState,
     }});
   } catch(e) { next(e); }
 });

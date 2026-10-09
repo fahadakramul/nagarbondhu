@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { publicText } from '../services/privacy';
 import { db } from '../db';
 import { authenticate, requireRole } from '../middleware/auth';
 import { DuplicateService } from '../services/duplicate.service';
@@ -12,7 +13,7 @@ router.get('/reports/:id/possible-duplicates', (req, res) => {
   res.json({
     success: true,
     count: duplicates.length,
-    duplicates,
+    duplicates:duplicates.map(d=>({...d,reviewedBy:undefined,candidateReport:d.candidateReport?{id:d.candidateReport.id,title:publicText(d.candidateReport.title || ''),category:d.candidateReport.category,status:d.candidateReport.actionStatus||d.candidateReport.status,latitude:d.candidateReport.latitude,longitude:d.candidateReport.longitude,createdAt:d.candidateReport.createdAt}:undefined})),
   });
 });
 

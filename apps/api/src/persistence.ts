@@ -14,6 +14,7 @@ const tableMap: Record<string, string> = {
   priorityAssessments: 'priorityAssessment', possibleDuplicates: 'possibleDuplicate', statusHistories: 'reportStatusHistory',
   departments: 'department', officers: 'responsiblePerson', recommendations: 'actionRecommendation',
   actionPlans: 'actionPlan', progressUpdates: 'actionProgress', actionEvents: 'actionAuditEvent',
+  submissionReceipts: 'submissionReceipt', feedback: 'citizenFeedback', notices: 'reportNotice',
 };
 function rowData(name: string, row: any) {
   if (name === 'reports') return fields(row, ['id','reporterId','title','description','category','userCategory','latitude','longitude','addressLabel','wardId','imageUrl','status','actionStatus','sourceType','createdAt','updatedAt','resolvedAt']);
@@ -28,7 +29,7 @@ export async function flushDatabase() {
   const snapshot = db.snapshot();
   await client.$transaction(async tx => {
     // Parent records precede child records; existing report/ward/user entities are reused.
-    for (const name of ['users','wards','reports','aiAnalyses','priorityAssessments','possibleDuplicates','statusHistories','departments','officers','recommendations','actionPlans','progressUpdates','actionEvents']) {
+    for (const name of Object.keys(tableMap)) {
       const old = new Map((committed?.[name] || []).map(row => [row.id, JSON.stringify(row)]));
       for (const row of snapshot[name]) {
         if (old.get(row.id) === JSON.stringify(row)) continue;
@@ -93,7 +94,7 @@ export const persistMutations: RequestHandler = (req, res, next) => {
           json(body);
         } catch (error) {
           db.restore(snapshot);
-          console.error('[Persistence] Failed to commit request', error instanceof Error ? error.message : 'Unknown error');
+          console.error('[Persistence] Failed to commit request');
           res.status(503); json({ success: false, error: 'Database write failed; no changes saved. Retry.' });
         } finally { release(); }
       })();

@@ -106,6 +106,9 @@ model Report {
   actionRecommendations ActionRecommendation[]
   actionPlan ActionPlan?
   actionEvents ActionAuditEvent[]
+  submissionReceipts SubmissionReceipt[]
+  feedback CitizenFeedback[]
+  notices ReportNotice[]
 
   duplicatesAsOriginal  PossibleDuplicate[] @relation("ReportOriginal")
   duplicatesAsCandidate PossibleDuplicate[] @relation("ReportCandidate")
@@ -297,6 +300,49 @@ model UploadedImage {
   data Bytes
   createdAt DateTime @default(now()) @map("created_at")
   @@map("uploaded_images")
+}
+
+model SubmissionReceipt {
+  id String @id
+  reportId String @map("report_id")
+  fingerprint String
+  capabilityHash String @map("capability_hash")
+  locationConfirmed Boolean @default(false) @map("location_confirmed")
+  locationSource String @map("location_source")
+  createdAt DateTime @default(now()) @map("created_at")
+  report Report @relation(fields: [reportId], references: [id])
+  feedback CitizenFeedback[]
+  @@index([reportId])
+  @@map("submission_receipts")
+}
+
+model CitizenFeedback {
+  id String @id
+  reportId String @map("report_id")
+  receiptId String @map("receipt_id")
+  verdict String
+  comment String
+  reviewStatus String @default("PENDING") @map("review_status")
+  reviewedBy String? @map("reviewed_by")
+  reviewNote String? @map("review_note")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  report Report @relation(fields: [reportId], references: [id])
+  receipt SubmissionReceipt @relation(fields: [receiptId], references: [id])
+  @@unique([reportId, receiptId])
+  @@index([reviewStatus, createdAt])
+  @@map("citizen_feedback")
+}
+
+model ReportNotice {
+  id String @id
+  reportId String @map("report_id")
+  message String
+  createdBy String @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  report Report @relation(fields: [reportId], references: [id])
+  @@index([reportId, createdAt])
+  @@map("report_notices")
 }
 
 model ActionProgress {

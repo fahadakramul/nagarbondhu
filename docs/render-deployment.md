@@ -29,9 +29,11 @@ The start command runs Prisma migrations. `202610090001_action_workflow` is an i
 
 The installed WebView APK already uses this hosted URL, so these server UI changes require no APK rebuild.
 
-For an opt-in real database smoke check, create ignored `apps/api/.env.persistence-test` with `DATABASE_URL` and run `node scripts/check-persistence.cjs` from `apps/api` after building. It migrates and uses a separate `workflow_smoke_test` schema, verifies reconnect persistence for drafts/plans/audit/photos and transactional FK rejection. It retains its isolated test records for inspection and does not delete production data.
+For an opt-in real database smoke check, create ignored `apps/api/.env.persistence-test` with `DATABASE_URL` and run `node scripts/check-persistence.cjs` from `apps/api` after building. It migrates and uses a separate `workflow_smoke_test` schema, verifies reconnect persistence for drafts/plans/audit/photos/receipts/feedback/notices and transactional FK rejection. It retains its isolated test records for inspection and does not delete production data.
 
-The existing demo role toggle remains unchanged and uses the publicly documented demo administrator. New endpoints enforce JWT ADMIN/URBAN_PLANNER roles, but this is **not secure production administrator access**. Separate login is deliberately deferred. Ward centres are approximate; boundaries need admin verification. No commissioner names are seeded; generic teams are labelled DEMO. No external notifications are sent.
+The existing role toggle opens the public demo planning view. In production this account is read-only; sensitive writes require a provisioned operator account. JWT roles are resolved from stored users, and registration always grants CITIZEN. See [full platform upgrade](full-platform-upgrade.md) for server-only operator provisioning and the inline dashboard session. Separate login screens remain deferred. Ward centres are approximate; boundaries need admin verification. No commissioner names are seeded; generic teams are labelled DEMO. No external notifications are sent.
 
 Render free services can sleep during inactivity, so the first app load may take
 longer. See https://render.com/docs/free for current limits.
+
+The additive `202610100001_citizen_tracking` migration preserves the already deployed database and adds citizen receipt/feedback/notice tables. Existing start commands apply it automatically.

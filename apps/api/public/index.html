@@ -139,13 +139,13 @@
       <!-- REAL-TIME KPI STATS -->
       <div>
         <h3 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
-          <i class="fa-solid fa-chart-line text-civic-600"></i> রিয়েল-টাইম নাগরিক পরিসংখ্যান (রাজশাহী ডাটাবেজ)
+          <i class="fa-solid fa-chart-line text-civic-600"></i> উপলব্ধ রিপোর্টের পরিসংখ্যান (বাস্তব + DEMO)
         </h3>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
             <span class="text-xs font-semibold text-slate-500">মোট রিপোর্ট</span>
             <span id="stat-total" class="text-3xl font-extrabold text-civic-700 mt-1">লোড হচ্ছে</span>
-            <span class="text-[11px] text-teal-600 mt-0.5">নাগরিক জমা</span>
+            <span class="text-[11px] text-teal-600 mt-0.5">উপলব্ধ রিপোর্ট</span>
           </div>
           <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
             <span class="text-xs font-semibold text-slate-500">উন্মুক্ত / কাজ চলছে</span>
@@ -158,9 +158,9 @@
             <span class="text-[11px] text-rose-500 mt-0.5">তাৎক্ষণিক নজরদারি</span>
           </div>
           <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
-            <span class="text-xs font-semibold text-slate-500">সমাধান সম্পন্ন</span>
+            <span class="text-xs font-semibold text-slate-500">সমাধান রিপোর্ট হয়েছে</span>
             <span id="stat-resolved" class="text-3xl font-extrabold text-emerald-600 mt-1">লোড হচ্ছে</span>
-            <span class="text-[11px] text-emerald-600 mt-0.5">মাঠ পর্যায়ে সমাধান</span>
+            <span class="text-[11px] text-emerald-600 mt-0.5">Reported resolution • যাচাই অবস্থা details-এ দেখুন</span>
           </div>
         </div>
       </div>
@@ -242,7 +242,7 @@
           <!-- DESCRIPTION & AI TRIGGER -->
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1">সমস্যার বিস্তারিত বর্ণনা * (বাংলা বা ইংরেজি)</label>
-            <textarea id="form-description" rows="4" required class="w-full text-sm p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-civic-500 focus:outline-none" placeholder="যেমন: তালাইমারী শহীদ মিনারের সামনের রাস্তায় ড্রেন উপচে কোমর সমান নোংরা পানি জমে আছে, পথচারীরা চলাচল করতে পারছে না..."></textarea>
+            <textarea id="form-description" rows="4" required minlength="5" maxlength="6000" class="w-full text-sm p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-civic-500 focus:outline-none" placeholder="যেমন: তালাইমারী শহীদ মিনারের সামনের রাস্তায় ড্রেন উপচে কোমর সমান নোংরা পানি জমে আছে, পথচারীরা চলাচল করতে পারছে না..."></textarea>
           </div>
 
           <!-- AI LIVE PREVIEW BUTTON -->
@@ -254,6 +254,7 @@
           </div>
 
           <!-- AI ANALYSIS PREVIEW CARD -->
+          <label class="block text-xs font-bold">সমস্যার category (AI ছাড়া নির্বাচন করা যায়)<select id="citizen-category" class="w-full p-2 border rounded-lg" onchange="userOverrideCategory=this.value||null"><option value="">নিশ্চিত নই</option><option value="ROAD_DAMAGE">সড়ক ক্ষতি</option><option value="WATERLOGGING">জলাবদ্ধতা</option><option value="DRAINAGE">ড্রেনেজ</option><option value="WASTE">বর্জ্য</option><option value="FOOTPATH">ফুটপাথ</option><option value="STREETLIGHT">সড়কবাতি</option><option value="OTHER">অন্যান্য</option></select></label><div id="submission-message" class="text-xs text-teal-800" role="status" aria-live="polite"></div>
           <div id="ai-preview-box" class="hidden bg-purple-50 border border-purple-200 rounded-xl p-4 space-y-3">
             <div class="flex justify-between items-center">
               <span class="text-xs font-bold text-purple-900 flex items-center gap-1.5">
@@ -264,11 +265,11 @@
             <p id="ai-preview-summary" class="text-xs text-purple-800 font-medium">--</p>
             <div class="flex items-center gap-4 text-xs text-purple-900">
               <span>তীব্রতা (Severity): <strong id="ai-preview-severity" class="text-rose-600 font-bold">--</strong> / ৫</span>
-              <span>কনফিডেন্স: <strong id="ai-preview-confidence">--</strong>%</span>
+              <span>Confidence (uncalibrated): <strong id="ai-preview-confidence">--</strong></span>
             </div>
             <div>
               <span class="text-[11px] font-bold text-purple-900">চিহ্নিত কারণসমূহ:</span>
-              <ul id="ai-preview-reasons" class="list-disc list-inside text-xs text-purple-800 space-y-0.5 mt-0.5"></ul>
+              <div id="assistant-details" class="text-xs space-y-2"></div><ul id="ai-preview-reasons" class="list-disc list-inside text-xs text-purple-800 space-y-0.5 mt-0.5"></ul>
             </div>
             <!-- Category Override option -->
             <div class="pt-2 border-t border-purple-200">
@@ -282,20 +283,20 @@
           <!-- TITLE -->
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1">সংক্ষিপ্ত শিরোনাম *</label>
-            <input type="text" id="form-title" required class="w-full text-sm p-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-civic-500 focus:outline-none" placeholder="যেমন: তালাইমারীতে ড্রেন উপচে তীব্র জলাবদ্ধতা">
+            <input type="text" id="form-title" required minlength="3" maxlength="200" class="w-full text-sm p-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-civic-500 focus:outline-none" placeholder="যেমন: তালাইমারীতে ড্রেন উপচে তীব্র জলাবদ্ধতা">
           </div>
 
           <!-- RAJSHAHI WARD SELECTOR -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">রাজশাহীর এলাকা / ওয়ার্ড *</label>
+              <label class="block text-xs font-bold text-slate-700 mb-1">রাজশাহীর এলাকা / ওয়ার্ড (অজানা রাখা যায়)</label>
               <select id="form-ward" onchange="onWardSelect(this.value)" class="w-full text-sm p-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-civic-500 focus:outline-none bg-white">
                 <!-- Injected via JS -->
               </select>
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-700 mb-1">নির্দিষ্ট ঠিকানা লেবেল</label>
-              <input type="text" id="form-address" class="w-full text-sm p-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-civic-500 focus:outline-none" value="জিরো পয়েন্ট, সাহেব বাজার, রাজশাহী">
+              <input type="text" id="form-address" class="w-full text-sm p-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-civic-500 focus:outline-none" value="">
             </div>
           </div>
 
@@ -329,9 +330,10 @@
             </p>
           </div>
 
+          <label class="flex items-start gap-2 text-xs"><input type="checkbox" id="location-confirmed" required> Pin-এর অবস্থান ও নির্বাচিত/অজানা ওয়ার্ড নিশ্চিত করেছি। ওয়ার্ড কেন্দ্র থেকে সীমানা নির্ধারণ করা যায় না।</label>
           <!-- ENHANCED IMAGE UPLOAD & CAMERA SECTION -->
           <div class="space-y-2">
-            <label class="block text-xs font-bold text-slate-700">সমস্যার ছবি যোগ করুন (ক্যামেরা বা ফাইল) *</label>
+            <label class="block text-xs font-bold text-slate-700">সমস্যার ছবি যোগ করুন (ঐচ্ছিক)</label>
 
             <!-- Hidden File Inputs -->
             <input type="file" id="camera-file-input" accept="image/*" capture="environment" class="hidden" onchange="handleFilePicked(event)">
@@ -383,6 +385,7 @@
 
           <!-- SUBMIT BUTTON -->
           <div class="pt-2">
+            <div id="duplicate-preview" class="text-xs text-amber-900 space-y-2" aria-live="polite"></div><button type="button" onclick="checkDuplicatePreview().catch(e=>setPlatformMessage(e.message))" class="bg-amber-100 px-3 py-2 rounded-lg text-xs">সম্ভাব্য একই সমস্যা দেখুন</button>
             <button type="submit" id="btn-submit-report" class="w-full bg-civic-700 hover:bg-civic-800 text-white font-bold text-sm py-3 rounded-xl shadow-md transition flex items-center justify-center gap-2">
               <i class="fa-solid fa-paper-plane"></i> রিপোর্ট জমা দিন (Submit Report)
             </button>
@@ -434,7 +437,7 @@
       </div>
 
       <!-- FULL LEAFLET MAP -->
-      <div id="main-map" class="w-full h-[600px] rounded-2xl border border-slate-300 shadow-sm z-10"></div>
+      <div class="flex gap-2 flex-wrap text-xs my-2"><label>অবস্থা<select id="map-status" onchange="renderMapMarkers()" class="border p-2 rounded"><option value="">সব</option><option value="SUBMITTED">জমা দেওয়া</option><option value="UNDER_REVIEW">পর্যালোচনাধীন</option><option value="AWAITING_FIELD_VERIFICATION">মাঠে যাচাই প্রয়োজন</option><option value="READY_FOR_ASSIGNMENT">দায়িত্বের জন্য প্রস্তুত</option><option value="ASSIGNED">দায়িত্ব অর্পিত</option><option value="IN_PROGRESS">কাজ চলছে</option><option value="ON_HOLD">স্থগিত</option><option value="RESOLVED">সমাধান জমা</option><option value="CLOSED">বন্ধ</option><option value="REJECTED">বাতিল</option></select></label><label>শুরু<input id="map-from" type="date" onchange="renderMapMarkers()" class="border p-2 rounded"></label><label>শেষ<input id="map-to" type="date" onchange="renderMapMarkers()" class="border p-2 rounded"></label><label>Data<select id="map-source" onchange="renderMapMarkers()" class="border p-2 rounded"><option value="">সব</option><option value="citizen_report">নাগরিক</option><option value="demo_seed">DEMO</option></select></label></div><p id="map-coverage" class="text-xs my-2" aria-live="polite">Map data লোড হচ্ছে…</p><p class="text-xs mb-2">Legend: cluster-এর সংখ্যা উপলব্ধ রিপোর্টের সংখ্যা; রং category অনুযায়ী।</p><div id="main-map" class="w-full h-[600px] rounded-2xl border border-slate-300 shadow-sm z-10"></div>
     </section>
 
     <!-- ==================== TAB 4: REPORTS FEED & DETAILS ==================== -->
@@ -449,7 +452,8 @@
       </div>
 
       <!-- FEED LIST CONTAINER -->
-      <div id="reports-feed-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="bg-teal-50 border rounded-xl p-3 text-xs space-y-2"><p>এই ডিভাইসে সংরক্ষিত submission receipts — এটি private account বা নিরাপদ “My Reports” নয়। Shared device ব্যবহার করলে অন্যরাও receipt ব্যবহার করতে পারবেন।</p><button class="bg-teal-700 text-white px-3 py-2 rounded" onclick="showDeviceReceipts()">এই ডিভাইসের রিপোর্ট references</button><div id="device-receipts" class="space-y-2"></div><form onsubmit="event.preventDefault();openDetailModal(document.getElementById('tracking-reference').value.trim())" class="flex gap-2"><label class="flex-1">Report reference<input id="tracking-reference" required class="border p-2 rounded w-full" placeholder="rep-…"></label><button class="border p-2 rounded">Track</button></form></div>
+      <div class="flex gap-2 text-xs"><button onclick="feedOffset=Math.max(0,feedOffset-50);loadData()" class="border rounded p-2">আগের পৃষ্ঠা</button><button onclick="feedOffset+=50;loadData()" class="border rounded p-2">পরের পৃষ্ঠা</button><span id="feed-page" aria-live="polite"></span></div><div id="reports-feed-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Injected via JS -->
       </div>
     </section>
@@ -463,14 +467,15 @@
       </div>
 
       <!-- TOP ACTIONABLE RECOMMENDATIONS -->
+      <div id="planning-tools" class="hidden bg-white p-5 rounded-2xl border space-y-3"></div>
       <div id="admin-action-dashboard" class="hidden bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
         <h3 class="font-bold text-slate-800">প্রশাসনিক করণীয় ও দায়িত্ব ব্যবস্থাপনা</h3>
         <p class="text-xs text-slate-500">অ্যাডমিন নিশ্চিতকরণ, দায়িত্ব অর্পণ ও সমাধান যাচাইয়ের নথি।</p>
         <div id="action-storage-status" class="text-xs"></div>
-        <div id="action-dashboard-cards" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+        <p class="text-xs text-amber-800">Public demo session: read-only। প্রকৃত operator account provision করলে নিচে existing session ব্যবহার করুন।</p><details><summary class="text-xs cursor-pointer">Operator session (আলাদা login screen নয়)</summary><form onsubmit="activateOperatorSession(event)" class="space-y-2 mt-2"><label class="block text-xs">Email<input id="operator-email" type="email" required class="border p-2 rounded w-full" autocomplete="username"></label><label class="block text-xs">Password<input id="operator-password" type="password" required class="border p-2 rounded w-full" autocomplete="current-password"></label><button class="bg-teal-700 text-white px-3 py-2 rounded text-xs">Session সক্রিয় করুন</button><p id="operator-message" class="text-xs" role="status"></p></form></details><div id="action-dashboard-cards" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
         <div id="action-dashboard-filters" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
         <h4 class="text-sm font-bold">সুপারিশকৃত করণীয় ও ফলো-আপ (Recommended Actions &amp; Follow-ups)</h4>
-        <div id="action-dashboard-list" class="space-y-3" aria-live="polite">লোড হচ্ছে…</div>
+        <div class="flex gap-2 text-xs"><button onclick="queueOffset=Math.max(0,queueOffset-50);loadActionDashboard()" class="border rounded px-3 py-2">আগের পৃষ্ঠা</button><button onclick="queueOffset+=50;loadActionDashboard()" class="border rounded px-3 py-2">পরের পৃষ্ঠা</button><span id="queue-page"></span></div><div id="action-dashboard-list" class="space-y-3" aria-live="polite">লোড হচ্ছে…</div>
         <details class="border-t pt-3">
           <summary class="text-sm font-bold cursor-pointer">বিভাগ ও দায়িত্বপ্রাপ্ত কর্মকর্তার ডিরেক্টরি</summary>
           <p class="text-xs text-slate-500 mt-2">নমুনা সেবা দল DEMO হিসেবে চিহ্নিত। বাস্তব নাম বা যোগাযোগের তথ্য শুধু বৈধ উৎস থেকে যুক্ত করুন। কোনো বার্তা বা notification পাঠানো হয় না।</p>
@@ -550,6 +555,7 @@
         <p id="modal-description" class="text-sm text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200">--</p>
       </div>
 
+      <div id="public-tracking" class="bg-teal-50 border rounded-xl p-4 text-xs space-y-2" aria-live="polite"></div>
       <!-- AI ANALYSIS CARD -->
       <div class="bg-purple-50 border border-purple-200 rounded-xl p-4 space-y-2">
         <h4 class="text-xs font-bold text-purple-900 flex items-center gap-1.5">
@@ -573,7 +579,7 @@
         <h4 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
           <i class="fa-solid fa-shield-halved text-amber-600"></i> অ্যাডমিন মডারেশন অ্যাকশন
         </h4>
-        <div id="report-action-workspace" class="space-y-4" aria-live="polite">করণীয় নথি লোড হচ্ছে…</div>
+        <button id="request-information-button" onclick="requestMoreInformation()" class="bg-teal-700 text-white px-3 py-2 rounded text-xs">প্রকাশ্য তথ্য-অনুরোধ</button><div id="report-action-workspace" class="space-y-4" aria-live="polite">করণীয় নথি লোড হচ্ছে…</div>
       </div>
     </div>
   </div>
@@ -589,5 +595,6 @@
   <!-- JAVASCRIPT APPLICATION LOGIC -->
   <script src="/app.js"></script>
   <script src="/actions.js"></script>
+  <script src="/platform.js"></script>
 </body>
 </html>

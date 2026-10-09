@@ -21,8 +21,8 @@ export class InsightsService {
     const observations = [
       `সর্বাধিক নাগরিক অভিযোগ (${topCategory?.percentage || 0}%) '${topCategory?.categoryLabelBn || 'সড়ক'}' বিভাগে জমা পড়েছে।`,
       `বর্তমানে ${summary.unresolvedOver7Days}টি অভিযোগ ৭ দিনের বেশি সময় ধরে অমীমাংসিত রয়েছে, যা দ্রুত মনিটরিং প্রয়োজন।`,
-      `${summary.hotspots.length}টি প্রধান এলাকায় ঘন ঘন সমস্যা দেখা যাচ্ছে (হটস্পট), যার মধ্যে '${summary.hotspots[0]?.areaName}' অন্যতম।`,
-      `মোট চিহ্নিত সম্ভাব্য ডুপ্লিকেট অভিযোগের সংখ্যা ${summary.duplicateReportsFlagged}টি, যা পুনরাবৃত্তির প্রবণতা প্রমাণ করে।`,
+      `${summary.hotspots.length}টি এলাকায় একাধিক উপলব্ধ রিপোর্ট আছে; এটি report-density, নিশ্চিত physical hazard নয়।`,
+      `মোট চিহ্নিত সম্ভাব্য ডুপ্লিকেট অভিযোগের সংখ্যা ${summary.duplicateReportsFlagged}টি, মিলের কারণ যাচাই প্রয়োজন; এটি পুনরাবৃত্তির প্রমাণ নয়।`,
     ];
 
     let aiPlanningSummary: string | null = null;
@@ -39,10 +39,11 @@ Write a 3-bullet concise Bengali executive planning brief based ONLY on these ve
 - Unresolved > 7 days: ${summary.unresolvedOver7Days}
 - Top Hotspot: ${summary.hotspots[0]?.areaName}`;
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${CONFIG.GEMINI_API_KEY}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent`;
         const res = await fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': CONFIG.GEMINI_API_KEY },
+          signal: AbortSignal.timeout(25000),
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
           }),
@@ -61,7 +62,7 @@ Write a 3-bullet concise Bengali executive planning brief based ONLY on these ve
       summary,
       observations,
       aiPlanningSummary,
-      sourceNote: 'এই পর্যবেক্ষণগুলো নগরবন্ধু এআই প্ল্যাটফর্মে সংরক্ষিত বাস্তব রিপোর্টের গাণিতিক বিশ্লেষণের ভিত্তিতে তৈরি। এটি সামগ্রিক রাজশাহী শহরের পূর্ণাঙ্গ শুমারি নয়।',
+      sourceNote: 'এই পর্যবেক্ষণগুলো নগরবন্ধু এআই প্ল্যাটফর্মে সংরক্ষিত বাস্তব ও DEMO রিপোর্টের গাণিতিক বিশ্লেষণের ভিত্তিতে তৈরি। এটি সামগ্রিক রাজশাহী শহরের পূর্ণাঙ্গ শুমারি নয়।',
     };
   }
 }

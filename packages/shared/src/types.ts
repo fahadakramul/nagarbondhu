@@ -45,6 +45,9 @@ export interface Ward {
 }
 
 export interface AiAnalysisData {
+  keywords?: string[];
+  clearerDescription?: string;
+  fieldVerificationNecessary?: boolean;
   category: ReportCategory;
   summary: string;
   severity: number; // 1 to 5

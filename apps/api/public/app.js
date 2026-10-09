@@ -375,7 +375,7 @@ function renderMapMarkers() {
 
   allReports.forEach(r => {
     if (catFilter !== 'ALL' && r.category !== catFilter) return;
-    const prioLevel = r.priorityAssessment?.priorityLevel || 'MEDIUM';
+    const prioLevel = r.priorityAssessment?.priorityLevel || 'অনুপলব্ধ';
     if (prioFilter !== 'ALL' && prioLevel !== prioFilter) return;
 
     const color = CATEGORY_COLORS[r.category] || '#0F766E';
@@ -399,7 +399,7 @@ function renderMapMarkers() {
         </span>
         <h4 style="font-weight: bold; font-size: 13px; margin-top: 4px; color: #0F172A;">${escapeHtml(r.title)}</h4>
         <p style="font-size: 11px; color: #64748B;">📍 ${escapeHtml(r.addressLabel || 'রাজশাহী')}</p>
-        <p style="font-size: 11px; font-weight: bold; color: #D97706;">অগ্রাধিকার স্কোর: ${r.priorityAssessment?.score || 50}/১০০</p>
+        <p style="font-size: 11px; font-weight: bold; color: #D97706;">অগ্রাধিকার স্কোর: ${r.priorityAssessment?.score ?? 'অনুপলব্ধ'}/১০০</p>
         ${photoThumb}
         <button onclick="openDetailModal('${r.id}')" style="margin-top: 8px; width: 100%; background-color: #0F766E; color: white; font-size: 11px; font-weight: bold; padding: 5px 8px; border-radius: 6px; border: none; cursor: pointer;">
           বিস্তারিত বিবরণ দেখুন
@@ -486,7 +486,7 @@ async function loadData() {
   try {
     const [summaryRes, reportsRes] = await Promise.all([
       fetch('/api/v1/dashboard/summary').then(r => r.json()).catch(() => ({ success: false })),
-      fetch('/api/v1/reports').then(r => r.json()).catch(() => ({ success: false }))
+      fetch('/api/v1/reports?limit=50&offset='+feedOffset).then(r => r.json()).catch(() => ({ success: false }))
     ]);
 
     if (summaryRes.success && summaryRes.data) {
@@ -497,6 +497,7 @@ async function loadData() {
 
     if (reportsRes.success && reportsRes.reports) {
       allReports = reportsRes.reports;
+      document.getElementById('feed-page').textContent = reportsRes.total ? `${Math.min(feedOffset+1,reportsRes.total)}–${Math.min(feedOffset+50,reportsRes.total)} / ${reportsRes.total}` : 'কোনো রিপোর্ট নেই';
       renderReportsFeed(reportsRes.reports);
       if (mainMap) renderMapMarkers();
       if (dashboardData) renderDashboard(dashboardData);
@@ -526,7 +527,7 @@ function renderReportsFeed(reports) {
 
   reports.forEach(r => {
     const color = CATEGORY_COLORS[r.category] || '#0F766E';
-    const prioLevel = r.priorityAssessment?.priorityLevel || 'MEDIUM';
+    const prioLevel = r.priorityAssessment?.priorityLevel || 'অনুপলব্ধ';
     const prioColor = prioLevel === 'CRITICAL' ? 'bg-red-100 text-red-700' : prioLevel === 'HIGH' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800';
 
     const card = document.createElement('div');
@@ -545,10 +546,10 @@ function renderReportsFeed(reports) {
           ${CATEGORY_NAMES_BN[r.category] || r.category}
         </span>
         <span class="text-[11px] font-bold px-2 py-0.5 rounded-md ${prioColor}">
-          স্কোর ${r.priorityAssessment?.score || 50} • ${prioLevel}
+          স্কোর ${r.priorityAssessment?.score ?? 'অনুপলব্ধ'} • ${prioLevel}
         </span>
       </div>
-      <p class="text-[10px] text-slate-500">${r.sourceType === 'demo_seed' ? 'নমুনা রিপোর্ট (SAMPLE)' : 'নাগরিক রিপোর্ট'}</p><h3 class="text-sm font-bold text-slate-900 leading-snug">${escapeHtml(r.title)}</h3>
+      <p class="text-[10px] text-slate-500 break-all">${escapeHtml(r.id)} • ${escapeHtml(ACTION_LABELS[r.actionStatus || (r.status==='AI_ANALYZED'?'SUBMITTED':r.status)] || r.status)}</p><p class="text-[10px] text-slate-500">${r.sourceType === 'demo_seed' ? 'নমুনা রিপোর্ট (SAMPLE)' : 'নাগরিক রিপোর্ট'}</p><h3 class="text-sm font-bold text-slate-900 leading-snug">${escapeHtml(r.title)}</h3>
       <p class="text-xs text-slate-500 line-clamp-2">${escapeHtml(r.description)}</p>
       ${photoHtml}
       <div class="flex justify-between items-center text-[11px] text-slate-400 pt-2 border-t border-slate-100">
@@ -670,7 +671,7 @@ async function runAiPreview() {
       document.getElementById('ai-preview-category-badge').textContent = CATEGORY_NAMES_BN[data.category] || data.category;
       document.getElementById('ai-preview-summary').textContent = data.summary;
       document.getElementById('ai-preview-severity').textContent = data.severity;
-      document.getElementById('ai-preview-confidence').textContent = Math.round((data.confidence || 0.88) * 100);
+      document.getElementById('ai-preview-confidence').textContent = Math.round((data.confidence ?? 0) * 100);
 
       const reasonsList = document.getElementById('ai-preview-reasons');
       reasonsList.innerHTML = '';
@@ -748,7 +749,7 @@ async function handleFormSubmit(e) {
 
     const result = await res.json();
     if (result.success) {
-      alert(`অভিনন্দন! আপনার রিপোর্ট সফলভাবে জমা হয়েছে।\nএআই ক্যাটাগরি: ${CATEGORY_NAMES_BN[result.report.category] || result.report.category}\nনির্ধারিত প্রায়োরিটি স্কোর: ${result.report.priorityAssessment?.score || 50}/১০০`);
+      alert(`অভিনন্দন! আপনার রিপোর্ট সফলভাবে জমা হয়েছে।\nএআই ক্যাটাগরি: ${CATEGORY_NAMES_BN[result.report.category] || result.report.category}\nনির্ধারিত প্রায়োরিটি স্কোর: ${result.report.priorityAssessment?.score ?? 'অনুপলব্ধ'}/১০০`);
       document.getElementById('report-form').reset();
       clearSelectedImage();
       document.getElementById('ai-preview-box').classList.add('hidden');
@@ -832,6 +833,7 @@ function closeDetailModal() {
 
 // Toggle Role (Citizen <-> Admin / Urban Planner)
 async function toggleUserRole() {
+  actionDirectory = null;
   isAdminMode = !isAdminMode;
   const roleText = document.getElementById('role-text');
   const roleIcon = document.getElementById('role-icon');

@@ -128,30 +128,31 @@ export function coverage(filters:AnalyticsFilters,weights={completeness:0.4,cons
     })};
 }
 
-export const ScenarioInput=z.object({filters:z.object({source:z.enum(['demo_seed','citizen_report']).default('demo_seed'),wardId:z.string().max(100).optional(),category:z.enum(categories).optional()}).strict(),budget:z.number().min(0).max(100000000).default(6000),teams:z.number().int().min(1).max(50).default(1),maxCases:z.number().int().min(1).max(100).default(4),days:z.number().int().min(1).max(90).default(2)}).strict();
-export function scenarios(input:z.infer<typeof ScenarioInput>) {
+export const ScenarioInput=z.object({filters:z.object({source:z.enum(['demo_seed','citizen_report']).default('demo_seed'),wardId:z.string().max(100).optional(),category:z.enum(categories).optional()}).strict(),useBudget:z.boolean().default(true),budget:z.number().min(0).max(100000000).default(6000),teams:z.number().int().min(1).max(50).default(1),maxCases:z.number().int().min(1).max(100).default(4),days:z.number().int().min(1).max(90).default(2)}).strict();
+export function scenarios(raw:z.input<typeof ScenarioInput>) {
+  const input=ScenarioInput.parse(raw);
   const rows=analytics(input.filters).rows.filter(r=>!closed(r.status)), clusters=rootClusters(input.filters);
   const recurring=new Set(clusters.filter(c=>c.recurringCount>0).flatMap(c=>c.reportIds));
   const score=(r:typeof rows[number])=>db.findPriorityAssessmentByReportId(r.id)?.score || 0;
   const capacity=Math.min(input.maxCases,input.teams*input.days*2);
-  const cost=(id:string)=>demoCases.find(c=>c.id===id)?.cost ?? null;
+  const cost=(id:string)=>isCanonicalDemo(id)?demoCases.find(c=>c.id===id)?.cost ?? null:null;
   const definitions=[['PRIORITY','উচ্চ অগ্রাধিকার আগে'],['NEARBY','কাছাকাছি যৌথ পরিদর্শন'],['RECURRING','পুনরাবৃত্ত পর্যবেক্ষণ আগে'],['SEVERITY','উচ্চ তীব্রতার অসমাধিত'],['CUSTOM','নির্বাচিত ওয়ার্ড / category']] as const;
-  return {facts:{eligible:rows.length,source:input.filters.source},assumptions:{...input,capacity,casesPerTeamDay:2,costs:'Only canonical fictional demo cases have illustrative BDT costs; other costs are unknown, excluded from a budget-feasible simulation.',routeDiscount:'Nearby scenario: illustrative 20% shared-visit cost reduction for stops within 300 m. Not a repair-cost estimate.'},label:MODE_LABEL,
+  return {facts:{eligible:rows.length,source:input.filters.source},assumptions:{...input,capacity,casesPerTeamDay:2,costs:'Only canonical fictional demo cases have illustrative BDT costs. Unknown costs are deferred in budget mode; capacity-only mode selects cases without claiming budget feasibility.',routeDiscount:'Nearby scenario: illustrative 20% shared-visit cost reduction for stops within 300 m. Not a repair-cost estimate.'},label:MODE_LABEL,
     scenarios:definitions.map(([key,title])=>{
       let candidates=rows.slice();
       if(key==='RECURRING')candidates=candidates.filter(r=>recurring.has(r.id));
       if(key==='SEVERITY')candidates=candidates.filter(r=>(db.findAiAnalysisByReportId(r.id)?.severity || 0)>=4);
       candidates.sort((a,b)=>score(b)-score(a) || a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
-      if(key==='NEARBY' && candidates.length){const anchors=candidates.filter(r=>cost(r.id)!==null);anchors.sort((a,b)=>anchors.filter(r=>distance(r,b)<=300).length-anchors.filter(r=>distance(r,a)<=300).length || score(b)-score(a));const anchor=anchors[0] || candidates[0];candidates.sort((a,b)=>distance(a,anchor)-distance(b,anchor) || score(b)-score(a));}
+      if(key==='NEARBY' && candidates.length){const anchors=candidates.filter(r=>!input.useBudget || cost(r.id)!==null);anchors.sort((a,b)=>anchors.filter(r=>distance(r,b)<=300).length-anchors.filter(r=>distance(r,a)<=300).length || score(b)-score(a));const anchor=anchors[0] || candidates[0];candidates.sort((a,b)=>distance(a,anchor)-distance(b,anchor) || score(b)-score(a));}
       const selected:any[]=[], deferred:any[]=[];let spent=0;
       for(const r of rows)if(!candidates.some(c=>c.id===r.id))deferred.push({id:r.id,reason:key==='RECURRING'?'No time-separated nearby pattern': 'Reported severity below 4 or unavailable'});
       for(const r of candidates) {
         const base=cost(r.id), shared=key==='NEARBY' && selected.some(s=>distance(r,s)<=300), estimated=base===null?null:Math.round(base*(shared?0.8:1));
-        const reason=selected.length>=capacity?'Team / case capacity reached':estimated===null?'No configured cost assumption; budget feasibility unknown':spent+estimated>input.budget?'Hypothetical budget exceeded':null;
+        const reason=selected.length>=capacity?'Team / case capacity reached':input.useBudget && estimated===null?'No configured cost assumption; budget feasibility unknown':input.useBudget && spent+estimated!>input.budget?'Hypothetical budget exceeded':null;
         if(reason){deferred.push({id:r.id,reason});continue;}
-        spent+=estimated!;selected.push({...r,illustrativeCost:estimated,reason:key==='NEARBY'?(shared?'Nearby shared-visit assumption':'Suggested visit anchor or separate stop'):key==='RECURRING'?'Nearby observations at least 7 days apart':key==='SEVERITY'?'Reported severity ≥ 4':key==='CUSTOM'?'User-selected scope, ordered by recorded priority':'Recorded priority score first'});
+        spent+=estimated || 0;selected.push({...r,illustrativeCost:estimated,reason:key==='NEARBY'?(shared?'Nearby shared-visit assumption':'Suggested visit anchor or separate stop'):key==='RECURRING'?'Nearby observations at least 7 days apart':key==='SEVERITY'?'Reported severity ≥ 4':key==='CUSTOM'?'User-selected scope, ordered by recorded priority':'Recorded priority score first'});
       }
-      return {key,title,selected,deferred,illustrativeCost:spent,unusedBudget:input.budget-spent,workload:{cases:selected.length,illustrativeTeamDays:selected.length/2},groups:groupStops(selected),tradeOff:key==='NEARBY'?'Reduces illustrative visit overhead; may defer a distant urgent case':key==='RECURRING'?'Examines repeated observations; may defer isolated severe cases':'Focuses selected criteria; inspection duration and costs are assumptions, not guaranteed outcomes'};
+      return {key,title,selected,deferred,illustrativeCost:selected.some(r=>r.illustrativeCost===null)?null:spent,unusedBudget:input.useBudget?input.budget-spent:null,workload:{cases:selected.length,illustrativeTeamDays:selected.length/2},groups:groupStops(selected),tradeOff:key==='NEARBY'?'Groups nearby observations; may defer a distant urgent case':key==='RECURRING'?'Examines repeated observations; may defer isolated severe cases':'Focuses selected criteria; inspection duration and costs are assumptions, not guaranteed outcomes'};
     }),limitation:'Human planning support only; no official spending approval, verified population benefits or guaranteed outcomes.'};
 }
 

@@ -33,6 +33,7 @@ describe('Competition MVP integrity and integration',()=>{
     expect(new Set(result.scenarios.map(s=>s.selected.map(r=>r.id).join('|'))).size).toBeGreaterThanOrEqual(3);
     const real={...db.reports.get('mvp-demo-water-2')!,id:'actual-unknown-cost',sourceType:'citizen_report' as const};db.reports.set(real.id,real);
     const realResult=scenarios({filters:{source:'citizen_report'},budget:100000,teams:1,maxCases:4,days:2});expect(realResult.scenarios[0].selected.length).toBe(0);expect(realResult.scenarios[0].deferred[0].reason).toContain('unknown');
+    const capacityOnly=scenarios({filters:{source:'citizen_report'},useBudget:false,teams:1,maxCases:4,days:2});expect(capacityOnly.scenarios[0].selected.length).toBe(1);expect(capacityOnly.scenarios[0].illustrativeCost).toBeNull();expect(capacityOnly.scenarios[0].unusedBudget).toBeNull();
   });
   test('coverage includes zero-report configured wards, transparent components and weight validation',async()=>{
     const result=coverage({source:'demo_seed',from:'2026-08-01',to:'2026-10-05'});expect(result.rows.length).toBe(db.wards.size+1);expect(result.rows.some(r=>r.count===0 && r.score===null && r.classification==='INSUFFICIENT_DATA')).toBe(true);

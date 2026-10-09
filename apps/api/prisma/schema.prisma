@@ -1,0 +1,187 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CITIZEN
+  ADMIN
+  URBAN_PLANNER
+}
+
+enum ReportCategory {
+  ROAD_DAMAGE
+  WATERLOGGING
+  DRAINAGE
+  WASTE
+  FOOTPATH
+  STREETLIGHT
+  OTHER
+}
+
+enum ReportStatus {
+  SUBMITTED
+  AI_ANALYZED
+  UNDER_REVIEW
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+}
+
+enum PriorityLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ReviewStatus {
+  PENDING
+  CONFIRMED_DUPLICATE
+  DISMISSED
+}
+
+model User {
+  id           String    @id @default(uuid())
+  displayName  String    @map("display_name")
+  email        String?   @unique
+  phone        String?   @unique
+  passwordHash String    @map("password_hash")
+  role         UserRole  @default(CITIZEN)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  reports       Report[]
+  statusHistory ReportStatusHistory[]
+
+  @@map("users")
+}
+
+model Ward {
+  id              String   @id @default(uuid())
+  wardNumber      Int      @unique @map("ward_number")
+  wardName        String   @map("ward_name")
+  areaDescription String?  @map("area_description")
+  centerLatitude  Float    @map("center_latitude")
+  centerLongitude Float    @map("center_longitude")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  reports Report[]
+
+  @@map("wards")
+}
+
+model Report {
+  id           String         @id @default(uuid())
+  reporterId   String?        @map("reporter_id")
+  title        String
+  description  String
+  category     ReportCategory
+  userCategory ReportCategory? @map("user_category")
+  latitude     Float
+  longitude    Float
+  addressLabel String?        @map("address_label")
+  wardId       String?        @map("ward_id")
+  imageUrl     String?        @map("image_url")
+  status       ReportStatus   @default(SUBMITTED)
+  sourceType   String         @default("citizen_report") @map("source_type")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  resolvedAt   DateTime?      @map("resolved_at")
+
+  reporter           User?                @relation(fields: [reporterId], references: [id], onDelete: SetNull)
+  ward               Ward?                @relation(fields: [wardId], references: [id], onDelete: SetNull)
+  aiAnalysis         AiAnalysis?
+  priorityAssessment PriorityAssessment?
+  statusHistory      ReportStatusHistory[]
+
+  duplicatesAsOriginal  PossibleDuplicate[] @relation("ReportOriginal")
+  duplicatesAsCandidate PossibleDuplicate[] @relation("ReportCandidate")
+
+  @@index([status])
+  @@index([category])
+  @@index([latitude, longitude])
+  @@index([createdAt])
+  @@index([wardId])
+  @@map("reports")
+}
+
+model AiAnalysis {
+  id                 String         @id @default(uuid())
+  reportId           String         @unique @map("report_id")
+  provider           String
+  modelName          String         @map("model_name")
+  suggestedCategory  ReportCategory @map("suggested_category")
+  summary            String
+  severity           Int            // 1 to 5
+  confidence         Float?         // 0.0 to 1.0
+  reasons            Json           // string array or explanation object
+  missingInformation Json?          @map("missing_information")
+  createdAt          DateTime       @default(now()) @map("created_at")
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@map("ai_analyses")
+}
+
+model PriorityAssessment {
+  id               String        @id @default(uuid())
+  reportId         String        @unique @map("report_id")
+  severityFactor   Int           @map("severity_factor")
+  impactFactor     Int           @map("impact_factor")
+  recurrenceFactor Int           @map("recurrence_factor")
+  ageFactor        Int           @map("age_factor")
+  score            Float
+  priorityLevel    PriorityLevel @map("priority_level")
+  explanation      Json
+  assessedAt       DateTime      @default(now()) @map("assessed_at")
+  overriddenBy     String?       @map("overridden_by")
+  overrideReason   String?       @map("override_reason")
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@index([priorityLevel])
+  @@index([score])
+  @@map("priority_assessments")
+}
+
+model PossibleDuplicate {
+  id                String       @id @default(uuid())
+  reportId          String       @map("report_id")
+  candidateReportId String       @map("candidate_report_id")
+  similarityScore   Float        @map("similarity_score")
+  matchingReasons   Json         @map("matching_reasons")
+  reviewStatus      ReviewStatus @default(PENDING) @map("review_status")
+  reviewedBy        String?      @map("reviewed_by")
+  reviewedAt        DateTime?    @map("reviewed_at")
+  createdAt         DateTime     @default(now()) @map("created_at")
+
+  report          Report @relation("ReportOriginal", fields: [reportId], references: [id], onDelete: Cascade)
+  candidateReport Report @relation("ReportCandidate", fields: [candidateReportId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+  @@index([candidateReportId])
+  @@index([reviewStatus])
+  @@map("possible_duplicates")
+}
+
+model ReportStatusHistory {
+  id             String       @id @default(uuid())
+  reportId       String       @map("report_id")
+  previousStatus ReportStatus @map("previous_status")
+  newStatus      ReportStatus @map("new_status")
+  changedBy      String       @map("changed_by")
+  note           String?
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [changedBy], references: [id], onDelete: SetNull)
+
+  @@index([reportId])
+  @@map("report_status_history")
+}

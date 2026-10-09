@@ -1,0 +1,29 @@
+{
+  "name": "nagarbondhu-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NagarBondhu AI — AI-Powered Urban Problem Intelligence Platform for Rajshahi, Bangladesh",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build:shared": "npm --prefix packages/shared run build",
+    "dev:api": "npm --prefix apps/api run dev",
+    "start:api": "npm --prefix apps/api run start",
+    "test:api": "npm --prefix apps/api test",
+    "seed:api": "npm --prefix apps/api run seed",
+    "dev:mobile": "npm --prefix apps/mobile run dev",
+    "start:mobile": "npm --prefix apps/mobile run start"
+  },
+  "keywords": [
+    "civic-tech",
+    "react-native",
+    "express",
+    "gemini-ai",
+    "rajshahi",
+    "urban-planning"
+  ],
+  "author": "NagarBondhu AI Team",
+  "license": "MIT"
+}

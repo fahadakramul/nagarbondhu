@@ -1,0 +1,176 @@
+import { z } from 'zod';
+import { CONFIG } from '../config';
+import { AiAnalysisData, ReportCategory } from '@nagarbondhu/shared';
+
+// Strict Zod schema for AI output
+export const AiAnalysisSchema = z.object({
+  category: z.enum([
+    'ROAD_DAMAGE',
+    'WATERLOGGING',
+    'DRAINAGE',
+    'WASTE',
+    'FOOTPATH',
+    'STREETLIGHT',
+    'OTHER',
+  ]),
+  summary: z.string().min(5),
+  severity: z.number().int().min(1).max(5),
+  confidence: z.number().min(0).max(1).optional().nullable(),
+  reasons: z.array(z.string()).min(1),
+  missing_information: z.array(z.string()).default([]),
+});
+
+export interface AiServiceResult {
+  data: AiAnalysisData;
+  provider: string;
+  modelName: string;
+  isFallback: boolean;
+}
+
+/**
+ * Intelligent Rule-based fallback analyzer for Bengali civic complaints
+ * Used when GEMINI_API_KEY is not configured or network request fails.
+ */
+function analyzeWithRuleFallback(text: string): AiAnalysisData {
+  const t = text.toLowerCase();
+
+  let category: ReportCategory = 'OTHER';
+  let severity = 3;
+  const reasons: string[] = [];
+  const missingInfo: string[] = [];
+
+  // Bengali keyword patterns with proper precedence
+  if (t.includes('বাতি') || t.includes('লাইট') || t.includes('অন্ধকার') || t.includes('ল্যাম্পপোস্ট') || t.includes('সড়কবাতি') || t.includes('streetlight')) {
+    category = 'STREETLIGHT';
+    reasons.push('সড়কবাতি অকেজো থাকা বা রাত্রিকালীন অন্ধকারের সমস্যার বিবরণ রয়েছে।');
+    severity = 3;
+    missingInfo.push('কতগুলো ল্যাম্পপোস্ট অচল?');
+  } else if (t.includes('ফুটপাথ') || t.includes('ফুটপাত') || t.includes('পথচারী') || t.includes('দখল') || t.includes('footpath')) {
+    category = 'FOOTPATH';
+    reasons.push('ফুটপাথের ক্ষতি বা পথচারীদের নিরাপদ চলাচলে বাধার উল্লেখ পাওয়া গেছে।');
+    severity = 3;
+  } else if (t.includes('পানি') || t.includes('জলাবদ্ধ') || t.includes('বন্যা') || t.includes('ডুবে') || t.includes('বৃষ্টি') || t.includes('waterlog')) {
+    category = 'WATERLOGGING';
+    reasons.push('অভিযোগে রাস্তায় জমে থাকা পানি বা বৃষ্টির জলাবদ্ধতার উল্লেখ রয়েছে।');
+    severity = t.includes('কোমর') || t.includes('মারাত্মক') ? 5 : 4;
+    missingInfo.push('পানি সাধারণত কতক্ষণ আটকে থাকে?');
+  } else if (t.includes('ড্রেন') || t.includes('নর্দমা') || t.includes('ম্যানহোল') || t.includes('স্ল্যাব') || t.includes('drain')) {
+    category = 'DRAINAGE';
+    reasons.push('নর্দমা উপচে পড়া বা ড্রেনেজ ব্যবস্থার প্রতিবন্ধকতার বর্ণনা রয়েছে।');
+    severity = t.includes('খোলা') || t.includes('ঢাকনা') ? 5 : 3;
+    missingInfo.push('ড্রেনটি কি সম্পূর্ণ বন্ধ নাকি উপচে পড়ছে?');
+  } else if (t.includes('ময়লা') || t.includes('বর্জ্য') || t.includes('আবর্জনা') || t.includes('ডাস্টবিন') || t.includes('ভাগাড়') || t.includes('waste')) {
+    category = 'WASTE';
+    reasons.push('কঠিন বর্জ্যের স্তূপ, উপচে পড়া ডাস্টবিন বা দুর্গন্ধের উল্লেখ পাওয়া গেছে।');
+    severity = 3;
+    missingInfo.push('কতদিন ধরে বর্জ্য অপসারণ করা হচ্ছে না?');
+  } else if (t.includes('রাস্তা') || t.includes('গর্ত') || t.includes('পিচ') || t.includes('খানাখন্দ') || t.includes('সড়ক') || t.includes('pothole')) {
+    category = 'ROAD_DAMAGE';
+    reasons.push('সড়কপৃষ্ঠের ভাঙন, বড় গর্ত বা খানাখন্দের উল্লেখ পাওয়া গেছে।');
+    severity = t.includes('বিশাল') || t.includes('উল্টে') ? 4 : 3;
+    missingInfo.push('গর্তের বিস্তার ও আনুমানিক গভীরতা কত?');
+  } else {
+    category = 'OTHER';
+    reasons.push('সাধারণ নাগরিক অবকাঠামোগত সমস্যা।');
+    severity = 2;
+  }
+
+  return {
+    category,
+    summary: text.length > 80 ? text.slice(0, 80) + '...' : text,
+    severity,
+    confidence: 0.80,
+    reasons,
+    missing_information: missingInfo,
+  };
+}
+
+/**
+ * Analyzes Bengali civic complaint using Google Gemini API
+ * Returns validated structured data.
+ */
+export async function analyzeBengaliComplaint(complaintText: string): Promise<AiServiceResult> {
+  const apiKey = CONFIG.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    // Transparent fallback when key is not configured
+    const fallbackData = analyzeWithRuleFallback(complaintText);
+    return {
+      data: fallbackData,
+      provider: 'Rule-Based Fallback (GEMINI_API_KEY not configured)',
+      modelName: 'keyword-heuristic-v1',
+      isFallback: true,
+    };
+  }
+
+  const prompt = `You are the AI Intelligence Engine for "NagarBondhu AI", an urban problem platform in Rajshahi, Bangladesh.
+Analyze the following citizen complaint submitted in Bengali or English.
+Return ONLY valid JSON with this exact schema (no markdown, no backticks, just raw JSON):
+{
+  "category": "ROAD_DAMAGE" | "WATERLOGGING" | "DRAINAGE" | "WASTE" | "FOOTPATH" | "STREETLIGHT" | "OTHER",
+  "summary": "Concise 1-2 sentence Bengali summary of the problem",
+  "severity": <integer 1 to 5>,
+  "confidence": <float 0.0 to 1.0>,
+  "reasons": ["Bengali bullet point reason 1", "Bengali bullet point reason 2"],
+  "missing_information": ["Missing detail question in Bengali if any, or empty array"]
+}
+
+Complaint Text:
+"""${complaintText}"""`;
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [{ text: prompt }],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          responseMimeType: 'application/json',
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gemini API HTTP Error: ${response.status} ${response.statusText}`);
+    }
+
+    const resJson: any = await response.json();
+    const rawText = resJson?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!rawText) {
+      throw new Error('Empty response from Gemini API');
+    }
+
+    // Clean JSON if necessary
+    const cleanedJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(cleanedJson);
+
+    // Validate with Zod
+    const validatedData = AiAnalysisSchema.parse(parsed);
+
+    return {
+      data: validatedData,
+      provider: 'Google Gemini AI',
+      modelName: CONFIG.GEMINI_MODEL,
+      isFallback: false,
+    };
+  } catch (error: any) {
+    console.warn(`[AI Service] Live Gemini call failed (${error.message}). Using safe heuristic fallback.`);
+    const fallbackData = analyzeWithRuleFallback(complaintText);
+    return {
+      data: fallbackData,
+      provider: 'Rule Fallback (Gemini API Call Failed)',
+      modelName: 'keyword-heuristic-v1',
+      isFallback: true,
+    };
+  }
+}

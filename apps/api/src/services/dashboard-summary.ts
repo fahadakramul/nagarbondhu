@@ -32,4 +32,3 @@ export function dashboardSummary(filters: AnalyticsFilters = {}) {
     recommendedActions:a.reviewFirst.map(r=>{const p=db.findPriorityAssessmentByReportId(r.id);return {reportId:r.id,title:r.title,score:p?.score ?? null,priorityLevel:r.priority,reason:p?.explanation.summary || 'মূল্যায়ন অনুপস্থিত; মাঠে তথ্য সংগ্রহ করুন।',location:publicText(db.reports.get(r.id)?.addressLabel || '')};}),
   };
 }
-

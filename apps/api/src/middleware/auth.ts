@@ -12,7 +12,11 @@ function currentUser(token: string): AuthenticatedUser {
 }
 
 export function protectDemoWrites(req: Request, res: Response, next: NextFunction) {
-  if (CONFIG.NODE_ENV === 'production' && !['GET','HEAD','OPTIONS'].includes(req.method) && !req.path.endsWith('/copilot') && req.user?.id === 'user-admin-01') {
+  // These exact routes additionally enforce the fixed fictional report allowlist in the service.
+  // Ordinary report/action/directory writes remain forbidden to the shared demo identity.
+  const scopedDemo = req.baseUrl === '/api/v1/competition' && req.method === 'POST' && /^\/demo\/(restore|missions|missions\/[^/]+\/update|clusters\/[^/]+\/review)$/.test(req.path);
+  const readOnlyCopilot = req.baseUrl === '/api/v1/admin' && req.method === 'POST' && req.path === '/copilot';
+  if (CONFIG.NODE_ENV === 'production' && !['GET','HEAD','OPTIONS'].includes(req.method) && !readOnlyCopilot && !scopedDemo && req.user?.id === 'user-admin-01') {
     return res.status(403).json({success:false,error:'Public demo admin is read-only. A provisioned operator account is required.'});
   }
   next();

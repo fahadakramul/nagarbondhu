@@ -11,7 +11,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "seed": "tsx prisma/seed.ts",
-    "test": "jest --runInBand --detectOpenHandles"
+    "test": "jest --runInBand --detectOpenHandles",
+    "seed:competition": "node scripts/seed-competition.cjs"
   },
   "dependencies": {
     "@prisma/client": "^5.14.0",

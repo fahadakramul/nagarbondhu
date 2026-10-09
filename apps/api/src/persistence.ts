@@ -15,6 +15,7 @@ const tableMap: Record<string, string> = {
   departments: 'department', officers: 'responsiblePerson', recommendations: 'actionRecommendation',
   actionPlans: 'actionPlan', progressUpdates: 'actionProgress', actionEvents: 'actionAuditEvent',
   submissionReceipts: 'submissionReceipt', feedback: 'citizenFeedback', notices: 'reportNotice',
+  clusterReviews: 'clusterReview', fieldMissions: 'fieldMission',
 };
 function rowData(name: string, row: any) {
   if (name === 'reports') return fields(row, ['id','reporterId','title','description','category','userCategory','latitude','longitude','addressLabel','wardId','imageUrl','status','actionStatus','sourceType','createdAt','updatedAt','resolvedAt']);

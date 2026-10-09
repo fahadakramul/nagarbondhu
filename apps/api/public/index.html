@@ -115,6 +115,7 @@
   <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
     <!-- ==================== TAB 1: HOME ==================== -->
+    <div id="app-demo-indicator" class="hidden bg-amber-50 border border-amber-200 text-amber-900 text-xs rounded-lg p-3 mb-4" role="status">Demo Mode — কাল্পনিক নমুনা তথ্য • DEMO চিহ্নিত records, identity, স্থান ও ফল কাল্পনিক।</div>
     <section id="section-home" class="tab-content space-y-6">
       <!-- HERO BANNER -->
       <div class="bg-gradient-to-r from-civic-800 via-civic-700 to-teal-800 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
@@ -399,7 +400,7 @@
       <div class="flex flex-wrap justify-between items-center gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
         <div>
           <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-            <i class="fa-solid fa-map-location-dot text-civic-600"></i> রাজশাহী আরবান প্রবলেম হটস্পট ম্যাপ
+            <i class="fa-solid fa-map-location-dot text-civic-600"></i> Urban Digital Twin Lite — শহরের সমস্যা ও পরিবর্তন
           </h2>
           <p class="text-xs text-slate-500">মার্কারে ক্লিক করে রিপোর্টের পূর্ণাঙ্গ বিবরণ ও প্রায়োরিটি বিশ্লেষণ দেখুন।</p>
         </div>
@@ -437,7 +438,7 @@
       </div>
 
       <!-- FULL LEAFLET MAP -->
-      <div class="flex gap-2 flex-wrap text-xs my-2"><label>অবস্থা<select id="map-status" onchange="renderMapMarkers()" class="border p-2 rounded"><option value="">সব</option><option value="SUBMITTED">জমা দেওয়া</option><option value="UNDER_REVIEW">পর্যালোচনাধীন</option><option value="AWAITING_FIELD_VERIFICATION">মাঠে যাচাই প্রয়োজন</option><option value="READY_FOR_ASSIGNMENT">দায়িত্বের জন্য প্রস্তুত</option><option value="ASSIGNED">দায়িত্ব অর্পিত</option><option value="IN_PROGRESS">কাজ চলছে</option><option value="ON_HOLD">স্থগিত</option><option value="RESOLVED">সমাধান জমা</option><option value="CLOSED">বন্ধ</option><option value="REJECTED">বাতিল</option></select></label><label>শুরু<input id="map-from" type="date" onchange="renderMapMarkers()" class="border p-2 rounded"></label><label>শেষ<input id="map-to" type="date" onchange="renderMapMarkers()" class="border p-2 rounded"></label><label>Data<select id="map-source" onchange="renderMapMarkers()" class="border p-2 rounded"><option value="">সব</option><option value="citizen_report">নাগরিক</option><option value="demo_seed">DEMO</option></select></label></div><p id="map-coverage" class="text-xs my-2" aria-live="polite">Map data লোড হচ্ছে…</p><p class="text-xs mb-2">Legend: cluster-এর সংখ্যা উপলব্ধ রিপোর্টের সংখ্যা; রং category অনুযায়ী।</p><div id="main-map" class="w-full h-[600px] rounded-2xl border border-slate-300 shadow-sm z-10"></div>
+      <div class="flex gap-2 flex-wrap text-xs my-2"><label>অবস্থা<select id="map-status" onchange="renderMapMarkers()" class="border p-2 rounded"><option value="">সব</option><option value="SUBMITTED">জমা দেওয়া</option><option value="UNDER_REVIEW">পর্যালোচনাধীন</option><option value="AWAITING_FIELD_VERIFICATION">মাঠে যাচাই প্রয়োজন</option><option value="READY_FOR_ASSIGNMENT">দায়িত্বের জন্য প্রস্তুত</option><option value="ASSIGNED">দায়িত্ব অর্পিত</option><option value="IN_PROGRESS">কাজ চলছে</option><option value="ON_HOLD">স্থগিত</option><option value="RESOLVED">সমাধান জমা</option><option value="CLOSED">বন্ধ</option><option value="REJECTED">বাতিল</option></select></label><label>শুরু<input id="map-from" type="date" onchange="renderMapMarkers()" class="border p-2 rounded"></label><label>শেষ<input id="map-to" type="date" onchange="renderMapMarkers()" class="border p-2 rounded"></label><label>Data<select id="map-source" onchange="renderMapMarkers()" class="border p-2 rounded"><option value="">সব</option><option value="citizen_report">নাগরিক</option><option value="demo_seed">DEMO</option></select></label></div><p id="map-coverage" class="text-xs my-2" aria-live="polite">Map data লোড হচ্ছে…</p><p class="text-xs mb-2">Legend: cluster-এর সংখ্যা উপলব্ধ রিপোর্টের সংখ্যা; রং category অনুযায়ী।</p><div id="twin-controls"></div><div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]"><div id="main-map" class="w-full h-[500px] rounded-2xl border border-slate-300 shadow-sm z-10"></div><aside id="twin-panel" class="bg-white rounded-2xl border p-4 text-sm overflow-auto max-h-[600px]" aria-live="polite">রিপোর্টের marker নির্বাচন করুন।</aside></div>
     </section>
 
     <!-- ==================== TAB 4: REPORTS FEED & DETAILS ==================== -->
@@ -467,6 +468,7 @@
       </div>
 
       <!-- TOP ACTIONABLE RECOMMENDATIONS -->
+      <div id="competition-workspace" class="bg-white rounded-2xl border p-4 sm:p-6 space-y-4"></div>
       <div id="planning-tools" class="hidden bg-white p-5 rounded-2xl border space-y-3"></div>
       <div id="admin-action-dashboard" class="hidden bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
         <h3 class="font-bold text-slate-800">প্রশাসনিক করণীয় ও দায়িত্ব ব্যবস্থাপনা</h3>
@@ -589,6 +591,11 @@
     <div class="max-w-7xl mx-auto px-4 space-y-1">
       <p class="font-bold text-slate-300">নগরবন্ধু এআই (NagarBondhu AI) — রাজশাহী আরবান ইন্টেলিজেন্স প্ল্যাটফর্ম</p>
       <p>React Native / Web App • PostgreSQL</p>
+      <div class="pt-4 space-y-2 leading-relaxed text-slate-300">
+        <p>Developed by: <strong class="text-white">Fahad MD Akramul Islam</strong></p>
+        <p>Ideation &amp; Supported By: <strong class="text-white">Tashika Hossain</strong></p>
+        <p class="max-w-xl mx-auto">Both are RUET, Department of Urban &amp; Regional Planning (URP), 24 Series students.</p>
+      </div>
     </div>
   </footer>
 
@@ -596,5 +603,6 @@
   <script src="/app.js"></script>
   <script src="/actions.js"></script>
   <script src="/platform.js"></script>
+  <script src="/competition.js"></script>
 </body>
 </html>

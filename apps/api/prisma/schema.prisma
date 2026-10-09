@@ -58,6 +58,8 @@ model User {
   reports       Report[]
   statusHistory ReportStatusHistory[]
   actionEvents ActionAuditEvent[]
+  clusterReviews ClusterReview[]
+  fieldMissions FieldMission[]
 
   @@map("users")
 }
@@ -370,4 +372,38 @@ model ActionAuditEvent {
   actor User @relation(fields: [actorId], references: [id])
   @@index([reportId, createdAt])
   @@map("action_audit_events")
+}
+
+model ClusterReview {
+  id String @id
+  reportIds Json @map("report_ids")
+  state String
+  evidence String
+  sourceType String @map("source_type")
+  revision Int @default(1)
+  updatedBy String @map("updated_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  actor User @relation(fields: [updatedBy], references: [id])
+  @@map("cluster_reviews")
+}
+
+model FieldMission {
+  id String @id
+  title String
+  reportIds Json @map("report_ids")
+  departmentId String? @map("department_id")
+  officerId String? @map("officer_id")
+  team String
+  status String
+  sourceType String @map("source_type")
+  route Json
+  updates Json
+  revision Int @default(1)
+  createdBy String @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  actor User @relation(fields: [createdBy], references: [id])
+  @@index([sourceType, status])
+  @@map("field_missions")
 }

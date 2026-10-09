@@ -50,12 +50,28 @@ async function main() {
   assert.equal(db.submissionReceipts.get('2f93c6ee-90a7-4d19-bab8-227143f47bf2').reportId,citizenId);
   assert.equal(db.feedback.get(feedback.body.data.id).comment,'Isolated persistence test feedback');
   assert.ok(Array.from(db.notices.values()).some(n=>n.reportId===citizenId));
+  // Final MVP: explicit fictional seed, mission/review writes, reconnect and safe restore in this isolated schema.
+  const competition=require('../dist/src/services/competition.service');
+  const realBefore=JSON.stringify(db.reports.get(citizenId));
+  competition.seedCompetitionDemo();await require('../dist/src/persistence').flushDatabase();
+  const preloaded=db.fieldMissions.get('mission-demo-preloaded');
+  const updated=await request(app).post('/api/v1/competition/demo/missions/mission-demo-preloaded/update').set('Authorization','Bearer '+auth.body.token).send({revision:preloaded.revision,status:'IN_PROGRESS',note:'DEMO isolated SQL inspection update',findings:'DEMO field evidence persistence verification',followUp:'DEMO revisit for flow measurement',photoUrl:'/uploads/workflow-smoke.png'});
+  assert.equal(updated.status,200);
+  const cluster=competition.rootClusters({source:'demo_seed'}).find(c=>c.reportIds.includes('mvp-demo-water-2'));
+  const review=await request(app).post(`/api/v1/competition/demo/clusters/${cluster.id}/review`).set('Authorization','Bearer '+auth.body.token).send({revision:cluster.review.revision,state:'UNSUPPORTED',evidence:'DEMO isolated test: observations do not yet support the proposed shared cause.'});
+  assert.equal(review.status,200);
+  const missionSnapshot=JSON.stringify(db.fieldMissions.get(preloaded.id));
+  await disconnectDatabase();db.fieldMissions.clear();db.clusterReviews.clear();await initializeDatabase();
+  assert.deepEqual(db.fieldMissions.get(preloaded.id),JSON.parse(missionSnapshot));assert.equal(db.clusterReviews.get(cluster.id).state,'UNSUPPORTED');
+  assert.ok(Array.from(db.actionEvents.values()).some(e=>e.reportId==='mvp-demo-water-2' && e.type==='MISSION_UPDATED'));
+  competition.seedCompetitionDemo();await require('../dist/src/persistence').flushDatabase();
+  assert.equal(JSON.stringify(db.reports.get(citizenId)),realBefore);
   const baseline=db.snapshot();
   // A nonexistent actor deliberately violates the FK inside a real transaction.
   db.actionEvents.set('bad-event',{id:'bad-event',reportId:'rep-001',planId:getPlan('rep-001').id,actorId:'missing-user',type:'TEST',note:'rollback test',details:{},createdAt:new Date().toISOString()});
   await assert.rejects(require('../dist/src/persistence').flushDatabase());
   db.restore(baseline);
   await disconnectDatabase();
-  console.log('PASS PostgreSQL additive migration, existing workflow, submission receipt, feedback, information notice, reconnect, photo storage and transactional FK rollback (isolated workflow_smoke_test schema).');
+  console.log('PASS PostgreSQL additive migration, existing workflow, submission receipt, feedback, information notice, mission/review persistence, demo restore preserving real data, reconnect, photo storage and transactional FK rollback (isolated workflow_smoke_test schema).');
 }
 main().catch(error=>{console.error(String(error.message).replace(/postgres(?:ql)?:\/\/[^\s"']+/g,'[private database URL]').slice(0,2500));process.exit(1);});

@@ -9,14 +9,9 @@ import {
   ReviewStatus,
 } from '@nagarbondhu/shared';
 
-// On web browser on PC, localhost works.
-// On physical phone (Expo Go on mobile), it connects to the PC's Wi-Fi LAN IP (192.168.0.67)
-export const DEFAULT_HOST_IP = '192.168.0.67';
-
-export const API_BASE_URL =
-  Platform.OS === 'web'
-    ? 'http://localhost:5000/api/v1'
-    : `http://${DEFAULT_HOST_IP}:5000/api/v1`;
+// App server URL tunneling via ngrok
+export const APP_SERVER_BASE_URL = 'https://enclose-lyricism-punctured.ngrok-free.dev';
+export const API_BASE_URL = `${APP_SERVER_BASE_URL}/api/v1`;
 
 // Fallback seed reports if device cannot reach port 5000 (firewall / router isolation)
 const FALLBACK_REPORTS: Report[] = [
@@ -180,6 +175,7 @@ class ApiService {
   getHeaders() {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true',
     };
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;
@@ -302,7 +298,7 @@ class ApiService {
       if (res.ok && data.imageUrl) {
         const fullUrl = data.imageUrl.startsWith('http')
           ? data.imageUrl
-          : `http://${DEFAULT_HOST_IP}:5000${data.imageUrl}`;
+          : `${APP_SERVER_BASE_URL}${data.imageUrl}`;
         return { success: true, imageUrl: fullUrl };
       }
     } catch (e) {}

@@ -65,9 +65,6 @@ export default function App() {
             ref={webViewRef}
             source={{
               uri: APP_URL,
-              headers: {
-                'ngrok-skip-browser-warning': 'true',
-              },
             }}
             style={styles.webView}
             javaScriptEnabled={true}

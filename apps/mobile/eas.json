@@ -8,11 +8,17 @@
       "distribution": "internal"
     },
     "preview": {
+      "env": {
+        "EXPO_PUBLIC_APP_SERVER_URL": "https://nagarbondhu-api.onrender.com"
+      },
       "android": {
         "buildType": "apk"
       }
     },
     "production": {
+      "env": {
+        "EXPO_PUBLIC_APP_SERVER_URL": "https://nagarbondhu-api.onrender.com"
+      },
       "android": {
         "buildType": "apk"
       }

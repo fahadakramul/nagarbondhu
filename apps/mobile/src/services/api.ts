@@ -174,7 +174,6 @@ class ApiService {
   getHeaders() {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'ngrok-skip-browser-warning': 'true',
     };
     if (this.token) {
       headers['Authorization'] = `Bearer ${this.token}`;

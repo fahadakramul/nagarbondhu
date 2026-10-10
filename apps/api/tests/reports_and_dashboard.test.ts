@@ -116,7 +116,7 @@ describe('Reports & Planning Dashboard Integration Tests', () => {
   test('serves the NagarBondhu AI web application HTML at root URL', async () => {
     const res = await request(app).get('/');
     expect(res.status).toBe(200);
-    expect(res.text).toContain('নগরবন্ধু এআই');
+    expect(res.text).toContain('নগরবন্ধু');
     expect(res.text).toContain('NagarBondhu AI');
   });
 });

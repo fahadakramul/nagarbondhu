@@ -18,10 +18,11 @@ function actionOptions(rows, value, placeholder) {
   return `<option value="">${actionEscape(placeholder)}</option>` + rows.map(row => `<option value="${actionEscape(row.id)}" ${row.id===value?'selected':''}>${actionEscape(row.wardName || directoryLabel(row))}</option>`).join('');
 }
 async function actionApi(path, body, method='GET') {
-  if (method!=='GET' && !path.startsWith('/copilot') && !confirm('এই পরিবর্তন সার্ভারে নথিভুক্ত হবে। নিশ্চিত করুন।')) throw new Error('পরিবর্তন বাতিল করেছেন।');
-  if (!authToken) throw new Error('অ্যাডমিন demo session পাওয়া যায়নি। আবার role পরিবর্তন করে চেষ্টা করুন।');
+  if (!authToken) { showOperatorLogin(); throw new Error('এই কাজের জন্য অ্যাডমিন হিসেবে লগইন করুন।'); }
+  if (method!=='GET' && !path.startsWith('/copilot') && !path.endsWith('/action-recommendations') && !await mvpConfirm('এই পরিবর্তন সংরক্ষণ করবেন?')) throw new Error('পরিবর্তন বাতিল করেছেন।');
   const response=await fetch(`/api/v1/admin${path}`,{method,headers:{'Content-Type':'application/json',Authorization:`Bearer ${authToken}`}, ...(body===undefined?{}:{body:JSON.stringify(body)})});
   const result=await response.json();
+  if (response.status===401) { authToken=null; sessionStorage.removeItem('nagarbondhu-operator-token'); actionDirectory=null; showOperatorLogin(); }
   if (!response.ok || !result.success) throw new Error(result.details?.map(d=>`${d.field}: ${d.message}`).join('; ') || result.error || 'অনুরোধ ব্যর্থ হয়েছে।');
   return result;
 }
@@ -30,7 +31,7 @@ async function ensureActionDirectory() {
   return actionDirectory;
 }
 function storageMessage(state) {
-  return state?.provider==='postgres' && state.ready ? 'PostgreSQL-এ নথি সংরক্ষিত হচ্ছে।' : 'Demo memory mode: restart হলে নথি reset হবে; স্থায়ী সংরক্ষণ সক্রিয় নয়।';
+  return state?.provider==='postgres' && state.ready ? 'নথি সংরক্ষণ চালু আছে।' : 'স্থায়ী সংরক্ষণ চালু নেই; সার্ভার পুনরায় চালু হলে এই নথি হারাবে।';
 }
 function listBlock(title, items) {
   return `<div><h5 class="font-semibold text-xs">${actionEscape(title)}</h5><ul class="list-disc pl-4 text-xs space-y-1">${items.map(item=>`<li>${actionEscape(item)}</li>`).join('') || '<li>তথ্য দেওয়া হয়নি।</li>'}</ul></div>`;
@@ -56,27 +57,27 @@ function renderActionWorkspace(data,directory) {
     <p class="text-xs text-slate-600">${actionEscape(storageMessage(data.persistence))}</p>
     <p class="text-xs font-bold">${actionEscape(ACTION_LABELS[data.status])}${plan ? ' • অ্যাডমিন নিশ্চিতকৃত পরিকল্পনা' : ' • দায়িত্ব এখনও নিশ্চিত হয়নি'}</p>
     <div class="bg-purple-50 border border-purple-200 p-3 rounded-xl space-y-3">
-      <h4 class="font-bold text-sm">AI-এর প্রস্তাবিত করণীয় (AI Recommended Actions)</h4>
-      <p class="text-xs">এই খসড়া কারিগরি রোগনির্ণয় বা অনুমোদিত কার্যাদেশ নয়। অ্যাডমিনের পর্যালোচনা প্রয়োজন।</p>
-      <button id="generate-action-draft" class="${buttonClass}" onclick="generateActionDraft()">${draft?'নতুন খসড়া তৈরি করুন (Regenerate)':'করণীয় খসড়া তৈরি করুন'}</button>
+      <h4 class="font-bold text-sm">প্রস্তাবিত করণীয়</h4>
+      <p class="text-xs">খসড়াটি দেখে প্রয়োজনমতো সম্পাদনা করুন, তারপর পরিকল্পনা নিশ্চিত করুন।</p>
+      <button id="generate-action-draft" class="${buttonClass}" onclick="generateActionDraft()">${draft?'নতুন খসড়া তৈরি করুন':'করণীয় খসড়া তৈরি করুন'}</button>
       <p id="action-ai-message" class="text-xs" role="status"></p>
-      ${draft ? `<p class="text-xs font-bold">${recommendation.isFallback?'নিয়ম-ভিত্তিক প্রস্তাব (live AI নয়)':'AI Suggested'} • ${actionEscape(actionDate(recommendation.createdAt))}</p>
+      ${draft ? `<p class="text-xs font-bold">${recommendation.isFallback?'নিয়মভিত্তিক খসড়া':'বিশ্লেষণ থেকে তৈরি খসড়া'} • ${actionEscape(actionDate(recommendation.createdAt))}</p>
         <p class="text-sm font-semibold">${actionEscape(draft.nextAction)}</p><p class="text-xs">কেন: ${actionEscape(draft.rationale)}</p>
         <p class="text-xs">প্রস্তাবিত দল: ${actionEscape(draft.suggestedDepartment)} • জরুরিতা: ${actionEscape(URGENCY_LABELS[draft.urgency])}</p>
-        <p class="text-xs">প্রস্তাবিত response target: ${actionEscape(draft.responseTarget)}</p>
-        ${listBlock('মাঠপর্যায়ে যাচাই',draft.fieldVerification)}${listBlock('সম্ভাব্য সম্পদ/সরঞ্জাম',draft.resources)}${listBlock('ফলো-আপ',draft.followUp)}${listBlock('Escalation প্রয়োজন হলে',draft.escalationConditions)}${listBlock('সীমাবদ্ধতা',draft.limitations)}
-        <p class="text-xs">Confidence: ${draft.confidence===null?'অনির্ধারিত':Math.round(draft.confidence*100)+'%'} • ${actionEscape(recommendation.provider)} / ${actionEscape(recommendation.modelName)}</p>
-        <button class="${buttonClass}" onclick="useActionDraft()">পর্যালোচনা করে পরিকল্পনায় নিন / সম্পাদনা করুন</button>` : '<p class="text-xs text-slate-500">এখনও কোনো খসড়া নেই। চাইলে নিচে manual পরিকল্পনা তৈরি করুন।</p>'}
+        <p class="text-xs">প্রস্তাবিত সময়সীমা: ${actionEscape(draft.responseTarget)}</p>
+        ${listBlock('মাঠপর্যায়ে যাচাই',draft.fieldVerification)}${listBlock('সম্ভাব্য সম্পদ/সরঞ্জাম',draft.resources)}${listBlock('ফলো-আপ',draft.followUp)}${listBlock('ঊর্ধ্বতন কর্তৃপক্ষকে জানানোর শর্ত',draft.escalationConditions)}${listBlock('সীমাবদ্ধতা',draft.limitations)}
+        <p class="text-xs">নির্ভরযোগ্যতার অনুমান: ${draft.confidence===null?'অনির্ধারিত':Math.round(draft.confidence*100)+'%'}</p>
+        <button class="${buttonClass}" onclick="useActionDraft()">পর্যালোচনা করে পরিকল্পনায় নিন / সম্পাদনা করুন</button>` : '<p class="text-xs text-slate-500">এখনও কোনো খসড়া নেই। চাইলে নিচে নিজে পরিকল্পনা তৈরি করুন।</p>'}
     </div>
     <form id="confirm-action-form" class="space-y-3" onsubmit="saveActionPlan(event)">
-      <h4 class="font-bold text-sm">দায়িত্ব অর্পণ ও নিশ্চিত পরিকল্পনা (Assign Responsibility)</h4>
+      <h4 class="font-bold text-sm">পরিকল্পনা ও দায়িত্ব অর্পণ</h4>
       <label class="block text-xs">অ্যাডমিন-নিশ্চিত করণীয়<textarea id="plan-description" required minlength="10" maxlength="4000" class="${inputClass}" rows="3">${actionEscape(plan?.actionDescription || '')}</textarea></label>
       <input type="hidden" id="plan-recommendation" value="${actionEscape(plan?.recommendationId || '')}">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <label class="text-xs">সংশ্লিষ্ট ওয়ার্ড<select id="plan-ward" required onchange="updatePlanOfficerOptions()" class="${inputClass}">${actionOptions(directory.wards,plan?.wardId,'ওয়ার্ড যাচাই করে নির্বাচন করুন')}</select></label>
         <label class="text-xs">সংশ্লিষ্ট বিভাগ<select id="plan-department" required onchange="updatePlanOfficerOptions()" class="${inputClass}">${actionOptions(directory.departments.filter(d=>d.active || d.id===plan?.departmentId),plan?.departmentId,'বিভাগ নির্বাচন করুন')}</select></label>
         <label class="text-xs">দায়িত্বপ্রাপ্ত কর্মকর্তা<select id="plan-officer" class="${inputClass}"></select></label>
-        <label class="text-xs">লক্ষ্য তারিখ (Target Date)<input id="plan-date" type="date" required class="${inputClass}" value="${plan?.targetDate?.slice(0,10) || ''}"></label>
+        <label class="text-xs">লক্ষ্য তারিখ<input id="plan-date" type="date" required class="${inputClass}" value="${plan?.targetDate?.slice(0,10) || ''}"></label>
         <label class="text-xs">অগ্রাধিকার<select id="plan-priority" class="${inputClass}">${['LOW','MEDIUM','HIGH','CRITICAL'].map(p=>`<option ${p===(plan?.priority || selectedReport.priorityAssessment?.priorityLevel)?'selected':''}>${p}</option>`).join('')}</select></label>
         <label class="text-xs">জরুরিতা<select id="plan-urgency" class="${inputClass}">${Object.entries(URGENCY_LABELS).map(([key,label])=>`<option value="${key}" ${key===(plan?.urgency || 'SOON')?'selected':''}>${label}</option>`).join('')}</select></label>
       </div>
@@ -101,7 +102,7 @@ function renderActionWorkspace(data,directory) {
       <button id="save-action-status" class="${buttonClass}" ${!data.allowedTransitions.length?'disabled':''}>অবস্থা পরিবর্তন নথিভুক্ত করুন</button>
       <p id="action-status-message" class="text-xs" role="status"></p>
     </form>
-    ${plan ? `<form onsubmit="saveActionProgress(event)" class="space-y-2 border-t pt-3"><h4 class="font-bold text-sm">কাজের অগ্রগতি (Progress)</h4>
+    ${plan ? `<form onsubmit="saveActionProgress(event)" class="space-y-2 border-t pt-3"><h4 class="font-bold text-sm">কাজের অগ্রগতি</h4>
       <label class="block text-xs">অগ্রগতির নোট<textarea id="action-progress-note" required minlength="5" class="${inputClass}"></textarea></label>
       <label class="block text-xs">অগ্রগতির ছবি (ঐচ্ছিক)<input id="action-progress-photo" type="file" accept="image/png,image/jpeg,image/webp" class="${inputClass}"></label>
       <button id="save-action-progress" class="${buttonClass}" ${['RESOLVED','CLOSED','REJECTED'].includes(data.status)?'disabled':''}>অগ্রগতি সংরক্ষণ করুন</button><p id="action-progress-message" class="text-xs"></p></form>` : ''}
@@ -117,7 +118,7 @@ function renderActionWorkspace(data,directory) {
       ${data.reportHistory?.map(h=>`<p class="text-xs text-slate-500">রিপোর্ট: ${actionEscape(h.previousStatus)} → ${actionEscape(h.newStatus)} • ${actionDate(h.createdAt)} • ${actionEscape(h.note || '')}</p>`).join('') || ''}
     </div></details>`;
   updatePlanOfficerOptions(plan?.officerId);
-  if(directory.readOnly){document.getElementById('report-action-workspace').querySelectorAll('button,input,textarea,select').forEach(el=>el.disabled=true);document.getElementById('action-ai-message').textContent='Read-only demo: পরিবর্তন করতে provisioned operator session প্রয়োজন।';}
+  if(directory.readOnly){document.getElementById('report-action-workspace').querySelectorAll('button,input,textarea,select').forEach(el=>el.disabled=true);document.getElementById('action-ai-message').textContent='পরিবর্তন সংরক্ষণ করতে নিজের অ্যাডমিন অ্যাকাউন্টে লগইন করুন।';}
   document.getElementById('request-information-button').disabled=!!directory.readOnly;
 }
 function updatePlanOfficerOptions(selected=null) {
@@ -183,7 +184,7 @@ async function loadActionDashboard() {
     query.set('source',statsSource());query.set('limit','50');query.set('offset',String(queueOffset));
     const result=await actionApi(`/actions/dashboard?${query}`); if(sequence!==dashboardRequestSequence || !isAdminMode)return;
     document.getElementById('action-storage-status').textContent=storageMessage(result.persistence);
-    document.getElementById('queue-page').textContent=(statsSource()==='demo_seed'?'Demo Data — কাল্পনিক নমুনা তথ্য • ':'বাস্তব নাগরিক রিপোর্ট • ')+`${result.data.total?queueOffset+1:0}–${Math.min(queueOffset+50,result.data.total)} / ${result.data.total}`;
+    document.getElementById('queue-page').textContent=(statsSource()==='demo_seed'?'নমুনা রিপোর্ট • ':'নাগরিক রিপোর্ট • ')+`${result.data.total?queueOffset+1:0}–${Math.min(queueOffset+50,result.data.total)} / ${result.data.total}`;
     const labels={totalReports:'মোট রিপোর্ট',closed:'যাচাই শেষে বন্ধ',unassigned:'দায়িত্বহীন রিপোর্ট',awaitingVerification:'মাঠে যাচাই প্রয়োজন',assigned:'দায়িত্ব অর্পিত',inProgress:'কাজ চলছে',overdue:'লক্ষ্য তারিখ পেরিয়েছে',resolvedAwaitingVerification:'সমাধান যাচাই বাকি',highPriorityUnresolved:'উচ্চ অগ্রাধিকারে অসম্পন্ন'};
     document.getElementById('action-dashboard-cards').innerHTML=Object.entries(labels).map(([key,label])=>`<div class="rounded-xl bg-teal-50 p-3"><p class="text-xs">${label}</p><p class="text-xl font-bold text-teal-800">${result.data.summary[key]}</p></div>`).join('');
     list.innerHTML=result.data.rows.map(row=>`<div class="border border-slate-200 rounded-xl p-3 space-y-1 text-xs">
@@ -227,7 +228,7 @@ function renderDirectoryEditor() {
       <label class="block text-xs">প্রদত্ত যোগাযোগ (ঐচ্ছিক; DEMO-তে নয়)<input id="directory-person-contact" class="${inputClass}"></label>
       <label class="text-xs"><input id="directory-person-active" type="checkbox" checked> সক্রিয়</label><button class="${buttonClass}">সংরক্ষণ</button></form>
     </div><p id="directory-save-message" class="text-xs mt-2" role="status"></p>`;
-  if(actionDirectory.readOnly){document.getElementById('action-directory-editor').querySelectorAll('button,input,textarea,select').forEach(el=>el.disabled=true);document.getElementById('directory-save-message').textContent='Read-only demo directory';}
+  if(actionDirectory.readOnly){document.getElementById('action-directory-editor').querySelectorAll('button,input,textarea,select').forEach(el=>el.disabled=true);document.getElementById('directory-save-message').textContent='ডিরেক্টরি পরিবর্তন করতে অ্যাডমিন লগইন প্রয়োজন।';}
 }
 function editDirectoryEntry(type,id) {
   const row=(type==='department'?actionDirectory.departments:actionDirectory.officers).find(r=>r.id===id), prefix=`directory-${type}`;

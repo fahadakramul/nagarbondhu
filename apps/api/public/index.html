@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>নগরবন্ধু এআই | NagarBondhu AI — রাজশাহী আরবান ইন্টেলিজেন্স</title>
+  <title>নগরবন্ধু | NagarBondhu AI — রাজশাহী আরবান ইন্টেলিজেন্স</title>
   
   <!-- PWA & Mobile WebAPK Support -->
   <link rel="manifest" href="/manifest.json">
@@ -70,8 +70,8 @@
           🏙️
         </div>
         <div>
-          <h1 class="text-xl sm:text-2xl font-bold tracking-tight leading-none">নগরবন্ধু এআই</h1>
-          <p class="text-xs text-teal-200 mt-1">NagarBondhu AI • রাজশাহী আরবান প্রবলেম ইন্টেলিজেন্স</p>
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight leading-none">নগরবন্ধু</h1>
+          <p class="text-xs text-teal-200 mt-1">রাজশাহীর নাগরিক সেবা</p>
         </div>
       </div>
 
@@ -115,7 +115,7 @@
   <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
     <!-- ==================== TAB 1: HOME ==================== -->
-    <div id="app-demo-indicator" class="hidden bg-amber-50 border border-amber-200 text-amber-900 text-xs rounded-lg p-3 mb-4" role="status">Demo Mode — কাল্পনিক নমুনা তথ্য • DEMO চিহ্নিত records, identity, স্থান ও ফল কাল্পনিক।</div>
+    <div id="app-demo-indicator" class="hidden bg-amber-50 border border-amber-200 text-amber-900 text-xs rounded-lg p-3 mb-4" role="status">আপনি নমুনা রিপোর্ট দেখছেন। নাগরিক রিপোর্ট দেখতে তথ্যের উৎস পরিবর্তন করুন।</div>
     <section id="section-home" class="tab-content space-y-6">
       <!-- HERO BANNER -->
       <div class="bg-gradient-to-r from-civic-800 via-civic-700 to-teal-800 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
@@ -124,7 +124,7 @@
             নাগরিক সমস্যা সমাধান ও কৃত্রিম বুদ্ধিমত্তা চালিত নগর পরিকল্পনা
           </h2>
           <p class="text-sm sm:text-base text-teal-100 leading-relaxed">
-            রাজশাহী শহরের ভাঙা সড়ক, জলাবদ্ধতা, উন্মুক্ত বর্জ্য, নষ্ট ড্রেন ও সড়কবাতির অভিযোগ বাংলায় লিখুন। রিপোর্টের শ্রেণিবিন্যাস, ব্যাখ্যাসহ অগ্রাধিকার ও সম্ভাব্য মিল পর্যালোচনা করে সিদ্ধান্ত নিতে সহায়তা করে। Live AI উপলব্ধ হলে AI Preview পাওয়া যায়; AI ছাড়াও রিপোর্ট জমা দেওয়া যায়।
+            রাজশাহী শহরের ভাঙা সড়ক, জলাবদ্ধতা, উন্মুক্ত বর্জ্য, নষ্ট ড্রেন ও সড়কবাতির অভিযোগ বাংলায় লিখুন। রিপোর্টের শ্রেণিবিন্যাস, ব্যাখ্যাসহ অগ্রাধিকার ও সম্ভাব্য মিল পর্যালোচনা করে সিদ্ধান্ত নিতে সহায়তা করে। জমা দেওয়ার আগে বিবরণ ও সমস্যার ধরন যাচাই করতে পারেন।
           </p>
           <div class="pt-2 flex flex-wrap gap-3">
             <button onclick="switchTab('report')" class="bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold text-sm px-5 py-2.5 rounded-xl shadow-md transition flex items-center gap-2">
@@ -139,7 +139,7 @@
 
       <!-- REAL-TIME KPI STATS -->
       <div class="flex flex-wrap items-center gap-3 text-xs">
-        <label>পরিসংখ্যান ও তালিকার উৎস<select id="stats-source" class="border rounded p-2 ml-2" onchange="feedOffset=0;loadData()"><option value="demo_seed">কাল্পনিক DEMO</option><option value="citizen_report">বাস্তব নাগরিক রিপোর্ট</option></select></label>
+        <label>পরিসংখ্যান ও তালিকার উৎস<select id="stats-source" class="border rounded p-2 ml-2" onchange="feedOffset=0;loadData()"><option value="citizen_report">নাগরিক রিপোর্ট</option><option value="demo_seed">নমুনা রিপোর্ট</option></select></label>
         <button type="button" class="border rounded px-3 py-2" onclick="loadData()">তথ্য refresh / আবার চেষ্টা করুন</button>
         <p id="stats-message" role="status" class="w-full"></p>
       </div>
@@ -241,7 +241,7 @@
             <i class="fa-solid fa-bullhorn text-civic-600"></i> নাগরিক সমস্যা রিপোর্ট করুন
           </h2>
           <p class="text-xs text-slate-500 mt-1">
-            সমস্যার বিবরণ বাংলা বা ইংরেজিতে লিখুন। Live AI Preview উপলব্ধ হলে প্রস্তাব দেখুন; নিজের category নির্বাচন করে AI ছাড়াও জমা দিতে পারেন।
+            সমস্যার বিবরণ বাংলা বা ইংরেজিতে লিখুন। সমস্যার ধরন নির্বাচন করুন। চাইলে জমা দেওয়ার আগে বিবরণ বিশ্লেষণ করুন।
           </p>
         </div>
 
@@ -255,14 +255,14 @@
           <!-- AI LIVE PREVIEW BUTTON -->
           <div class="flex items-center gap-3">
             <button type="button" onclick="runAiPreview()" id="btn-ai-preview" class="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2">
-              <i class="fa-solid fa-wand-magic-sparkles"></i> ✨ এআই বিশ্লেষণ চালান (AI Preview)
+              <i class="fa-solid fa-wand-magic-sparkles"></i> বিবরণ বিশ্লেষণ করুন
             </button>
             <span class="text-xs text-slate-400">জমা দেওয়ার আগে এআই ক্যাটাগরি ও তীব্রতা দেখুন</span>
           </div>
 
           <div id="ai-preview-feedback" class="text-xs space-y-2" role="status" aria-live="polite"></div>
           <!-- AI ANALYSIS PREVIEW CARD -->
-          <label class="block text-xs font-bold">সমস্যার category (AI ছাড়া নির্বাচন করা যায়)<select id="citizen-category" class="w-full p-2 border rounded-lg" onchange="userOverrideCategory=this.value||null"><option value="">নিশ্চিত নই</option><option value="ROAD_DAMAGE">সড়ক ক্ষতি</option><option value="WATERLOGGING">জলাবদ্ধতা</option><option value="DRAINAGE">ড্রেনেজ</option><option value="WASTE">বর্জ্য</option><option value="FOOTPATH">ফুটপাথ</option><option value="STREETLIGHT">সড়কবাতি</option><option value="OTHER">অন্যান্য</option></select></label><div id="submission-message" class="text-xs text-teal-800" role="status" aria-live="polite"></div>
+          <label class="block text-xs font-bold">সমস্যার ধরন<select id="citizen-category" class="w-full p-2 border rounded-lg" onchange="userOverrideCategory=this.value||null"><option value="">নিশ্চিত নই</option><option value="ROAD_DAMAGE">সড়ক ক্ষতি</option><option value="WATERLOGGING">জলাবদ্ধতা</option><option value="DRAINAGE">ড্রেনেজ</option><option value="WASTE">বর্জ্য</option><option value="FOOTPATH">ফুটপাথ</option><option value="STREETLIGHT">সড়কবাতি</option><option value="OTHER">অন্যান্য</option></select></label><div id="submission-message" class="text-xs text-teal-800" role="status" aria-live="polite"></div>
           <div id="ai-preview-box" class="hidden bg-purple-50 border border-purple-200 rounded-xl p-4 space-y-3">
             <div class="flex justify-between items-center">
               <span class="text-xs font-bold text-purple-900 flex items-center gap-1.5">
@@ -272,7 +272,7 @@
             </div>
             <p id="ai-preview-summary" class="text-xs text-purple-800 font-medium">--</p>
             <div class="flex items-center gap-4 text-xs text-purple-900">
-              <span>তীব্রতা (Severity): <strong id="ai-preview-severity" class="text-rose-600 font-bold">--</strong> / ৫</span>
+              <span>তীব্রতা: <strong id="ai-preview-severity" class="text-rose-600 font-bold">--</strong> / ৫</span>
               <span>Confidence (uncalibrated): <strong id="ai-preview-confidence">--</strong></span>
             </div>
             <div>
@@ -445,11 +445,11 @@
       </div>
 
       <!-- FULL LEAFLET MAP -->
-      <div class="flex gap-2 flex-wrap text-xs my-2"><label>অবস্থা<select id="map-status" onchange="renderMapMarkers()" class="border p-2 rounded"><option value="">সব</option><option value="SUBMITTED">জমা দেওয়া</option><option value="UNDER_REVIEW">পর্যালোচনাধীন</option><option value="AWAITING_FIELD_VERIFICATION">মাঠে যাচাই প্রয়োজন</option><option value="READY_FOR_ASSIGNMENT">দায়িত্বের জন্য প্রস্তুত</option><option value="ASSIGNED">দায়িত্ব অর্পিত</option><option value="IN_PROGRESS">কাজ চলছে</option><option value="ON_HOLD">স্থগিত</option><option value="RESOLVED">সমাধান জমা</option><option value="CLOSED">বন্ধ</option><option value="REJECTED">বাতিল</option></select></label><label>শুরু<input id="map-from" type="date" onchange="renderMapMarkers()" class="border p-2 rounded"></label><label>শেষ<input id="map-to" type="date" onchange="renderMapMarkers()" class="border p-2 rounded"></label><label>Data<select id="map-source" onchange="renderMapMarkers()" class="border p-2 rounded"><option value="">সব</option><option value="citizen_report">নাগরিক</option><option value="demo_seed">DEMO</option></select></label></div><p id="map-coverage" class="text-xs my-2" aria-live="polite">Map data লোড হচ্ছে…</p><p class="text-xs mb-2">Legend: cluster-এর সংখ্যা উপলব্ধ রিপোর্টের সংখ্যা; রং category অনুযায়ী।</p><div id="twin-controls"></div><div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]"><div id="main-map" class="w-full h-[500px] rounded-2xl border border-slate-300 shadow-sm z-10"></div><aside id="twin-panel" class="bg-white rounded-2xl border p-4 text-sm overflow-auto max-h-[600px]" aria-live="polite">রিপোর্টের marker নির্বাচন করুন।</aside></div>
+      <div class="flex gap-2 flex-wrap text-xs my-2"><label>অবস্থা<select id="map-status" onchange="renderMapMarkers()" class="border p-2 rounded"><option value="">সব</option><option value="SUBMITTED">জমা দেওয়া</option><option value="UNDER_REVIEW">পর্যালোচনাধীন</option><option value="AWAITING_FIELD_VERIFICATION">মাঠে যাচাই প্রয়োজন</option><option value="READY_FOR_ASSIGNMENT">দায়িত্বের জন্য প্রস্তুত</option><option value="ASSIGNED">দায়িত্ব অর্পিত</option><option value="IN_PROGRESS">কাজ চলছে</option><option value="ON_HOLD">স্থগিত</option><option value="RESOLVED">সমাধান জমা</option><option value="CLOSED">বন্ধ</option><option value="REJECTED">বাতিল</option></select></label><label>শুরু<input id="map-from" type="date" onchange="renderMapMarkers()" class="border p-2 rounded"></label><label>শেষ<input id="map-to" type="date" onchange="renderMapMarkers()" class="border p-2 rounded"></label><label>তথ্যের উৎস<select id="map-source" onchange="loadMapRecords()" class="border p-2 rounded"><option value="citizen_report">নাগরিক</option><option value="">সব</option><option value="demo_seed">নমুনা</option></select></label></div><p id="map-coverage" class="text-xs my-2" aria-live="polite">মানচিত্রের তথ্য লোড হচ্ছে…</p><p class="text-xs mb-2">একসঙ্গে থাকা চিহ্নের সংখ্যা রিপোর্টের সংখ্যা; রং সমস্যার ধরন অনুযায়ী।</p><div id="twin-controls"></div><div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]"><div id="main-map" class="w-full h-[500px] rounded-2xl border border-slate-300 shadow-sm z-10"></div><aside id="twin-panel" class="bg-white rounded-2xl border p-4 text-sm overflow-auto max-h-[600px]" aria-live="polite">মানচিত্র থেকে রিপোর্ট নির্বাচন করুন।</aside></div>
     </section>
 
     <!-- ==================== TAB 4: REPORTS FEED & DETAILS ==================== -->
-    <section id="section-feed" class="tab-content hidden space-y-4"><label class="block text-xs">তালিকার ডাটার উৎস<select id="feed-source" class="border rounded p-2 ml-2" onchange="document.getElementById('stats-source').value=this.value;feedOffset=0;loadData()"><option value="demo_seed">কাল্পনিক DEMO</option><option value="citizen_report">বাস্তব নাগরিক রিপোর্ট</option></select></label>
+    <section id="section-feed" class="tab-content hidden space-y-4"><label class="block text-xs">তালিকার ডাটার উৎস<select id="feed-source" class="border rounded p-2 ml-2" onchange="document.getElementById('stats-source').value=this.value;feedOffset=0;loadData()"><option value="citizen_report">নাগরিক রিপোর্ট</option><option value="demo_seed">নমুনা রিপোর্ট</option></select></label>
       <div class="flex justify-between items-center">
         <div>
           <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -468,9 +468,9 @@
 
     <!-- ==================== TAB 5: URBAN PLANNING DASHBOARD ==================== -->
     <section id="section-dashboard" class="tab-content hidden space-y-6">
-      <div class="bg-white border rounded-xl p-3 text-xs space-y-2"><label>Dashboard data source<select id="dashboard-source" class="border rounded p-2 ml-2" onchange="document.getElementById('stats-source').value=this.value;feedOffset=0;loadData()"><option value="demo_seed">কাল্পনিক DEMO</option><option value="citizen_report">বাস্তব নাগরিক রিপোর্ট</option></select></label><button class="border rounded px-3 py-2" onclick="loadData()">Refresh / আবার চেষ্টা করুন</button><p id="dashboard-data-message" role="status"></p><div id="dashboard-distributions" class="flex flex-wrap gap-4"></div></div>
+      <div class="bg-white border rounded-xl p-3 text-xs space-y-2"><label>তথ্যের উৎস<select id="dashboard-source" class="border rounded p-2 ml-2" onchange="document.getElementById('stats-source').value=this.value;feedOffset=0;loadData()"><option value="citizen_report">নাগরিক রিপোর্ট</option><option value="demo_seed">নমুনা রিপোর্ট</option></select></label><button class="border rounded px-3 py-2" onclick="loadData()">আবার লোড করুন</button><p id="dashboard-data-message" role="status"></p><div id="dashboard-distributions" class="flex flex-wrap gap-4"></div></div>
       <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-md">
-        <span class="text-[11px] font-bold text-teal-400 uppercase tracking-widest">Urban Problem Intelligence</span>
+        <span class="text-[11px] font-bold text-teal-400 uppercase tracking-widest">নাগরিক সমস্যার চিত্র</span>
         <h2 class="text-xl sm:text-2xl font-extrabold mt-1">রাজশাহী আরবান প্ল্যানিং সাপোর্ট ড্যাশবোর্ড</h2>
         <p class="text-xs text-slate-400 mt-1">প্রকৃত ডাটাবেজ কোয়েরির ওপর ভিত্তি করে পরিসংখ্যান, হটস্পট ও ডুপ্লিকেট সনাক্তকরণ কিউ।</p>
       </div>
@@ -482,7 +482,7 @@
         <h3 class="font-bold text-slate-800">প্রশাসনিক করণীয় ও দায়িত্ব ব্যবস্থাপনা</h3>
         <p class="text-xs text-slate-500">অ্যাডমিন নিশ্চিতকরণ, দায়িত্ব অর্পণ ও সমাধান যাচাইয়ের নথি।</p>
         <div id="action-storage-status" class="text-xs"></div>
-        <p class="text-xs text-amber-800">Public demo session: read-only। প্রকৃত operator account provision করলে নিচে existing session ব্যবহার করুন।</p><details><summary class="text-xs cursor-pointer">Operator session (আলাদা login screen নয়)</summary><form onsubmit="activateOperatorSession(event)" class="space-y-2 mt-2"><label class="block text-xs">Email<input id="operator-email" type="email" required class="border p-2 rounded w-full" autocomplete="username"></label><label class="block text-xs">Password<input id="operator-password" type="password" required class="border p-2 rounded w-full" autocomplete="current-password"></label><button class="bg-teal-700 text-white px-3 py-2 rounded text-xs">Session সক্রিয় করুন</button><p id="operator-message" class="text-xs" role="status"></p></form></details><div id="action-dashboard-cards" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+        <p class="text-xs text-amber-800">পরিকল্পনা, দায়িত্ব ও অগ্রগতি সংরক্ষণ করতে অ্যাডমিন হিসেবে লগইন করুন।</p><button type="button" onclick="showOperatorLogin()" class="bg-teal-700 text-white px-3 py-2 rounded text-xs">অ্যাডমিন লগইন</button><button type="button" onclick="logoutOperator()" class="border px-3 py-2 rounded text-xs">লগআউট</button><div id="operator-login-modal" class="hidden fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4"><div class="bg-white rounded-2xl p-6 w-full max-w-sm space-y-3"><h3 class="font-bold">অ্যাডমিন লগইন</h3><form onsubmit="activateOperatorSession(event)" class="space-y-2 mt-2"><label class="block text-xs">Email<input id="operator-email" type="email" required class="border p-2 rounded w-full" autocomplete="username"></label><label class="block text-xs">Password<input id="operator-password" type="password" required class="border p-2 rounded w-full" autocomplete="current-password"></label><button class="bg-teal-700 text-white px-3 py-2 rounded text-xs">লগইন করুন</button><p id="operator-message" class="text-xs" role="status"></p></form><button type="button" onclick="closeOperatorLogin()" class="text-sm underline">ফিরে যান</button></div></div><div id="action-dashboard-cards" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
         <div id="action-dashboard-filters" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
         <h4 class="text-sm font-bold">সুপারিশকৃত করণীয় ও ফলো-আপ (Recommended Actions &amp; Follow-ups)</h4>
         <div class="flex gap-2 text-xs"><button onclick="queueOffset=Math.max(0,queueOffset-50);loadActionDashboard()" class="border rounded px-3 py-2">আগের পৃষ্ঠা</button><button onclick="queueOffset+=50;loadActionDashboard()" class="border rounded px-3 py-2">পরের পৃষ্ঠা</button><span id="queue-page"></span></div><div id="action-dashboard-list" class="space-y-3" aria-live="polite">লোড হচ্ছে…</div>
@@ -542,7 +542,7 @@
   <!-- DETAIL MODAL -->
   <div id="report-modal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-4 shadow-2xl relative">
-      <button onclick="closeDetailModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg">
+      <button onclick="closeDetailModal()" aria-label="বিস্তারিত বন্ধ করুন" class="sticky top-0 float-right z-10 bg-white rounded-lg p-2 text-slate-600 hover:text-slate-800 text-lg">
         <i class="fa-solid fa-xmark"></i>
       </button>
 
@@ -569,17 +569,17 @@
       <!-- AI ANALYSIS CARD -->
       <div class="bg-purple-50 border border-purple-200 rounded-xl p-4 space-y-2">
         <h4 class="text-xs font-bold text-purple-900 flex items-center gap-1.5">
-          <i class="fa-solid fa-robot"></i> এআই বিশ্লেষণ ও কারণসমূহ
+          <i class="fa-solid fa-robot"></i> সমস্যার সারাংশ
         </h4>
         <p id="modal-ai-provider" class="text-xs text-purple-800"></p><p id="modal-ai-summary" class="text-xs text-purple-800 font-medium">--</p>
-        <p class="text-xs text-purple-900">তীব্রতা (Severity): <strong id="modal-ai-severity" class="text-rose-600 font-bold">--</strong> / ৫</p>
+        <p class="text-xs text-purple-900">তীব্রতা: <strong id="modal-ai-severity" class="text-rose-600 font-bold">--</strong> / ৫</p>
         <ul id="modal-ai-reasons" class="list-disc list-inside text-xs text-purple-800 space-y-0.5"></ul>
       </div>
 
       <!-- EXPLAINABLE PRIORITY CARD -->
       <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
         <h4 class="text-xs font-bold text-amber-900 flex items-center gap-1.5">
-          <i class="fa-solid fa-scale-balanced"></i> ব্যাখ্যাযোগ্য প্রায়োরিটি স্কোর: <span id="modal-prio-score" class="font-extrabold text-amber-700">--</span>/১০০
+          <i class="fa-solid fa-scale-balanced"></i> অগ্রাধিকার: <span id="modal-prio-score" class="font-extrabold text-amber-700">--</span>/১০০
         </h4>
         <p id="modal-prio-summary" class="text-xs text-amber-800">--</p>
       </div>
@@ -587,7 +587,7 @@
       <!-- ADMIN CONTROLS (Only visible in Admin Mode) -->
       <div id="modal-admin-controls" class="hidden bg-slate-100 border border-slate-300 rounded-xl p-4 space-y-3">
         <h4 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-          <i class="fa-solid fa-shield-halved text-amber-600"></i> অ্যাডমিন মডারেশন অ্যাকশন
+          <i class="fa-solid fa-shield-halved text-amber-600"></i> অভিযোগের ব্যবস্থা নিন
         </h4>
         <button id="request-information-button" onclick="requestMoreInformation()" class="bg-teal-700 text-white px-3 py-2 rounded text-xs">প্রকাশ্য তথ্য-অনুরোধ</button><div id="report-action-workspace" class="space-y-4" aria-live="polite">করণীয় নথি লোড হচ্ছে…</div>
       </div>
@@ -597,8 +597,7 @@
   <!-- FOOTER -->
   <footer class="bg-slate-900 text-slate-400 py-6 text-xs text-center border-t border-slate-800">
     <div class="max-w-7xl mx-auto px-4 space-y-1">
-      <p class="font-bold text-slate-300">নগরবন্ধু এআই (NagarBondhu AI) — রাজশাহী আরবান ইন্টেলিজেন্স প্ল্যাটফর্ম</p>
-      <p>React Native / Web App • PostgreSQL</p>
+      <p class="font-bold text-slate-300">নগরবন্ধু — রাজশাহীর নাগরিক সেবা</p>
       <div class="pt-4 space-y-2 leading-relaxed text-slate-300">
         <p>Developed by: <strong class="text-white">Fahad MD Akramul Islam</strong></p>
         <p>Ideation &amp; Supported By: <strong class="text-white">Tashika Hossain</strong></p>

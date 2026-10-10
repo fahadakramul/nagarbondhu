@@ -15,7 +15,13 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: GEMINI_MODEL
-        value: gemini-2.5-flash
+        value: gemini-2.5-flash-lite
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: OPERATOR_EMAIL
+        sync: false
+      - key: OPERATOR_PASSWORD_HASH
+        sync: false
       - key: DATABASE_PROVIDER
         value: postgres
       - key: DATABASE_URL

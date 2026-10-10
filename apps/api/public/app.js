@@ -484,11 +484,11 @@ function onUrlImageChanged(val) {
 // Load Data from Backend REST API
 let dataRequestSequence=0;
 const statsIds=['stat-total','stat-open','stat-high','stat-resolved','stat-progress'];
-function statsSource(){return document.getElementById('stats-source')?.value || 'demo_seed';}
+function statsSource(){return document.getElementById('stats-source')?.value || 'citizen_report';}
 async function loadData() {
   const sequence=++dataRequestSequence,source=statsSource();
   document.getElementById('dashboard-source').value=source;document.getElementById('feed-source').value=source;
-  const label=source==='demo_seed'?'Demo Data — কাল্পনিক নমুনা তথ্য':'বাস্তব নাগরিক রিপোর্ট';
+  const label=source==='demo_seed'?'নমুনা রিপোর্ট':'নাগরিক রিপোর্ট';
   statsIds.forEach(id=>document.getElementById(id).textContent='লোড হচ্ছে…');
   document.getElementById('stats-message').textContent=label+' • লোড হচ্ছে…';
   document.getElementById('dashboard-data-message').textContent=label+' • লোড হচ্ছে…';
@@ -513,7 +513,7 @@ async function loadData() {
     document.getElementById('feed-page').textContent=label+' • '+(data.total?`${Math.min(feedOffset+1,data.total)}–${Math.min(feedOffset+50,data.total)} / ${data.total}`:'কোনো রিপোর্ট নেই');
     renderReportsFeed(allReports);
   }else{allReports=[];document.getElementById('feed-page').textContent='তথ্য অনুপলব্ধ';document.getElementById('reports-feed-container').innerHTML='<p>রিপোর্ট লোড করা যায়নি।</p><button class="border rounded p-2" onclick="loadData()">আবার চেষ্টা করুন</button>';}
-  if(isAdminMode && authToken)loadActionDashboard();
+  if(isAdminMode && authToken)await loadActionDashboard();
 }
 function updateHomeStats(data) {
   const values=[data.totalReports,data.openReports,data.highPriorityReports+data.criticalPriorityReports,data.resolvedReports,data.inProgressReports];
@@ -676,7 +676,7 @@ async function runAiPreview() {
     alert('এআই বিশ্লেষণ চালানো যায়নি।');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> ✨ এআই বিশ্লেষণ চালান (AI Preview)`;
+    btn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> বিবরণ বিশ্লেষণ করুন`;
   }
 }
 
@@ -776,7 +776,7 @@ function openDetailModal(reportId) {
   }
 
   // AI Box
-  document.getElementById('modal-ai-provider').textContent=r.aiAnalysis ? (r.sourceType==='demo_seed'?'Demo Data — কাল্পনিক নমুনা তথ্য • ':'')+(/rule|fallback|demo/i.test(r.aiAnalysis.provider)?'নিয়মভিত্তিক / নমুনা বিশ্লেষণ — Live AI নয়':'সংরক্ষিত AI-এর অস্থায়ী প্রস্তাব')+' • '+r.aiAnalysis.provider : 'বিশ্লেষণ অনুপলব্ধ';
+  document.getElementById('modal-ai-provider').textContent=r.aiAnalysis ? (r.sourceType==='demo_seed'?'নমুনা রিপোর্ট • ':'')+(/rule|fallback|demo/i.test(r.aiAnalysis.provider)?'নিয়মভিত্তিক সারাংশ':'বিবরণ থেকে তৈরি সারাংশ') : 'বিশ্লেষণ অনুপলব্ধ';
   document.getElementById('modal-ai-summary').textContent = 'বিশ্লেষণ পাওয়া যায়নি';
   document.getElementById('modal-ai-severity').textContent = 'অনুপলব্ধ';
   document.getElementById('modal-ai-reasons').textContent = '';
@@ -813,6 +813,7 @@ function openDetailModal(reportId) {
 }
 
 function closeDetailModal() {
+  ++detailRequestSequence;
   document.getElementById('report-modal').classList.add('hidden');
   selectedReport = null;
 }
@@ -830,16 +831,14 @@ async function toggleUserRole() {
     roleText.textContent = 'অ্যাডমিন / প্ল্যানার';
     toggleBtn.className = 'flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow transition';
 
-    // Auto-login as demo admin
+    // Only restore a private, authenticated administrator session.
     try {
-      const res = await fetch('/api/v1/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: 'admin@nagarbondhu.gov.bd', password: 'DemoAdmin123!' })
-      });
-      const data = await res.json();
-      if (data.token) authToken = data.token;
-    } catch (e) {}
+      const savedToken = sessionStorage.getItem('nagarbondhu-operator-token');
+      const res = savedToken && await fetch('/api/v1/auth/me', { headers: { Authorization: `Bearer ${savedToken}` } });
+      const data = res && await res.json();
+      if (res?.ok && ['ADMIN','URBAN_PLANNER'].includes(data.user?.role) && data.user?.id !== 'user-admin-01') authToken = savedToken;
+      else { sessionStorage.removeItem('nagarbondhu-operator-token'); authToken = null; showOperatorLogin(); }
+    } catch (e) { authToken = null; showOperatorLogin(); }
   } else {
     roleIcon.textContent = '👤';
     roleText.textContent = 'সাধারণ নাগরিক';
@@ -847,9 +846,10 @@ async function toggleUserRole() {
     authToken = null;
   }
 
-  loadData();
+  await loadData();
   document.getElementById('admin-action-dashboard').classList.toggle('hidden', !isAdminMode);
-  if (selectedReport) openDetailModal(selectedReport.id);
+  document.getElementById('planning-tools').classList.toggle('hidden', !isAdminMode);
+  if (selectedReport) await openDetailModal(selectedReport.id);
 }
 
 // Admin Status Update

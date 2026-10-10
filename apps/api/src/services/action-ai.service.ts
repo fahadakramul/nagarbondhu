@@ -49,7 +49,7 @@ export async function generateActionRecommendation(report: Report, actorId: stri
       fieldVerification: [...checks, 'ওয়ার্ড সীমানা ও স্থানাঙ্ক যাচাই'], resources: ['প্রয়োজন অনুযায়ী পরিদর্শন দল ও নিরাপত্তা চিহ্ন; পরিমাণ ও সরঞ্জাম মাঠে নির্ধারণ করতে হবে।'],
       followUp: ['পরিদর্শনের ফল নথিভুক্ত করুন।', 'অ্যাডমিন অনুমোদনের পর অগ্রগতি এবং সমাধানের প্রমাণ সংরক্ষণ করুন।'],
       escalationConditions: ['তাৎক্ষণিক জননিরাপত্তা ঝুঁকি নিশ্চিত হলে সংশ্লিষ্ট দায়িত্বপ্রাপ্ত দলের কাছে জরুরি পর্যালোচনার জন্য পাঠান।'],
-      confidence: null, limitations: ['AI key নেই; এটি category-ভিত্তিক নিয়মের খসড়া, live AI বিশ্লেষণ নয়।', 'ওয়ার্ড সীমানা, ক্ষতির প্রকৃতি, বাজেট ও জনসংখ্যার প্রভাব যাচাই করা হয়নি।', 'কোনো ছবি বিশ্লেষণ করা হয়নি।'],
+      confidence: null, limitations: ['সমস্যার ধরন অনুযায়ী নিয়মভিত্তিক খসড়া তৈরি হয়েছে।', 'ওয়ার্ড সীমানা, ক্ষতির প্রকৃতি ও প্রয়োজনীয় সম্পদ মাঠে যাচাই করুন।', 'সংযুক্ত ছবি বিশ্লেষণ করা হয়নি।'],
     };
   } else {
     const prompt = `You advise NagarBondhu civic administrators in Bengali. Return JSON only with keys: nextAction, rationale, suggestedDepartment, urgency (ROUTINE/SOON/URGENT/IMMEDIATE), responseTarget, fieldVerification (array), resources (array), followUp (array), escalationConditions (array), confidence (number 0..1 or null), limitations (array).

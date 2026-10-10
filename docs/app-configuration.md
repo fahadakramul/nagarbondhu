@@ -23,9 +23,9 @@ password in frontend code. Existing provisioned accounts continue to work.
 
 ## Gemini free tier
 
-The default model is `gemini-2.5-flash-lite`, which has free input and output
+The default model is `gemini-3.5-flash-lite`, which has free input and output
 on the Gemini API Free tier:
-https://ai.google.dev/gemini-api/docs/pricing#gemini-2.5-flash-lite
+https://ai.google.dev/gemini-api/docs/pricing#gemini-3.5-flash-lite
 
 Create a key at https://aistudio.google.com/apikey using a Google project on
 the **Free** tier. Set the following in `apps/api/.env` locally, or in the
@@ -33,7 +33,7 @@ Render service's environment settings for the hosted mobile app:
 
 ```dotenv
 GEMINI_API_KEY=your_actual_key
-GEMINI_MODEL=gemini-2.5-flash-lite
+GEMINI_MODEL=gemini-3.5-flash-lite
 ```
 
 Restart the API, then check connectivity:

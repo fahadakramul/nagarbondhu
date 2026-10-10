@@ -153,7 +153,6 @@ Complaint Text:
           },
         ],
         generationConfig: {
-          temperature: 0.1,
           responseMimeType: 'application/json',
         },
       }),

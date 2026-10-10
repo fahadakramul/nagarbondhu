@@ -58,7 +58,7 @@ REPORT DATA: ${JSON.stringify(recommendationContext(report))}`;
     try {
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': CONFIG.GEMINI_API_KEY },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, responseMimeType: 'application/json' } }),
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json' } }),
         signal: AbortSignal.timeout(25000),
       });
       if (!response.ok) throw new Error(`Provider HTTP ${response.status}`);

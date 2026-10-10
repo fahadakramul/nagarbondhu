@@ -90,3 +90,15 @@ Inspect: Home → কাল্পনিক DEMO; dashboard source selector; Adva
 ## Video flow
 
 Open the app ahead of recording so Render can wake. Show homepage DEMO counts → report Preview error/explicit non-live helper and manual category → list/priority → map dated comparison → dashboard scenarios → cluster evidence → ward coverage → preloaded field mission route and stored inspection history. All fictional data and simulations remain labelled.
+
+## Final live deployment evidence
+
+Render deployment of code commit `5e497a1` succeeded in 58.1 seconds on October 10, 2026 (Asia/Dhaka). The prior feature dataset did not need another restore. Read-only public-schema SQL hashes before and after deployment matched for all original demo reports, missions and cluster reviews. A new citizen report arrived during final verification and was retained.
+
+Actual DEMO counts: total 16; unresolved 13; IN_PROGRESS 3; RESOLVED/CLOSED 3; HIGH/CRITICAL unresolved 10. The initial empty citizen source showed a genuine zero. At final verification a new citizen report was present; current SQL, homepage summary, feed and operations queue all returned one citizen report. Counts can change as submissions arrive. Live API totals/status/category aggregates and feed source membership were checked against PostgreSQL. Live operations source filtering and authorization denial paths were also verified.
+
+The live app was inspected in a 390-pixel iframe: the loaded document and footer both measured clientWidth=scrollWidth=375 (15-pixel vertical scrollbar); homepage and planning content stayed within the page width. Native Android execution remains untested.
+
+Dependency audit findings remain: the repository-wide production-labelled npm graph reports 60 advisory entries (including a critical `tar` entry through the old Expo toolchain); the API/shared scoped audit reports 9 entries in Jest/helper packages. These are package-graph advisories, not evidence of an exploited request path. The deployed Express application does not import Jest. No security-clean claim is made. Automated suggestions include major Expo/React Native upgrades, which conflict with preserving the current framework and would require separate mobile migration/device validation; no forced dependency/framework upgrade was applied.
+
+Proof screenshot: `final-stabilization-live.png` in the task visualization directory. Detailed automated regression output remains in the completed Codex tool results. Temporary SQL credentials, audit JSON and responsive preview files are removed after verification.

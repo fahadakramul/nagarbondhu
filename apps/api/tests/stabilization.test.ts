@@ -43,7 +43,7 @@ describe('Final stabilization regression checks',()=>{
   });
   test('live preview missing key is explicit 503, optional rule preview is labelled',async()=>{
     const input={title:'Blocked drain',text:'The drain near the road is blocked.'};
-    const failed=await request(app).post('/api/v1/ai/analyze-complaint').send(input);expect(failed.status).toBe(503);expect(failed.body.data).toBeUndefined();expect(failed.body.error).toContain('Live AI');
+    const failed=await request(app).post('/api/v1/ai/analyze-complaint').send(input);expect(failed.status).toBe(503);expect(failed.body.data).toBeUndefined();expect(failed.body.error).toContain('বিবরণ বিশ্লেষণ করা যাচ্ছে না');
     const fallback=await request(app).post('/api/v1/ai/analyze-complaint').send({...input,allowFallback:true});expect(fallback.status).toBe(200);expect(fallback.body.metadata.isFallback).toBe(true);expect(fallback.body.data.confidence).toBeNull();
     expect((await request(app).post('/api/v1/ai/analyze-complaint').send({...input,apiKey:'do-not-accept'})).status).toBe(400);
   });

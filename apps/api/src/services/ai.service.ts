@@ -98,7 +98,7 @@ function analyzeWithRuleFallback(text: string): AiAnalysisData {
  */
 export class AiUnavailableError extends Error {
   statusCode = 503;
-  constructor() { super('Live AI এখন উপলব্ধ নয়। আবার চেষ্টা করুন, অথবা স্পষ্টভাবে চিহ্নিত নিয়মভিত্তিক preview নিন। AI ছাড়াও রিপোর্ট জমা দেওয়া যায়।'); }
+  constructor() { super('এই মুহূর্তে বিবরণ বিশ্লেষণ করা যাচ্ছে না। আবার চেষ্টা করুন বা নিয়মভিত্তিক সারাংশ দেখুন। বিশ্লেষণ ছাড়াও রিপোর্ট জমা দিতে পারেন।'); }
 }
 export async function analyzeBengaliComplaint(complaintText: string, allowFallback = true): Promise<AiServiceResult> {
   complaintText=complaintText.replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi,'[email removed]').replace(/(?:\+?880|0)1[3-9][0-9]{8}/g,'[phone removed]');

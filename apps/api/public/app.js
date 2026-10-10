@@ -734,7 +734,7 @@ async function handleFormSubmit(e) {
 
     const result = await res.json();
     if (result.success) {
-      alert(`অভিনন্দন! আপনার রিপোর্ট সফলভাবে জমা হয়েছে।\nএআই ক্যাটাগরি: ${CATEGORY_NAMES_BN[result.report.category] || result.report.category}\nনির্ধারিত প্রায়োরিটি স্কোর: ${result.report.priorityAssessment?.score ?? 'অনুপলব্ধ'}/১০০`);
+      alert(`অভিনন্দন! আপনার রিপোর্ট সফলভাবে জমা হয়েছে।\nসমস্যার ধরন: ${CATEGORY_NAMES_BN[result.report.category] || result.report.category}\nনির্ধারিত প্রায়োরিটি স্কোর: ${result.report.priorityAssessment?.score ?? 'অনুপলব্ধ'}/১০০`);
       document.getElementById('report-form').reset();
       clearSelectedImage();
       document.getElementById('ai-preview-box').classList.add('hidden');

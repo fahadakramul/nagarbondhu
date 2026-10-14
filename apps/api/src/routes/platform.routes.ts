@@ -3,12 +3,27 @@ import { z } from 'zod';
 import { randomUUID } from 'crypto';
 import { db } from '../db';
 import { authenticate, requireRole } from '../middleware/auth';
-import { publicTracking, receiptFor } from '../services/citizen.service';
+import { publicTracking, receiptFor, hash, resolutionRatingSummary } from '../services/citizen.service';
 import { analytics, csvExport } from '../services/analytics.service';
 import { planningInterpretation } from '../services/planning-ai.service';
 import { event, fail, getReport, getPlan, workflowStatus, transition } from '../services/action.service';
 
 const router=Router();
+router.post('/reports/:id/rating',(req,res,next)=>{
+  try {
+    const input=z.object({voterToken:z.string().regex(/^[a-f0-9]{64}$/),score:z.number().int().min(1).max(5),afterPhotoUrl:z.string().max(2000)}).strict().parse(req.body);
+    getReport(req.params.id);
+    if(!resolutionRatingSummary(req.params.id).available)fail('সমাধানের ছবি যুক্ত হওয়ার পর রেটিং দিতে পারবেন।');
+    const photo=getPlan(req.params.id)!.afterPhotoUrl!;
+    if(input.afterPhotoUrl!==photo)fail('সমাধানের ছবি বদলেছে। নতুন ছবি দেখে আবার রেটিং দিন।',409);
+    const voterHash=hash(input.voterToken);
+    const existing=Array.from(db.resolutionRatings.values()).find(r=>r.reportId===req.params.id && r.voterHash===voterHash);
+    const now=new Date().toISOString();
+    const data={id:existing?.id || randomUUID(),reportId:req.params.id,voterHash,afterPhotoUrl:photo,score:input.score,createdAt:existing?.createdAt || now,updatedAt:now};
+    db.resolutionRatings.set(data.id,data);
+    res.status(existing?200:201).json({success:true,data:{score:data.score,...resolutionRatingSummary(req.params.id)}});
+  }catch(e){next(e);}
+});
 export const AnalyticsQuery=z.object({wardId:z.string().max(100).optional(),category:z.enum(['ROAD_DAMAGE','WATERLOGGING','DRAINAGE','WASTE','FOOTPATH','STREETLIGHT','OTHER']).optional(),from:z.string().date().optional(),to:z.string().date().optional(),source:z.enum(['all','demo_seed','citizen_report']).optional()}).strict().refine(q=>!q.from || !q.to || q.from<=q.to,'Invalid date range');
 router.get('/reports/:id/tracking',(req,res,next)=>{try{const data=publicTracking(req.params.id);if(!data)fail('Report not found',404);res.json({success:true,data});}catch(e){next(e);}});
 router.post('/reports/:id/feedback',(req,res,next)=>{

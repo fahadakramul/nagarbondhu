@@ -15,6 +15,7 @@ const tableMap: Record<string, string> = {
   departments: 'department', officers: 'responsiblePerson', recommendations: 'actionRecommendation',
   actionPlans: 'actionPlan', progressUpdates: 'actionProgress', actionEvents: 'actionAuditEvent',
   submissionReceipts: 'submissionReceipt', feedback: 'citizenFeedback', notices: 'reportNotice',
+  resolutionRatings: 'resolutionRating',
   clusterReviews: 'clusterReview', fieldMissions: 'fieldMission',
 };
 function rowData(name: string, row: any) {

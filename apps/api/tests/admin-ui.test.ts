@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 import { app } from '../src/app';
 import { db, DatabaseRepository } from '../src/db';
 import { CONFIG } from '../src/config';
+import { confirmPlan, getPlan } from '../src/services/action.service';
 const { JSDOM } = require('jsdom');
 
 describe('Administrator UI connected to the real API',()=>{
@@ -39,6 +40,24 @@ describe('Administrator UI connected to the real API',()=>{
     await window.activateOperatorSession({preventDefault(){},target:el('operator-email').closest('form')});
     await eventually(()=>!el('operator-login-modal').classList.contains('hidden')?false:run('!!authToken'));
   }
+  test('citizens see the resolution photo and save or update stars without a submission receipt',async()=>{
+    const id='rep-001';
+    confirmPlan(id,{actionDescription:'Inspect and repair the damaged road.',wardId:db.reports.get(id)!.wardId!,wardVerified:true,wardVerificationNote:'Ward location confirmed during inspection.',departmentId:'roads',assignmentNote:'Repair team assigned',targetDate:'2026-12-01',priority:'HIGH',urgency:'URGENT',revision:0},'private-operator');
+    const plan=getPlan(id)!;db.actionPlans.set(plan.id,{...plan,status:'RESOLVED',afterPhotoUrl:'/uploads/resolved.png'});
+    window.localStorage.setItem('nagarbondhu-rating-token','c'.repeat(64));
+    await window.openDetailModal(id);
+    expect(el('resolution-rating').querySelector('img').getAttribute('src')).toBe('/uploads/resolved.png');
+    const form=el('resolution-rating-form');form.elements['resolution-score'].value='4';
+    await window.submitResolutionRating({preventDefault(){},target:form},id,'/uploads/resolved.png');
+    expect(el('rating-summary').textContent).toContain('4/৫');expect(el('rating-message').textContent).toContain('সংরক্ষিত');
+    await window.openDetailModal(id);
+    expect(el('resolution-rating-form').elements['resolution-score'].value).toBe('4');
+    el('resolution-rating-form').elements['resolution-score'].value='2';
+    await window.submitResolutionRating({preventDefault(){},target:el('resolution-rating-form')},id,'/uploads/resolved.png');
+    expect(el('rating-summary').textContent).toContain('2/৫');expect(db.resolutionRatings.size).toBe(1);
+    db.actionPlans.set(plan.id,{...getPlan(id)!,status:'UNDER_REVIEW'});
+    await window.openDetailModal(id);expect(el('resolution-rating')).toBeNull();
+  });
   test('defaults to citizen data and opens a reachable private login instead of public auto-login',async()=>{
     expect(el('stats-source').value).toBe('citizen_report');expect(run('mvpSource')).toBe('citizen_report');
     await run('toggleUserRole()');expect(run('authToken')).toBeNull();

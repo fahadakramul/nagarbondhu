@@ -90,8 +90,31 @@ openDetailModal=async function(id){
     const {data:d}=await platformApi('/reports/'+encodeURIComponent(id)+'/tracking');if(selectedReport?.id!==id)return;
     const a=d.assignment,token=readReceiptTokens()[id];
     document.getElementById('public-tracking').innerHTML=`<h4 class="font-bold">রিপোর্টের অগ্রগতি</h4><p class="break-all">রিপোর্ট নম্বর: ${platformEscape(id)}</p><p>${platformEscape(ACTION_LABELS[d.status])} • ${d.sourceType==='demo_seed'?'নমুনা রিপোর্ট':'নাগরিক রিপোর্ট'} • ${actionDate(d.createdAt)}</p><p>দায়িত্ব: ${platformEscape(a?.officer || a?.department || 'এখনও নথিভুক্ত নয়')} ${a?'('+platformEscape(a.officer?a.officerVerification:a.departmentVerification)+')':''}</p><p>লক্ষ্য: ${actionDate(a?.targetDate)}</p>${a?`<p>${platformEscape(a.actionDescription)}</p>`:''}<p>সমাধান যাচাই: ${platformEscape(d.resolution?.verificationStatus || 'প্রযোজ্য নয়')}</p>${d.resolution?.note?`<p>${platformEscape(d.resolution.note)}</p>`:''}<h5 class="font-bold">অগ্রগতি</h5>${d.progress.map(p=>`<p>${actionDate(p.createdAt)} — ${platformEscape(p.note)}</p>`).join('') || '<p>অগ্রগতির নতুন তথ্য নেই।</p>'}<h5 class="font-bold">ঘটনাক্রম</h5>${d.timeline.map(e=>`<p>${actionDate(e.createdAt)} • ${platformEscape(e.status?ACTION_LABELS[e.status]:(TIMELINE_LABELS[e.type]||e.type))} ${platformEscape(e.message||'')}</p>`).join('')}${['RESOLVED','CLOSED'].includes(d.status)?token?`<form onsubmit="submitCitizenFeedback(event)"><label>আপনার পর্যবেক্ষণ<select id="citizen-verdict" class="${inputClass}"><option value="APPEARS_RESOLVED">সমাধান হয়েছে বলে মনে হচ্ছে</option><option value="PERSISTS">সমস্যা রয়ে গেছে</option></select></label><label>মন্তব্য<textarea id="citizen-comment" maxlength="2000" class="${inputClass}"></textarea></label><button class="${buttonClass}">Feedback সংরক্ষণ করুন</button><p>অ্যাডমিন review করবেন; verified status নিজে পরিবর্তন হবে না।</p></form>`:'<p>Feedback দিতে এই ডিভাইসে সংরক্ষিত submission receipt প্রয়োজন।</p>':''}<p id="feedback-message" role="status"></p>`;
+    renderResolutionRating(id,d);
   }catch(error){document.getElementById('device-receipts').textContent=error.message;document.getElementById('public-tracking').textContent=error.message;}
 };
+function ratingSummaryText(rating){return rating.count?`★ ${rating.average}/৫ • ${rating.count}টি নাগরিক রেটিং`:'এখনও রেটিং নেই। প্রথম রেটিং দিন।';}
+function renderResolutionRating(id,data){
+  if(!data.rating?.available)return;
+  const section=document.createElement('section');section.className='border rounded-xl p-4 my-3 bg-teal-50';section.id='resolution-rating';
+  section.innerHTML=`<h4 class="font-bold">সমাধানের ছবি ও নাগরিক রেটিং</h4><img src="${platformEscape(data.resolution.afterPhotoUrl)}" alt="সমস্যা সমাধানের পরের ছবি" class="w-full max-h-80 object-contain rounded-lg my-3" loading="lazy"><p id="rating-summary" class="font-bold">${ratingSummaryText(data.rating)}</p><form id="resolution-rating-form"><fieldset class="my-3"><legend>সমাধানের মান কেমন? ১ = খুব খারাপ, ৫ = খুব ভালো</legend><div class="flex flex-wrap gap-3 my-2">${[1,2,3,4,5].map(score=>`<label class="cursor-pointer"><input type="radio" name="resolution-score" value="${score}" required aria-label="${score} তারকা"> <span class="text-amber-600">${'★'.repeat(score)}</span></label>`).join('')}</div></fieldset><button class="${buttonClass}">রেটিং দিন</button><p class="text-xs mt-2">এই ব্রাউজার থেকে আবার রেটিং দিলে আগেরটি আপডেট হবে। নাগরিক রেটিং অফিসিয়াল যাচাইয়ের অবস্থা বদলায় না।</p><p id="rating-message" role="status" aria-live="polite"></p></form>`;
+  document.getElementById('public-tracking').appendChild(section);
+  const form=section.querySelector('form');
+  form.onsubmit=e=>submitResolutionRating(e,id,data.resolution.afterPhotoUrl);
+  try{const saved=JSON.parse(localStorage.getItem('nagarbondhu-rating-'+id)||'null');if(saved?.photo===data.resolution.afterPhotoUrl && [1,2,3,4,5].includes(saved.score)){form.elements['resolution-score'].value=String(saved.score);section.querySelector('button').textContent='রেটিং আপডেট করুন';}}catch{}
+}
+async function submitResolutionRating(e,id,photo){
+  e.preventDefault();const form=e.target,button=form.querySelector('button'),message=form.querySelector('#rating-message');
+  if(button.disabled)return;button.disabled=true;message.textContent='রেটিং সংরক্ষণ হচ্ছে…';
+  try{
+    let voterToken=localStorage.getItem('nagarbondhu-rating-token');
+    if(!/^[a-f0-9]{64}$/.test(voterToken||'')){voterToken=Array.from(crypto.getRandomValues(new Uint8Array(32)),v=>v.toString(16).padStart(2,'0')).join('');localStorage.setItem('nagarbondhu-rating-token',voterToken);}
+    const score=Number(form.elements['resolution-score'].value);
+    const {data}=await platformApi('/reports/'+encodeURIComponent(id)+'/rating',{voterToken,score,afterPhotoUrl:photo});
+    form.closest('section').querySelector('#rating-summary').textContent=ratingSummaryText(data);message.textContent='আপনার রেটিং সংরক্ষিত হয়েছে।';button.textContent='রেটিং আপডেট করুন';
+    try{localStorage.setItem('nagarbondhu-rating-'+id,JSON.stringify({score,photo}));}catch{}
+  }catch(error){message.textContent=error.message;}finally{button.disabled=false;}
+}
 async function submitCitizenFeedback(e){e.preventDefault();const button=e.target.querySelector('button');button.disabled=true;try{await platformApi('/reports/'+encodeURIComponent(selectedReport.id)+'/feedback',{trackingToken:readReceiptTokens()[selectedReport.id],verdict:document.getElementById('citizen-verdict').value,comment:document.getElementById('citizen-comment').value});document.getElementById('feedback-message').textContent='Feedback সংরক্ষিত; অ্যাডমিন review বাকি।';}catch(error){document.getElementById('feedback-message').textContent=error.message;}finally{button.disabled=false;}}
 async function loadMapRecords(){const sequence=++mapRequestSequence;try{const result=await platformApi('/map/reports');if(sequence!==mapRequestSequence)return;mapRecords=result.markers;renderMapMarkers();}catch(error){document.getElementById('map-coverage').textContent=error.message+' আবার map tab খুলে চেষ্টা করুন।';}}
 function renderMapMarkers(){

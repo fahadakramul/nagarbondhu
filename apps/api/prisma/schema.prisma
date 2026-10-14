@@ -110,6 +110,7 @@ model Report {
   actionEvents ActionAuditEvent[]
   submissionReceipts SubmissionReceipt[]
   feedback CitizenFeedback[]
+  resolutionRatings ResolutionRating[]
   notices ReportNotice[]
 
   duplicatesAsOriginal  PossibleDuplicate[] @relation("ReportOriginal")
@@ -334,6 +335,20 @@ model CitizenFeedback {
   @@unique([reportId, receiptId])
   @@index([reviewStatus, createdAt])
   @@map("citizen_feedback")
+}
+
+model ResolutionRating {
+  id String @id
+  reportId String @map("report_id")
+  voterHash String @map("voter_hash")
+  afterPhotoUrl String @map("after_photo_url")
+  score Int
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  @@unique([reportId, voterHash])
+  @@index([reportId, afterPhotoUrl])
+  @@map("resolution_ratings")
 }
 
 model ReportNotice {

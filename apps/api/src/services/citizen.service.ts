@@ -6,6 +6,14 @@ import { publicText } from './privacy';
 
 export interface SubmissionReceipt { id:string; reportId:string; fingerprint:string; capabilityHash:string; locationConfirmed:boolean; locationSource:string; createdAt:string }
 export interface CitizenFeedback { id:string; reportId:string; receiptId:string; verdict:string; comment:string; reviewStatus:string; reviewedBy:string|null; reviewNote:string|null; createdAt:string; updatedAt:string }
+export interface ResolutionRating { id:string; reportId:string; voterHash:string; afterPhotoUrl:string; score:number; createdAt:string; updatedAt:string }
+export function resolutionRatingSummary(reportId:string) {
+  const photo=getPlan(reportId)?.afterPhotoUrl;
+  const ratings=Array.from(db.resolutionRatings.values()).filter(r=>r.reportId===reportId && r.afterPhotoUrl===photo);
+  const report=db.reports.get(reportId);
+  return {count:ratings.length,average:ratings.length?Math.round(ratings.reduce((sum,r)=>sum+r.score,0)/ratings.length*10)/10:null,
+    available:!!photo && !!report && ['RESOLVED','CLOSED'].includes(workflowStatus(report))};
+}
 export interface ReportNotice { id:string; reportId:string; message:string; createdBy:string; createdAt:string }
 export const hash = (value:string) => createHash('sha256').update(value).digest('hex');
 export function receiptFor(reportId:string, capability:string) {
@@ -23,6 +31,7 @@ export function publicTracking(reportId:string) {
   // Audit details, assignment notes, actor identities and internal admin notes are deliberately excluded.
   const timeline=Array.from(db.actionEvents.values()).filter(e=>e.reportId===reportId && ['PLAN_CONFIRMED','ASSIGNMENT_RECORDED','DUE_DATE_CHANGED','STATUS_CHANGED','RESOLUTION_SUBMITTED','RESOLUTION_VERIFIED','RESOLUTION_VERIFICATION_REJECTED','CITIZEN_FEEDBACK_REVIEWED','MISSION_CREATED','MISSION_UPDATED','CLUSTER_REVIEWED'].includes(e.type)).map(e=>({type:e.type,createdAt:e.createdAt,status:typeof e.details?.status==='string'?e.details.status:undefined,message:['REJECTED','ON_HOLD'].includes(String(e.details?.status))?publicText(e.note):undefined}));
   return {id:reportId,status:workflowStatus(report),sourceType:report.sourceType,createdAt:report.createdAt,updatedAt:report.updatedAt,
+    rating:resolutionRatingSummary(reportId),
     assignment:plan?{department:db.departments.get(plan.departmentId)?.displayName,departmentVerification:db.departments.get(plan.departmentId)?.verificationStatus,officer:db.officers.get(plan.officerId || '')?.displayName,officerVerification:db.officers.get(plan.officerId || '')?.verificationStatus,targetDate:plan.targetDate,actionDescription:publicText(plan.actionDescription)}:null,
     resolution:plan?{note:publicText(plan.resolutionNotes || ''),verificationStatus:plan.verificationStatus,verifiedAt:plan.verifiedAt,beforePhotoUrl:plan.beforePhotoUrl,afterPhotoUrl:plan.afterPhotoUrl}:null,
     progress,timeline:[{type:'REPORT_RECEIVED',createdAt:report.createdAt},...timeline,...progress.map(p=>({type:'PROGRESS_UPDATED',createdAt:p.createdAt})),...Array.from(db.notices.values()).filter(n=>n.reportId===reportId).map(n=>({type:'INFORMATION_REQUESTED',message:publicText(n.message),createdAt:n.createdAt}))].sort((a,b)=>a.createdAt.localeCompare(b.createdAt))};

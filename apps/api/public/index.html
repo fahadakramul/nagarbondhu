@@ -258,6 +258,7 @@
             <label class="block text-xs font-bold text-slate-700 mb-1">সমস্যার বিস্তারিত বর্ণনা * (বাংলা বা ইংরেজি)</label>
             <textarea id="form-description" rows="4" required minlength="5" maxlength="6000" class="w-full text-sm p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-civic-500 focus:outline-none" placeholder="যেমন: তালাইমারী শহীদ মিনারের সামনের রাস্তায় ড্রেন উপচে কোমর সমান নোংরা পানি জমে আছে, পথচারীরা চলাচল করতে পারছে না..."></textarea>
             <button type="button" onclick="previewPhotoCheck()" class="text-xs border border-teal-700 text-teal-800 rounded-lg px-3 py-2 mt-2">ছবি ও বিবরণ যাচাই করুন</button><p id="photo-check-message" class="text-xs mt-2" role="status" aria-live="polite"></p>
+            <div class="border border-teal-200 rounded-xl p-3 space-y-2 mt-2"><button id="voice-start" type="button" onclick="startVoiceComplaint()" class="bg-teal-700 text-white rounded-lg px-3 py-2 text-sm">🎤 বলে অভিযোগ করুন</button><button id="voice-stop" type="button" onclick="stopVoiceComplaint()" class="hidden bg-red-700 text-white rounded-lg px-3 py-2 text-sm">রেকর্ড বন্ধ করুন</button><p id="voice-message" class="text-xs" role="status" aria-live="polite">সর্বোচ্চ ৬০ সেকেন্ড। লেখা তৈরি হলে দেখে সম্পাদনা করুন।</p><audio id="voice-preview" class="hidden w-full" controls></audio><button id="voice-transcribe" type="button" onclick="sendVoiceComplaint()" class="hidden text-teal-800 border rounded-lg px-3 py-2 text-sm">আবার লেখা তৈরি করুন</button></div>
           </div>
 
           <!-- AI LIVE PREVIEW BUTTON -->

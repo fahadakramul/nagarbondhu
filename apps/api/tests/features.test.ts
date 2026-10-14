@@ -7,7 +7,7 @@ import { randomUUID } from 'crypto';
 import { hash } from '../src/services/citizen.service';
 import { deviceHash } from '../src/middleware/civicLimit';
 import { wardScorecard } from '../src/services/scorecard.service';
-import { checkPhoto, parseMedia } from '../src/services/media-ai.service';
+import { checkPhoto, parseMedia, transcribeAudio } from '../src/services/media-ai.service';
 import { CONFIG } from '../src/config';
 describe('Differentiating civic features',()=>{
   let snapshot:ReturnType<typeof db.snapshot>;
@@ -55,5 +55,13 @@ describe('Differentiating civic features',()=>{
       expect((await request(app).post('/api/v1/ai/check-photo').send({deviceId:randomUUID(),description:'ড্রেনে বর্জ্য জমেছে',imageUrl:'http://127.0.0.1/private'})).status).toBe(400);
       mock.mockRejectedValue(new Error('offline'));await expect(checkPhoto('ভিন্ন বর্ণনা আছে',image)).rejects.toMatchObject({statusCode:503});
     }finally{CONFIG.GEMINI_API_KEY=key;}
+  });
+  test('voice transcription is validated and raw audio is never stored',async()=>{
+    const old=CONFIG.GEMINI_API_KEY;CONFIG.GEMINI_API_KEY='test-only';
+    try{const mock=jest.spyOn(global,'fetch').mockResolvedValue({ok:true,json:async()=>({candidates:[{content:{parts:[{text:'{"transcript_bn":"রাস্তার পাশে ড্রেন বন্ধ"}'}]}}]})} as Response);
+      const before=db.snapshot();expect((await transcribeAudio(parseMedia('data:audio/webm;base64,AQIDBA==','audio'))).transcript_bn).toContain('ড্রেন');expect(db.snapshot()).toEqual(before);
+      mock.mockResolvedValue({ok:true,json:async()=>({candidates:[{content:{parts:[{text:'{"wrong":"data"}'}]}}]})} as Response);await expect(transcribeAudio(parseMedia('data:audio/mp4;base64,AQIDBA==','audio'))).rejects.toMatchObject({statusCode:503});
+      expect((await request(app).post('/api/v1/ai/transcribe').send({deviceId:randomUUID(),audioBase64:'data:text/plain;base64,AQID'})).status).toBe(400);
+    }finally{CONFIG.GEMINI_API_KEY=old;}
   });
 });

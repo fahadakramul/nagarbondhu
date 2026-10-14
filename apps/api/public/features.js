@@ -1,5 +1,29 @@
 // Public civic tools. Every number is derived from stored reports or a labelled live API.
 const bn=value=>Number(value).toLocaleString('bn-BD');
+let voiceRecorder=null,voiceStream=null,voiceTimer=null,voiceBlob=null,voiceUrl=null,voiceBusy=false;
+async function startVoiceComplaint(){
+  const message=document.getElementById('voice-message'),start=document.getElementById('voice-start');
+  if(voiceBusy||voiceRecorder?.state==='recording')return;
+  if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined'){message.textContent='এই ব্রাউজারে কণ্ঠ রেকর্ড করা যাচ্ছে না। লিখে অভিযোগ দিন।';return;}
+  start.disabled=true;message.textContent='মাইক্রোফোনের অনুমতি দিন…';
+  try{
+    voiceStream=await navigator.mediaDevices.getUserMedia({audio:true});
+    const mime=['audio/webm;codecs=opus','audio/mp4','audio/webm','audio/ogg;codecs=opus'].find(t=>MediaRecorder.isTypeSupported(t));
+    if(!mime)throw new Error('এই ব্রাউজারের অডিও বিন্যাস সমর্থিত নয়। লিখে অভিযোগ দিন।');
+    const recorder=new MediaRecorder(voiceStream,{mimeType:mime}),chunks=[];voiceRecorder=recorder;let bytes=0;
+    recorder.ondataavailable=e=>{if(e.data.size){chunks.push(e.data);bytes+=e.data.size;if(bytes>5*1024*1024&&recorder.state==='recording')recorder.stop();}};
+    recorder.onerror=()=>{message.textContent='রেকর্ডিং ব্যর্থ হয়েছে। আবার চেষ্টা করুন অথবা লিখুন।';stopVoiceComplaint();};
+    recorder.onstop=async()=>{clearInterval(voiceTimer);voiceStream?.getTracks().forEach(t=>t.stop());voiceStream=null;voiceRecorder=null;document.getElementById('voice-stop').classList.add('hidden');start.disabled=false;voiceBlob=new Blob(chunks,{type:recorder.mimeType});chunks.length=0;if(voiceUrl)URL.revokeObjectURL(voiceUrl);voiceUrl=URL.createObjectURL(voiceBlob);const preview=document.getElementById('voice-preview');preview.src=voiceUrl;preview.classList.remove('hidden');document.getElementById('voice-transcribe').classList.remove('hidden');await sendVoiceComplaint();};
+    const began=Date.now();recorder.start(1000);document.getElementById('voice-stop').classList.remove('hidden');message.textContent='রেকর্ড হচ্ছে: ০ / ৬০ সেকেন্ড';voiceTimer=setInterval(()=>{const seconds=Math.floor((Date.now()-began)/1000);message.textContent='রেকর্ড হচ্ছে: '+bn(seconds)+' / ৬০ সেকেন্ড';if(seconds>=60)stopVoiceComplaint();},250);
+  }catch(error){voiceStream?.getTracks().forEach(t=>t.stop());voiceStream=null;start.disabled=false;message.textContent=error.name==='NotAllowedError'?'মাইক্রোফোনের অনুমতি পাওয়া যায়নি। ব্রাউজারের অনুমতি বদলান অথবা লিখে অভিযোগ দিন।':error.message;}
+}
+function stopVoiceComplaint(){if(voiceRecorder?.state==='recording')voiceRecorder.stop();}
+async function sendVoiceComplaint(){
+  if(!voiceBlob||voiceBusy)return;const message=document.getElementById('voice-message'),retry=document.getElementById('voice-transcribe'),start=document.getElementById('voice-start'),description=document.getElementById('form-description'),before=description.value;
+  voiceBusy=true;retry.disabled=true;start.disabled=true;message.textContent='কণ্ঠ থেকে লেখা তৈরি হচ্ছে…';
+  try{if(voiceBlob.size>5*1024*1024)throw new Error('অডিও ৫ এমবির বেশি। ছোট করে আবার রেকর্ড করুন।');const {data}=await platformApi('/ai/transcribe',{deviceId:civicDevice(),audioBase64:await civicDataUrl(voiceBlob)});if(!data.transcript_bn.trim())throw new Error('স্পষ্ট বক্তব্য শোনা যায়নি। আবার রেকর্ড করুন।');if(description.value!==before)throw new Error('আপনি ইতিমধ্যে লেখা বদলেছেন। আবার লেখা তৈরি করতে চাপুন।');description.value=before.trim()?before+'\n'+data.transcript_bn:data.transcript_bn;description.dispatchEvent(new Event('input',{bubbles:true}));message.textContent='লেখা তৈরি হয়েছে। দেখে সম্পাদনা করুন, তারপর বিবরণ বিশ্লেষণ করুন।';voiceBlob=null;if(voiceUrl)URL.revokeObjectURL(voiceUrl);voiceUrl=null;document.getElementById('voice-preview').removeAttribute('src');document.getElementById('voice-preview').classList.add('hidden');retry.classList.add('hidden');}catch(error){message.textContent=error.message+' লিখেও রিপোর্ট দিতে পারেন।';}finally{voiceBusy=false;retry.disabled=false;start.disabled=false;}
+}
+window.addEventListener('pagehide',()=>{clearInterval(voiceTimer);voiceStream?.getTracks().forEach(t=>t.stop());if(voiceUrl)URL.revokeObjectURL(voiceUrl);voiceBlob=null;});
 function photoCheckLabel(data){return !data||data.unavailable?data?.message||'ছবি যাচাইয়ের তথ্য নেই':data.matchesDescription==='MATCH'?'✅ ছবি ও বিবরণ মিলছে':data.matchesDescription==='UNCLEAR'?'❔ ছবি স্পষ্ট নয়':'⚠️ ছবিতে আংশিক মিল বা অন্য সমস্যা দেখা যাচ্ছে: '+data.observedDetails_bn;}
 let photoCheckBusy=false;
 async function previewPhotoCheck(){if(photoCheckBusy)return;const box=document.getElementById('photo-check-message'),description=document.getElementById('form-description').value.trim();box.textContent='ছবি ও বিবরণ যাচাই হচ্ছে…';photoCheckBusy=true;try{const imageBase64=selectedImageDataUrl,imageUrl=document.getElementById('form-image')?.value.trim();if(!imageBase64&&!imageUrl)throw new Error('আগে ছবি নির্বাচন করুন।');const {data}=await platformApi('/ai/check-photo',{deviceId:civicDevice(),description,...(imageBase64?{imageBase64}:{imageUrl})});if(description!==document.getElementById('form-description').value.trim()||imageBase64!==selectedImageDataUrl){box.textContent='ছবি বা বিবরণ বদলেছে। আবার যাচাই করুন।';return;}box.textContent=photoCheckLabel(data)+' • প্রাথমিক AI পর্যবেক্ষণ';}catch(error){box.textContent=error.message+' যাচাই ছাড়াও রিপোর্ট জমা দিতে পারেন।';}finally{photoCheckBusy=false;}}

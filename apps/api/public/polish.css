@@ -1,0 +1,59 @@
+/* Small presentation layer shared by the existing public and planning screens. */
+body { line-height: 1.6; }
+main, .tab-content, main .grid > *, main .flex > * { min-width: 0; }
+main, footer, #report-modal { overflow-wrap: anywhere; }
+button, input, select, textarea { font: inherit; }
+button, select, input:not([type="checkbox"]):not([type="radio"]):not([type="file"]) { min-height: 44px; }
+button { white-space: normal; }
+input, select, textarea { max-width: 100%; min-width: 0; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, summary:focus-visible {
+  outline: 3px solid #0d9488; outline-offset: 3px;
+}
+header button:focus-visible { outline-color: #fbbf24; }
+#primary-navigation { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 6px; padding-bottom: 6px; }
+#primary-navigation .nav-tab { gap: 6px; text-align: left; }
+#navigation-toggle { display: none; }
+.feature-directory { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.feature-directory button {
+  display: flex; align-items: flex-start; gap: 10px; padding: 14px; text-align: left;
+  background: white; border: 1px solid #e2e8f0; border-radius: 12px;
+  color: #115e59; font-size: 14px; font-weight: 600;
+}
+.feature-directory button:hover { background: #f0fdfa; border-color: #0d9488; }
+.feature-directory i { margin-top: 5px; flex-shrink: 0; }
+.feature-directory small { display: block; margin-top: 3px; color: #475569; font-size: 12px; font-weight: 400; line-height: 1.5; }
+#section-home [id^="stat-"] { font-size: clamp(1.1rem, 3vw, 1.875rem); }
+#twin-controls label { display: flex; flex-direction: column; gap: 4px; max-width: 100%; }
+@media (max-width: 1023px) {
+  .feature-directory { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 639px) {
+  header > div { padding-top: 10px !important; padding-bottom: 10px !important; gap: 8px !important; }
+  header > div > div:first-child { gap: 8px; }
+  header > div > div:first-child > div:first-child { width: 32px; height: 32px; flex-shrink: 0; }
+  #role-toggle-btn { font-size: 12px; padding-left: 8px; padding-right: 8px; }
+  #role-toggle-btn > span:last-child { display: none; }
+  #navigation-toggle {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    width: 100%; padding: 10px 16px; color: #fff; font-size: 14px; font-weight: 600;
+  }
+  #navigation-current { color: #5eead4; font-size: 12px; }
+  #primary-navigation { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 60vh; overflow-y: auto; }
+  #primary-navigation[data-enhanced="true"]:not(.is-open) { display: none; }
+  #primary-navigation .nav-tab { padding: 10px; white-space: normal; }
+  main { padding-top: 16px !important; }
+  main .text-xs { font-size: 13px; line-height: 1.6; }
+  main input:not([type="checkbox"]):not([type="radio"]), main select, main textarea { font-size: 16px; }
+  .feature-directory { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .feature-directory button { padding: 12px; gap: 8px; }
+  #section-home > div:first-child { padding: 20px; }
+  #section-home > div:first-child h2 { font-size: 24px; }
+  #section-home > div:first-child button { flex: 1 1 100%; justify-content: center; }
+  #section-report > div { padding: 16px; }
+  #report-form .flex, #section-feed > .flex, #admin-action-dashboard > .flex { flex-wrap: wrap; }
+  #section-map select, #twin-controls select { width: 100%; }
+  .leaflet-bar a { width: 44px; height: 44px; line-height: 44px; }
+  #twin-controls label { width: 100%; }
+  #competition-workspace form > .grid, #planning-tools .grid, #action-dashboard-filters { grid-template-columns: minmax(0, 1fr); }
+  #operator-login-modal > div { max-height: 85dvh; overflow-y: auto; }
+}

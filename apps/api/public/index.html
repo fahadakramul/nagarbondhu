@@ -59,6 +59,7 @@
       font-family: 'Hind Siliguri', sans-serif;
     }
   </style>
+  <link rel="stylesheet" href="/polish.css">
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-bengali">
 
@@ -90,8 +91,12 @@
     </div>
 
     <!-- NAVIGATION TABS -->
-    <nav class="bg-slate-900 border-t border-slate-800">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto space-x-2 py-1.5 text-xs font-semibold no-scrollbar">
+    <nav class="bg-slate-900 border-t border-slate-800" aria-label="প্রধান নেভিগেশন">
+      <button type="button" id="navigation-toggle" aria-expanded="false" aria-controls="primary-navigation">
+        <span><i class="fa-solid fa-bars" aria-hidden="true"></i> মেনু · সব বিভাগ</span>
+        <span id="navigation-current">হোম</span>
+      </button>
+      <div id="primary-navigation" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-xs font-semibold">
         <button onclick="switchTab('home')" id="tab-home" class="nav-tab px-4 py-2 rounded-md text-teal-400 bg-slate-800 transition flex items-center gap-1.5">
           <i class="fa-solid fa-house"></i> হোম
         </button>
@@ -128,20 +133,38 @@
       <div class="bg-gradient-to-r from-civic-800 via-civic-700 to-teal-800 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
         <div class="max-w-3xl relative z-10 space-y-3">
           <h2 class="text-2xl sm:text-4xl font-extrabold leading-tight">
-            নাগরিক সমস্যা সমাধান ও কৃত্রিম বুদ্ধিমত্তা চালিত নগর পরিকল্পনা
+            আপনার রিপোর্ট, নগর পরিকল্পনার সহায়ক তথ্য
           </h2>
           <p class="text-sm sm:text-base text-teal-100 leading-relaxed">
-            রাজশাহী শহরের ভাঙা সড়ক, জলাবদ্ধতা, উন্মুক্ত বর্জ্য, নষ্ট ড্রেন ও সড়কবাতির অভিযোগ বাংলায় লিখুন। রিপোর্টের শ্রেণিবিন্যাস, ব্যাখ্যাসহ অগ্রাধিকার ও সম্ভাব্য মিল পর্যালোচনা করে সিদ্ধান্ত নিতে সহায়তা করে। জমা দেওয়ার আগে বিবরণ ও সমস্যার ধরন যাচাই করতে পারেন।
+            নগরবন্ধু AI রাজশাহীর নাগরিক সমস্যার রিপোর্ট, ম্যাপ ও ব্যাখ্যাসহ অগ্রাধিকার দিয়ে নগর পরিকল্পনায় সহায়তা করে। সমস্যা লিখুন, ম্যাপে স্থান নিশ্চিত করুন, তারপর রিপোর্ট জমা দিন।
           </p>
           <div class="pt-2 flex flex-wrap gap-3">
             <button onclick="switchTab('report')" class="bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold text-sm px-5 py-2.5 rounded-xl shadow-md transition flex items-center gap-2">
-              <i class="fa-solid fa-plus-circle"></i> অভিযোগ জমা দিন
+              <i class="fa-solid fa-plus-circle"></i> সমস্যা রিপোর্ট করুন
             </button>
             <button onclick="switchTab('map')" class="bg-teal-900/60 hover:bg-teal-900/90 text-white font-semibold text-sm px-5 py-2.5 rounded-xl border border-teal-400/30 transition flex items-center gap-2">
               <i class="fa-solid fa-map"></i> সমস্যার ম্যাপ দেখুন
             </button>
+            <button onclick="switchTab('dashboard')" class="bg-teal-900/60 hover:bg-teal-900/90 text-white font-semibold text-sm px-5 py-2.5 rounded-xl border border-teal-400/30 transition flex items-center gap-2">প্ল্যানিং ড্যাশবোর্ড</button>
           </div>
         </div>
+      </div>
+
+      <div aria-labelledby="directory-heading">
+        <h3 id="directory-heading" class="text-base font-bold text-slate-800 mb-3">সব বিভাগ ও পরিকল্পনার টুল</h3>
+        <div class="feature-directory">
+          <button type="button" onclick="switchTab('report')"><i class="fa-solid fa-bullhorn" aria-hidden="true"></i><span>সমস্যা রিপোর্ট<small>বিবরণ, ছবি ও স্থান</small></span></button>
+          <button type="button" onclick="switchTab('map')"><i class="fa-solid fa-map-location-dot" aria-hidden="true"></i><span>সমস্যার ম্যাপ<small>Urban Digital Twin Lite</small></span></button>
+          <button type="button" onclick="switchTab('feed')"><i class="fa-solid fa-list-check" aria-hidden="true"></i><span>রিপোর্ট তালিকা<small>রিপোর্ট ও অগ্রগতি খুঁজুন</small></span></button>
+          <button type="button" onclick="switchTab('dashboard')"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i><span>প্ল্যানিং ড্যাশবোর্ড<small>অগ্রাধিকার ও হটস্পট</small></span></button>
+          <button type="button" onclick="switchTab('scorecard')"><i class="fa-solid fa-table-cells" aria-hidden="true"></i><span>ওয়ার্ড স্কোরকার্ড<small>ওয়ার্ডভিত্তিক রিপোর্ট</small></span></button>
+          <button type="button" onclick="openPlanningModule('scenarios')"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i><span>বিকল্প পরিকল্পনা<small>What-If Urban Planner</small></span></button>
+          <button type="button" onclick="openPlanningModule('clusters')"><i class="fa-solid fa-diagram-project" aria-hidden="true"></i><span>সম্ভাব্য মূল কারণ<small>Root-Cause Cluster Intelligence</small></span></button>
+          <button type="button" onclick="openPlanningModule('coverage')"><i class="fa-solid fa-chart-column" aria-hidden="true"></i><span>রিপোর্টিং কভারেজ<small>Urban Voice &amp; Reporting Coverage</small></span></button>
+          <button type="button" onclick="openPlanningModule('missions')"><i class="fa-solid fa-route" aria-hidden="true"></i><span>ফিল্ড পরিদর্শন<small>Smart Field Mission Planner</small></span></button>
+          <button type="button" onclick="openTimelineMap()"><i class="fa-solid fa-clock" aria-hidden="true"></i><span>সময়ভিত্তিক ম্যাপ<small>আগের ও বর্তমান অবস্থা</small></span></button>
+        </div>
+        <p class="text-xs text-slate-500 mt-2">দায়িত্ব ব্যবস্থাপনা, রিপোর্টের সারাংশ ও Copilot ড্যাশবোর্ডে অ্যাডমিন লগইনের মাধ্যমে ব্যবহার করুন।</p>
       </div>
 
       <!-- REAL-TIME KPI STATS -->
@@ -623,5 +646,6 @@
   <script src="/platform.js"></script>
   <script src="/competition.js"></script>
   <script src="/features.js"></script>
+  <script src="/polish.js"></script>
 </body>
 </html>

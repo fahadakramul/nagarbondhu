@@ -34,7 +34,7 @@ describe('Administrator UI connected to the real API',()=>{
       if(options.body)call=call.send(JSON.parse(options.body));
       const response=await call;return {ok:response.status<400,status:response.status,json:async()=>response.body};
     };
-    context=dom.getInternalVMContext();for(const name of ['app','actions','platform','competition','features'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../public/'+name+'.js'),'utf8'),context);
+    context=dom.getInternalVMContext();for(const name of ['app','actions','platform','competition','features','polish'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../public/'+name+'.js'),'utf8'),context);
   });
   afterEach(async()=>{await new Promise(r=>setTimeout(r,40));dom?.window.close();CONFIG.NODE_ENV=oldMode;CONFIG.GEMINI_API_KEY=oldKey;db.restore(snapshot);});
   async function login(){
@@ -42,6 +42,30 @@ describe('Administrator UI connected to the real API',()=>{
     await window.activateOperatorSession({preventDefault(){},target:el('operator-email').closest('form')});
     await eventually(()=>!el('operator-login-modal').classList.contains('hidden')?false:run('!!authToken'));
   }
+  test('mobile menu exposes every section, closes on navigation and supports Escape',async()=>{
+    expect(el('primary-navigation').dataset.enhanced).toBe('true');
+    for(const tab of ['home','report','map','feed','dashboard','scorecard']){
+      el('navigation-toggle').click();expect(el('navigation-toggle').getAttribute('aria-expanded')).toBe('true');
+      run(`switchTab('${tab}')`);
+      expect(el('section-'+tab).classList.contains('hidden')).toBe(false);
+      expect(el('tab-'+tab).getAttribute('aria-current')).toBe('page');
+      expect(window.document.querySelectorAll('.nav-tab[aria-current]').length).toBe(1);
+      expect(el('navigation-toggle').getAttribute('aria-expanded')).toBe('false');
+    }
+    el('navigation-toggle').click();el('tab-home').dispatchEvent(new window.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+    expect(el('navigation-toggle').getAttribute('aria-expanded')).toBe('false');
+    expect(window.document.activeElement).toBe(el('navigation-toggle'));
+    await new Promise(r=>setTimeout(r,200));
+  });
+  test('homepage shortcuts load each existing planning module from the API',async()=>{
+    for(const module of ['scenarios','clusters','coverage','missions']){
+      window.openPlanningModule(module);
+      await eventually(()=>!!el('mvp-content'));
+      expect(run('currentTab')).toBe('dashboard');expect(run('mvpTab')).toBe(module);
+      const headings:any={scenarios:'What-If Urban Planner',clusters:'Root-Cause Cluster Intelligence',coverage:'Urban Voice',missions:'Smart Field Mission Planner'};
+      await eventually(()=>el('mvp-content')?.textContent.includes(headings[module]));
+    }
+  });
   test('public scorecard and ward navigation work with the full feature script, voice failure remains usable',async()=>{
     await window.loadScorecard();expect(el('scorecard-message').textContent).toContain('নাগরিক রিপোর্ট');expect(el('scorecard-cards').querySelectorAll('article').length).toBe(db.wards.size);
     el('scorecard-source').value='demo_seed';await window.loadScorecard();expect(el('scorecard-message').textContent).toContain('নমুনা');

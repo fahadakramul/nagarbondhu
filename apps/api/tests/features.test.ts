@@ -6,6 +6,7 @@ import { PriorityService } from '../src/services/priority.service';
 import { randomUUID } from 'crypto';
 import { hash } from '../src/services/citizen.service';
 import { deviceHash } from '../src/middleware/civicLimit';
+import { wardScorecard } from '../src/services/scorecard.service';
 describe('Differentiating civic features',()=>{
   let snapshot:ReturnType<typeof db.snapshot>;
   beforeEach(()=>{snapshot=db.snapshot();});afterEach(()=>{db.restore(snapshot);jest.restoreAllMocks();});
@@ -34,5 +35,14 @@ describe('Differentiating civic features',()=>{
     const result=await request(app).post(`/api/v1/reports/${id}/citizen-verification`).send({receiptToken:token,verdict:'NOT_FIXED',note:'সমস্যা এখনও রয়ে গেছে'});
     expect(result.body.data).toMatchObject({reopened:true,status:'UNDER_REVIEW'});expect(db.reports.get(id)!.reopenedCount).toBe(1);
     expect(db.statusHistories.at(-1)!.note).toContain('নাগরিক');
+  });
+  test('scorecard uses scoped stored data, missing dates never invent fast fixes, low samples have no grade',async()=>{
+    const empty=wardScorecard('citizen_report');expect(empty.every(w=>w.total===0&&w.grade===null)).toBe(true);
+    const base=db.reports.get('rep-001')!,wardId=base.wardId!;
+    for(let i=0;i<3;i++)db.createReport({...base,id:'scorecard-'+i,sourceType:'citizen_report',createdAt:'2026-10-01T00:00:00Z',resolvedAt:i<2?'2026-10-03T00:00:00Z':null,status:i<2?'RESOLVED':'SUBMITTED',actionStatus:i<2?'RESOLVED':'SUBMITTED'});
+    const row=wardScorecard('citizen_report').find(w=>w.wardId===wardId)!;expect(row.total).toBe(3);expect(row.resolved).toBe(2);expect(row.medianDaysToResolve).toBe(2);expect(row.grade).not.toBeNull();
+    expect(row.index).toBeCloseTo(Object.values(row.breakdown).reduce((s,v)=>s+v,0));
+    expect((await request(app).get('/api/v1/wards/scorecard?source=invalid')).status).toBe(400);
+    expect((await request(app).get('/api/v1/wards/scorecard?source=citizen_report')).body.data.find((w:any)=>w.wardId===wardId).total).toBe(3);
   });
 });

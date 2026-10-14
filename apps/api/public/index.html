@@ -107,6 +107,7 @@
         <button onclick="switchTab('dashboard')" id="tab-dashboard" class="nav-tab px-4 py-2 rounded-md text-slate-300 hover:text-white transition flex items-center gap-1.5">
           <i class="fa-solid fa-chart-pie"></i> প্ল্যানিং ড্যাশবোর্ড
         </button>
+        <button onclick="switchTab('scorecard')" id="tab-scorecard" class="nav-tab px-4 py-2 rounded-md text-slate-300 hover:text-white transition whitespace-nowrap">ওয়ার্ড স্কোরকার্ড</button>
       </div>
     </nav>
   </header>
@@ -116,6 +117,12 @@
 
     <!-- ==================== TAB 1: HOME ==================== -->
     <div id="app-demo-indicator" class="hidden bg-amber-50 border border-amber-200 text-amber-900 text-xs rounded-lg p-3 mb-4" role="status">আপনি নমুনা রিপোর্ট দেখছেন। নাগরিক রিপোর্ট দেখতে তথ্যের উৎস পরিবর্তন করুন।</div>
+    <section id="section-scorecard" class="tab-content hidden space-y-4">
+      <h2 class="font-bold text-xl text-teal-800">ওয়ার্ড স্কোরকার্ড</h2>
+      <div class="flex flex-wrap gap-3 text-sm"><label>তথ্যের উৎস<select id="scorecard-source" class="border rounded p-2 block" onchange="loadScorecard()"><option value="citizen_report">নাগরিক রিপোর্ট</option><option value="demo_seed">নমুনা রিপোর্ট</option><option value="all">সব — মিশ্র তথ্য</option></select></label><label>সমস্যার ধরন<select id="scorecard-category" class="border rounded p-2 block" onchange="loadScorecard()"><option value="">সব</option><option value="ROAD_DAMAGE">সড়ক ক্ষতি</option><option value="DRAINAGE">ড্রেনেজ</option><option value="WATERLOGGING">জলাবদ্ধতা</option><option value="WASTE">বর্জ্য</option><option value="FOOTPATH">ফুটপাথ</option><option value="STREETLIGHT">সড়কবাতি</option><option value="OTHER">অন্যান্য</option></select></label></div>
+      <p id="scorecard-message" class="text-xs" role="status"></p><div id="scorecard-cards" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
+      <p class="text-xs">এই স্কোর শুধু অ্যাপে আসা রিপোর্টের উপর ভিত্তি করে; এটি কোনো ব্যক্তির মূল্যায়ন নয়। তিনটির কম রিপোর্ট হলে গ্রেড দেওয়া হয় না।</p>
+    </section>
     <section id="section-home" class="tab-content space-y-6">
       <!-- HERO BANNER -->
       <div class="bg-gradient-to-r from-civic-800 via-civic-700 to-teal-800 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
@@ -139,7 +146,7 @@
 
       <!-- REAL-TIME KPI STATS -->
       <div class="flex flex-wrap items-center gap-3 text-xs">
-        <label>পরিসংখ্যান ও তালিকার উৎস<select id="stats-source" class="border rounded p-2 ml-2" onchange="feedOffset=0;loadData()"><option value="citizen_report">নাগরিক রিপোর্ট</option><option value="demo_seed">নমুনা রিপোর্ট</option></select></label>
+        <label>পরিসংখ্যান ও তালিকার উৎস<select id="stats-source" class="border rounded p-2 ml-2" onchange="feedOffset=0;loadData()"><option value="citizen_report">নাগরিক রিপোর্ট</option><option value="demo_seed">নমুনা রিপোর্ট</option><option value="all">সব — মিশ্র তথ্য</option></select></label>
         <button type="button" class="border rounded px-3 py-2" onclick="loadData()">তথ্য refresh / আবার চেষ্টা করুন</button>
         <p id="stats-message" role="status" class="w-full"></p>
       </div>
@@ -449,7 +456,7 @@
     </section>
 
     <!-- ==================== TAB 4: REPORTS FEED & DETAILS ==================== -->
-    <section id="section-feed" class="tab-content hidden space-y-4"><label class="block text-xs">তালিকার ডাটার উৎস<select id="feed-source" class="border rounded p-2 ml-2" onchange="document.getElementById('stats-source').value=this.value;feedOffset=0;loadData()"><option value="citizen_report">নাগরিক রিপোর্ট</option><option value="demo_seed">নমুনা রিপোর্ট</option></select></label>
+    <section id="section-feed" class="tab-content hidden space-y-4"><label class="block text-xs">তালিকার ডাটার উৎস<select id="feed-source" class="border rounded p-2 ml-2" onchange="document.getElementById('stats-source').value=this.value;feedOffset=0;loadData()"><option value="citizen_report">নাগরিক রিপোর্ট</option><option value="demo_seed">নমুনা রিপোর্ট</option><option value="all">সব — মিশ্র তথ্য</option></select></label>
       <div class="flex justify-between items-center">
         <div>
           <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -468,7 +475,7 @@
 
     <!-- ==================== TAB 5: URBAN PLANNING DASHBOARD ==================== -->
     <section id="section-dashboard" class="tab-content hidden space-y-6">
-      <div class="bg-white border rounded-xl p-3 text-xs space-y-2"><label>তথ্যের উৎস<select id="dashboard-source" class="border rounded p-2 ml-2" onchange="document.getElementById('stats-source').value=this.value;feedOffset=0;loadData()"><option value="citizen_report">নাগরিক রিপোর্ট</option><option value="demo_seed">নমুনা রিপোর্ট</option></select></label><button class="border rounded px-3 py-2" onclick="loadData()">আবার লোড করুন</button><p id="dashboard-data-message" role="status"></p><div id="dashboard-distributions" class="flex flex-wrap gap-4"></div></div>
+      <div class="bg-white border rounded-xl p-3 text-xs space-y-2"><label>তথ্যের উৎস<select id="dashboard-source" class="border rounded p-2 ml-2" onchange="document.getElementById('stats-source').value=this.value;feedOffset=0;loadData()"><option value="citizen_report">নাগরিক রিপোর্ট</option><option value="demo_seed">নমুনা রিপোর্ট</option><option value="all">সব — মিশ্র তথ্য</option></select></label><button class="border rounded px-3 py-2" onclick="loadData()">আবার লোড করুন</button><p id="dashboard-data-message" role="status"></p><div id="dashboard-distributions" class="flex flex-wrap gap-4"></div></div>
       <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-md">
         <span class="text-[11px] font-bold text-teal-400 uppercase tracking-widest">নাগরিক সমস্যার চিত্র</span>
         <h2 class="text-xl sm:text-2xl font-extrabold mt-1">রাজশাহী আরবান প্ল্যানিং সাপোর্ট ড্যাশবোর্ড</h2>

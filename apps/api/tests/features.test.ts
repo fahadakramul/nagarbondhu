@@ -69,6 +69,7 @@ describe('Differentiating civic features',()=>{
     const now=Date.now(),hour=Math.floor(now/3600000)*3600000;
     const hourly={time:Array.from({length:49},(_,i)=>new Date(hour+i*3600000+6*3600000).toISOString().slice(0,16)),precipitation:Array(49).fill(1),precipitation_probability:Array(49).fill(70)};
     expect(summarizeRain({hourly},now).next24hMm).toBe(24);
+    expect(summarizeRain({hourly:{...hourly,precipitation:[null,...hourly.precipitation.slice(1)],precipitation_probability:Array(49).fill(null)}},now)).toMatchObject({next24hMm:24,maxProbability:null,probabilityAvailableHours:0});
     jest.spyOn(global,'fetch').mockResolvedValue({ok:true,json:async()=>({hourly})} as Response);
     const priorities=JSON.stringify(db.snapshot().priorityAssessments);const data=await rainQueue('demo_seed');expect(data.alert).toBe(true);expect(data.reports.every(r=>r.sourceType==='demo_seed')).toBe(true);expect(data.reports.every(r=>r.rainBoost>0)).toBe(true);expect(JSON.stringify(db.snapshot().priorityAssessments)).toBe(priorities);
     expect(()=>summarizeRain({hourly:{...hourly,precipitation:[1]}})).toThrow();

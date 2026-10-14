@@ -15,7 +15,11 @@ async function startVoiceComplaint(){
     recorder.onerror=()=>{message.textContent='রেকর্ডিং ব্যর্থ হয়েছে। আবার চেষ্টা করুন অথবা লিখুন।';stopVoiceComplaint();};
     recorder.onstop=async()=>{clearInterval(voiceTimer);voiceStream?.getTracks().forEach(t=>t.stop());voiceStream=null;voiceRecorder=null;document.getElementById('voice-stop').classList.add('hidden');start.disabled=false;voiceBlob=new Blob(chunks,{type:recorder.mimeType});chunks.length=0;if(voiceUrl)URL.revokeObjectURL(voiceUrl);voiceUrl=URL.createObjectURL(voiceBlob);const preview=document.getElementById('voice-preview');preview.src=voiceUrl;preview.classList.remove('hidden');document.getElementById('voice-transcribe').classList.remove('hidden');await sendVoiceComplaint();};
     const began=Date.now();recorder.start(1000);document.getElementById('voice-stop').classList.remove('hidden');message.textContent='রেকর্ড হচ্ছে: ০ / ৬০ সেকেন্ড';voiceTimer=setInterval(()=>{const seconds=Math.floor((Date.now()-began)/1000);message.textContent='রেকর্ড হচ্ছে: '+bn(seconds)+' / ৬০ সেকেন্ড';if(seconds>=60)stopVoiceComplaint();},250);
-  }catch(error){voiceStream?.getTracks().forEach(t=>t.stop());voiceStream=null;start.disabled=false;message.textContent=error.name==='NotAllowedError'?'মাইক্রোফোনের অনুমতি পাওয়া যায়নি। ব্রাউজারের অনুমতি বদলান অথবা লিখে অভিযোগ দিন।':error.message;}
+  }catch(error){voiceStream?.getTracks().forEach(t=>t.stop());voiceStream=null;start.disabled=false;message.textContent=error.name==='NotAllowedError'
+    ? window.ReactNativeWebView
+      ? 'মাইক্রোফোনের অনুমতি পাওয়া যায়নি। ফোনের Settings → Apps → NagarBondhu AI → Permissions-এ Microphone চালু করুন। অপশন না থাকলে নতুন APK ইনস্টল করুন। লিখেও অভিযোগ দিতে পারেন।'
+      : 'মাইক্রোফোনের অনুমতি পাওয়া যায়নি। ব্রাউজারের site permissions-এ Microphone চালু করুন অথবা লিখে অভিযোগ দিন।'
+    : error.name==='NotReadableError'?'মাইক্রোফোন ব্যবহার করা যাচ্ছে না। অন্য অ্যাপের রেকর্ডিং বা কল বন্ধ করে আবার চেষ্টা করুন। লিখেও অভিযোগ দিতে পারেন।':error.message;}
 }
 function stopVoiceComplaint(){if(voiceRecorder?.state==='recording')voiceRecorder.stop();}
 async function sendVoiceComplaint(){

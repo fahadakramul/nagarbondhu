@@ -3,7 +3,7 @@
     "name": "NagarBondhu AI",
     "slug": "nagarbondhu-ai",
     "owner": "fahad_akramul",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -14,16 +14,20 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.nagarbondhu.ai"
+      "bundleIdentifier": "com.nagarbondhu.ai",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "নাগরিক সমস্যার বিবরণ কণ্ঠে রেকর্ড করতে মাইক্রোফোনের অনুমতি প্রয়োজন।"
+      }
     },
     "android": {
       "package": "com.nagarbondhu.ai",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0F766E"
       },
       "permissions": [
+        "RECORD_AUDIO",
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",

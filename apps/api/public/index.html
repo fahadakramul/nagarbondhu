@@ -130,27 +130,37 @@
     </section>
     <section id="section-home" class="tab-content space-y-6">
       <!-- HERO BANNER -->
-      <div class="bg-gradient-to-r from-civic-800 via-civic-700 to-teal-800 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
+      <div class="home-hero bg-gradient-to-r from-civic-800 via-civic-700 to-teal-800 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
+        <svg class="hero-city" viewBox="0 0 420 260" fill="none" aria-hidden="true" focusable="false">
+          <path d="M0 220H420M0 190H420M45 0V260M130 0V260M215 0V260M300 0V260M385 0V260" stroke="currentColor" stroke-opacity=".12"/>
+          <path d="M24 220V132H74V220M90 220V86H148V220M164 220V150H212V220M228 220V54H280V220M298 220V112H354V220M366 220V164H410V220" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".25" stroke-width="2"/>
+          <path d="M35 148H62M35 169H62M102 104H136M102 126H136M102 148H136M242 74H266M242 98H266M242 122H266M310 130H342M310 152H342" stroke="currentColor" stroke-opacity=".25" stroke-width="3"/>
+          <path d="M58 210L120 176L194 190L256 142L326 168L388 118" stroke="#5eead4" stroke-width="3" stroke-linecap="round"/>
+          <g fill="#5eead4"><circle cx="58" cy="210" r="5"/><circle cx="120" cy="176" r="5"/><circle cx="194" cy="190" r="5"/><circle cx="256" cy="142" r="5"/><circle cx="326" cy="168" r="5"/><circle cx="388" cy="118" r="5"/></g>
+        </svg>
         <div class="max-w-3xl relative z-10 space-y-3">
+          <p class="hero-eyebrow"><span aria-hidden="true"></span> NagarBondhu AI <span class="hero-city-label">রাজশাহী</span></p>
           <h2 class="text-2xl sm:text-4xl font-extrabold leading-tight">
-            আপনার রিপোর্ট, নগর পরিকল্পনার সহায়ক তথ্য
+            নাগরিক রিপোর্ট থেকে<br>নগর পরিকল্পনা
           </h2>
           <p class="text-sm sm:text-base text-teal-100 leading-relaxed">
-            নগরবন্ধু AI রাজশাহীর নাগরিক সমস্যার রিপোর্ট, ম্যাপ ও ব্যাখ্যাসহ অগ্রাধিকার দিয়ে নগর পরিকল্পনায় সহায়তা করে। সমস্যা লিখুন, ম্যাপে স্থান নিশ্চিত করুন, তারপর রিপোর্ট জমা দিন।
+            শহরের সমস্যা জানান। রিপোর্ট, ম্যাপ ও ব্যাখ্যাসহ অগ্রাধিকার দেখে পরিকল্পনার সিদ্ধান্ত নিন।
           </p>
-          <div class="pt-2 flex flex-wrap gap-3">
-            <button onclick="switchTab('report')" class="bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold text-sm px-5 py-2.5 rounded-xl shadow-md transition flex items-center gap-2">
+          <div class="hero-actions pt-2 flex flex-wrap gap-3">
+            <button onclick="switchTab('report')" class="hero-primary bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold text-sm px-5 py-2.5 rounded-xl shadow-md transition flex items-center gap-2">
               <i class="fa-solid fa-plus-circle"></i> সমস্যা রিপোর্ট করুন
             </button>
             <button onclick="switchTab('map')" class="bg-teal-900/60 hover:bg-teal-900/90 text-white font-semibold text-sm px-5 py-2.5 rounded-xl border border-teal-400/30 transition flex items-center gap-2">
-              <i class="fa-solid fa-map"></i> সমস্যার ম্যাপ দেখুন
+              <i class="fa-solid fa-map"></i> সমস্যার ম্যাপ
             </button>
-            <button onclick="switchTab('dashboard')" class="bg-teal-900/60 hover:bg-teal-900/90 text-white font-semibold text-sm px-5 py-2.5 rounded-xl border border-teal-400/30 transition flex items-center gap-2">প্ল্যানিং ড্যাশবোর্ড</button>
+            <button onclick="switchTab('dashboard')" class="bg-teal-900/60 hover:bg-teal-900/90 text-white font-semibold text-sm px-5 py-2.5 rounded-xl border border-teal-400/30 transition flex items-center gap-2"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i> প্ল্যানিং ড্যাশবোর্ড</button>
           </div>
+          <p class="hero-steps">বিবরণ লিখুন <span aria-hidden="true">→</span> স্থান নিশ্চিত করুন <span aria-hidden="true">→</span> রিপোর্ট জমা দিন</p>
         </div>
       </div>
 
-      <div aria-labelledby="directory-heading">
+      <div class="home-directory" aria-labelledby="directory-heading">
+        <p class="directory-eyebrow">রিপোর্ট · অনুসন্ধান · পরিকল্পনা</p>
         <h3 id="directory-heading" class="text-base font-bold text-slate-800 mb-3">সব বিভাগ ও পরিকল্পনার টুল</h3>
         <div class="feature-directory">
           <button type="button" onclick="switchTab('report')"><i class="fa-solid fa-bullhorn" aria-hidden="true"></i><span>সমস্যা রিপোর্ট<small>বিবরণ, ছবি ও স্থান</small></span></button>
@@ -168,7 +178,7 @@
       </div>
 
       <!-- REAL-TIME KPI STATS -->
-      <div class="flex flex-wrap items-center gap-3 text-xs">
+      <div class="home-data-controls flex flex-wrap items-center gap-3 text-xs">
         <label>পরিসংখ্যান ও তালিকার উৎস<select id="stats-source" class="border rounded p-2 ml-2" onchange="feedOffset=0;loadData()"><option value="citizen_report">নাগরিক রিপোর্ট</option><option value="demo_seed">নমুনা রিপোর্ট</option><option value="all">সব — মিশ্র তথ্য</option></select></label>
         <button type="button" class="border rounded px-3 py-2" onclick="loadData()">তথ্য refresh / আবার চেষ্টা করুন</button>
         <p id="stats-message" role="status" class="w-full"></p>

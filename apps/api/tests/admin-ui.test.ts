@@ -25,7 +25,7 @@ describe('Administrator UI connected to the real API',()=>{
     const html=fs.readFileSync(path.join(__dirname,'../public/index.html'),'utf8');
     dom=new JSDOM(html,{url:'http://localhost/',runScripts:'outside-only',pretendToBeVisual:true});window=dom.window;
     await new Promise<void>(resolve=>window.document.addEventListener('DOMContentLoaded',()=>resolve(),{once:true}));
-    window.AbortSignal=AbortSignal;window.alert=jest.fn();window.confirm=jest.fn(()=>{throw new Error('Native confirmations are unavailable in this WebView');});window.prompt=jest.fn(()=>{throw new Error('Native prompts are unavailable in this WebView');});
+    window.AbortSignal=AbortSignal;window.scrollTo=jest.fn();window.alert=jest.fn();window.confirm=jest.fn(()=>{throw new Error('Native confirmations are unavailable in this WebView');});window.prompt=jest.fn(()=>{throw new Error('Native prompts are unavailable in this WebView');});
     window.HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','');};
     window.HTMLDialogElement.prototype.close=function(){this.removeAttribute('open');};
     window.fetch=async(url:string,options:any={})=>{
@@ -55,6 +55,7 @@ describe('Administrator UI connected to the real API',()=>{
     el('navigation-toggle').click();el('tab-home').dispatchEvent(new window.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
     expect(el('navigation-toggle').getAttribute('aria-expanded')).toBe('false');
     expect(window.document.activeElement).toBe(el('navigation-toggle'));
+    expect(window.scrollTo).toHaveBeenCalledWith(0,0);
     await new Promise(r=>setTimeout(r,200));
   });
   test('homepage shortcuts load each existing planning module from the API',async()=>{
@@ -65,6 +66,19 @@ describe('Administrator UI connected to the real API',()=>{
       const headings:any={scenarios:'What-If Urban Planner',clusters:'Root-Cause Cluster Intelligence',coverage:'Urban Voice',missions:'Smart Field Mission Planner'};
       await eventually(()=>el('mvp-content')?.textContent.includes(headings[module]));
     }
+  });
+  test('denied microphone permission gives app-specific recovery and preserves the complaint',async()=>{
+    window.ReactNativeWebView={};window.MediaRecorder=function(){};
+    Object.defineProperty(window.navigator,'mediaDevices',{value:{getUserMedia:jest.fn().mockRejectedValue(new window.DOMException('Denied','NotAllowedError'))},configurable:true});
+    el('form-description').value='Keep my existing complaint while microphone access is denied.';
+    await window.startVoiceComplaint();
+    expect(el('voice-message').textContent).toContain('Settings → Apps');
+    expect(el('voice-message').textContent).toContain('নতুন APK');
+    expect(el('form-description').value).toContain('Keep my existing complaint');
+    expect(el('voice-start').disabled).toBe(false);
+    expect(el('voice-stop').classList.contains('hidden')).toBe(true);
+    delete window.ReactNativeWebView;await window.startVoiceComplaint();
+    expect(el('voice-message').textContent).toContain('site permissions');
   });
   test('public scorecard and ward navigation work with the full feature script, voice failure remains usable',async()=>{
     await window.loadScorecard();expect(el('scorecard-message').textContent).toContain('নাগরিক রিপোর্ট');expect(el('scorecard-cards').querySelectorAll('article').length).toBe(db.wards.size);

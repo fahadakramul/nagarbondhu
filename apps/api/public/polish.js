@@ -33,6 +33,7 @@ primaryNavigation.addEventListener('click', event => {
 
 const polishSwitchTab = switchTab;
 switchTab = function(tab) {
+  const changedSection = currentTab !== tab;
   polishSwitchTab(tab);
   primaryNavigation.querySelectorAll('.nav-tab').forEach(button => {
     if (button.id === 'tab-' + tab) button.setAttribute('aria-current', 'page');
@@ -41,6 +42,7 @@ switchTab = function(tab) {
   const active = document.getElementById('tab-' + tab);
   if (active) document.getElementById('navigation-current').textContent = active.textContent.trim();
   closeNavigation();
+  if (changedSection) window.scrollTo(0, 0);
 };
 document.getElementById('tab-home').setAttribute('aria-current', 'page');
 primaryNavigation.dataset.enhanced = 'true';

@@ -16,12 +16,33 @@ header button:focus-visible { outline-color: #fbbf24; }
 .feature-directory { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
 .feature-directory button {
   display: flex; align-items: flex-start; gap: 10px; padding: 14px; text-align: left;
-  background: white; border: 1px solid #e2e8f0; border-radius: 12px;
+  background: white; border: 1px solid #e2e8f0; border-radius: 14px;
   color: #115e59; font-size: 14px; font-weight: 600;
 }
 .feature-directory button:hover { background: #f0fdfa; border-color: #0d9488; }
-.feature-directory i { margin-top: 5px; flex-shrink: 0; }
+.feature-directory i {
+  display: flex; align-items: center; justify-content: center; width: 34px; height: 34px;
+  border-radius: 10px; background: #e6f5f2; color: #0f766e; font-size: 15px; flex-shrink: 0;
+}
+.feature-directory button:nth-child(5n+2) i { background: #eaf2fc; color: #2563a6; }
+.feature-directory button:nth-child(5n+3) i { background: #fef3dc; color: #946016; }
+.feature-directory button:nth-child(5n+4) i { background: #f0edfb; color: #6d54a2; }
+.feature-directory button:nth-child(5n) i { background: #edf5e9; color: #48703b; }
 .feature-directory small { display: block; margin-top: 3px; color: #475569; font-size: 12px; font-weight: 400; line-height: 1.5; }
+#section-home .home-hero { background: linear-gradient(120deg, #134e4a, #0f766e); box-shadow: 0 8px 24px #134e4a18; }
+.home-hero > div { max-width: 70%; }
+#section-home .home-hero > div > * + * { margin-top: 8px; }
+.hero-city { position: absolute; right: -20px; bottom: -8px; width: 38%; color: #ccfbf1; pointer-events: none; }
+.hero-eyebrow { display: flex; align-items: center; gap: 8px; font-size: 12px; font-family: 'Inter', 'Hind Siliguri', sans-serif; color: #ccfbf1; }
+.hero-eyebrow > span:first-child { width: 7px; height: 7px; border-radius: 50%; background: #99f6e4; }
+.hero-city-label { border-left: 1px solid #ffffff45; padding-left: 8px; }
+.hero-actions button { min-height: 46px; }
+.hero-primary { background: #fbbf24; box-shadow: none; }
+.hero-steps { font-size: 12px; color: #ccfbf1; padding-top: 4px; }
+.hero-steps span { padding: 0 5px; opacity: .65; }
+.directory-eyebrow { color: #0f766e; font-size: 12px; font-weight: 600; margin-bottom: 3px; }
+.home-data-controls { padding: 14px 16px; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; }
+.home-data-controls #stats-message:empty { display: none; }
 #section-home [id^="stat-"] { font-size: clamp(1.1rem, 3vw, 1.875rem); }
 #twin-controls label { display: flex; flex-direction: column; gap: 4px; max-width: 100%; }
 @media (max-width: 1023px) {
@@ -45,10 +66,18 @@ header button:focus-visible { outline-color: #fbbf24; }
   main .text-xs { font-size: 13px; line-height: 1.6; }
   main input:not([type="checkbox"]):not([type="radio"]), main select, main textarea { font-size: 16px; }
   .feature-directory { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
-  .feature-directory button { padding: 12px; gap: 8px; }
-  #section-home > div:first-child { padding: 20px; }
-  #section-home > div:first-child h2 { font-size: 24px; }
-  #section-home > div:first-child button { flex: 1 1 100%; justify-content: center; }
+  .feature-directory button { padding: 12px; gap: 8px; flex-direction: column; }
+  .feature-directory small { font-size: 11px; }
+  .home-hero { padding: 22px 20px !important; }
+  .home-hero > div { max-width: 100%; }
+  .home-hero h2 { font-size: 27px; line-height: 1.35; }
+  .home-hero > div > p:not(.hero-eyebrow):not(.hero-steps) { font-size: 14px; line-height: 1.65; }
+  .hero-city { width: 70%; opacity: .2; right: -60px; }
+  .home-hero .hero-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .hero-actions button { padding: 10px 8px; justify-content: center; font-size: 13px; gap: 6px; }
+  .hero-actions .hero-primary { grid-column: 1 / -1; }
+  .hero-steps { font-size: 11px; line-height: 1.7; }
+  .hero-steps span { padding: 0 2px; }
   #section-report > div { padding: 16px; }
   #report-form .flex, #section-feed > .flex, #admin-action-dashboard > .flex { flex-wrap: wrap; }
   #section-map select, #twin-controls select { width: 100%; }

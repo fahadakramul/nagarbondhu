@@ -13,6 +13,7 @@
         "EXPO_PUBLIC_APP_SERVER_URL": "https://nagarbondhu-api.onrender.com"
       },
       "android": {
+        "image": "ubuntu-22.04-jdk-17-ndk-r26b",
         "buildType": "apk"
       }
     },
@@ -21,6 +22,7 @@
         "EXPO_PUBLIC_APP_SERVER_URL": "https://nagarbondhu-api.onrender.com"
       },
       "android": {
+        "image": "ubuntu-22.04-jdk-17-ndk-r26b",
         "buildType": "apk"
       }
     }

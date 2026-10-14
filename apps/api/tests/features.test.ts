@@ -9,6 +9,7 @@ import { deviceHash } from '../src/middleware/civicLimit';
 import { wardScorecard } from '../src/services/scorecard.service';
 import { checkPhoto, parseMedia, transcribeAudio } from '../src/services/media-ai.service';
 import { CONFIG } from '../src/config';
+import { summarizeRain, rainQueue } from '../src/services/rain.service';
 describe('Differentiating civic features',()=>{
   let snapshot:ReturnType<typeof db.snapshot>;
   beforeEach(()=>{snapshot=db.snapshot();});afterEach(()=>{db.restore(snapshot);jest.restoreAllMocks();});
@@ -63,5 +64,13 @@ describe('Differentiating civic features',()=>{
       mock.mockResolvedValue({ok:true,json:async()=>({candidates:[{content:{parts:[{text:'{"wrong":"data"}'}]}}]})} as Response);await expect(transcribeAudio(parseMedia('data:audio/mp4;base64,AQIDBA==','audio'))).rejects.toMatchObject({statusCode:503});
       expect((await request(app).post('/api/v1/ai/transcribe').send({deviceId:randomUUID(),audioBase64:'data:text/plain;base64,AQID'})).status).toBe(400);
     }finally{CONFIG.GEMINI_API_KEY=old;}
+  });
+  test('rain calculations select next 24 Dhaka hours and boosts never change stored priority',async()=>{
+    const now=Date.now(),hour=Math.floor(now/3600000)*3600000;
+    const hourly={time:Array.from({length:49},(_,i)=>new Date(hour+i*3600000+6*3600000).toISOString().slice(0,16)),precipitation:Array(49).fill(1),precipitation_probability:Array(49).fill(70)};
+    expect(summarizeRain({hourly},now).next24hMm).toBe(24);
+    jest.spyOn(global,'fetch').mockResolvedValue({ok:true,json:async()=>({hourly})} as Response);
+    const priorities=JSON.stringify(db.snapshot().priorityAssessments);const data=await rainQueue('demo_seed');expect(data.alert).toBe(true);expect(data.reports.every(r=>r.sourceType==='demo_seed')).toBe(true);expect(data.reports.every(r=>r.rainBoost>0)).toBe(true);expect(JSON.stringify(db.snapshot().priorityAssessments)).toBe(priorities);
+    expect(()=>summarizeRain({hourly:{...hourly,precipitation:[1]}})).toThrow();
   });
 });

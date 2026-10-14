@@ -16,6 +16,8 @@ services:
         generateValue: true
       - key: GEMINI_MODEL
         value: gemini-3.5-flash-lite
+      - key: RAIN_ALERT_MM
+        value: "20"
       - key: GEMINI_API_KEY
         sync: false
       - key: OPERATOR_EMAIL

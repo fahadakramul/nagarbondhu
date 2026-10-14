@@ -97,6 +97,7 @@ model Report {
   actionStatus ActionStatus?  @map("action_status")
   sourceType   String         @default("citizen_report") @map("source_type")
   nearbySensitive Json? @map("nearby_sensitive")
+  photoCheck Json? @map("photo_check")
   affirmations Json?
   citizenVerification Json? @map("citizen_verification")
   reopenedCount Int @default(0) @map("reopened_count")

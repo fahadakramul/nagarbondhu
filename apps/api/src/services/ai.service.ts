@@ -141,7 +141,7 @@ Complaint Text:
 
     const response = await fetch(url, {
       method: 'POST',
-      signal: AbortSignal.timeout(25000),
+      signal: AbortSignal.timeout(10000),
       headers: {
         'Content-Type': 'application/json',
         'x-goog-api-key': apiKey,

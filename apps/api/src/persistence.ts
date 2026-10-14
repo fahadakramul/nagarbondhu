@@ -19,7 +19,7 @@ const tableMap: Record<string, string> = {
   clusterReviews: 'clusterReview', fieldMissions: 'fieldMission',
 };
 function rowData(name: string, row: any) {
-  if(name==='reports')return {...fields(row, ['id','reporterId','title','description','category','userCategory','latitude','longitude','addressLabel','wardId','imageUrl','status','actionStatus','sourceType','createdAt','updatedAt','resolvedAt']),reopenedCount:row.reopenedCount||0,...Object.fromEntries(['nearbySensitive','affirmations','citizenVerification'].filter(k=>row[k]).map(k=>[k,row[k]]))};
+  if(name==='reports')return {...fields(row, ['id','reporterId','title','description','category','userCategory','latitude','longitude','addressLabel','wardId','imageUrl','status','actionStatus','sourceType','createdAt','updatedAt','resolvedAt']),reopenedCount:row.reopenedCount||0,...Object.fromEntries(['nearbySensitive','affirmations','citizenVerification','photoCheck'].filter(k=>row[k]).map(k=>[k,row[k]]))};
   if (name === 'aiAnalyses') return { ...fields(row, ['id','reportId','provider','modelName','summary','severity','confidence','reasons','createdAt']), suggestedCategory: row.suggestedCategory || row.category, missingInformation: row.missing_information || [] };
   if (name === 'possibleDuplicates') return fields(row, ['id','reportId','candidateReportId','similarityScore','matchingReasons','reviewStatus','reviewedBy','reviewedAt','createdAt']);
   if (name === 'statusHistories') return { ...row, changedBy: db.users.has(row.changedBy) ? row.changedBy : null, changedByLabel: row.changedBy };

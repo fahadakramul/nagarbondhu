@@ -7,6 +7,8 @@ import { randomUUID } from 'crypto';
 import { hash } from '../src/services/citizen.service';
 import { deviceHash } from '../src/middleware/civicLimit';
 import { wardScorecard } from '../src/services/scorecard.service';
+import { checkPhoto, parseMedia } from '../src/services/media-ai.service';
+import { CONFIG } from '../src/config';
 describe('Differentiating civic features',()=>{
   let snapshot:ReturnType<typeof db.snapshot>;
   beforeEach(()=>{snapshot=db.snapshot();});afterEach(()=>{db.restore(snapshot);jest.restoreAllMocks();});
@@ -44,5 +46,14 @@ describe('Differentiating civic features',()=>{
     expect(row.index).toBeCloseTo(Object.values(row.breakdown).reduce((s,v)=>s+v,0));
     expect((await request(app).get('/api/v1/wards/scorecard?source=invalid')).status).toBe(400);
     expect((await request(app).get('/api/v1/wards/scorecard?source=citizen_report')).body.data.find((w:any)=>w.wardId===wardId).total).toBe(3);
+  });
+  test('photo check validates provider output, caches real results, rejects remote URLs and keeps errors honest',async()=>{
+    const key=CONFIG.GEMINI_API_KEY;CONFIG.GEMINI_API_KEY='test-only';
+    try{const data={photoShowsIssue:true,observedCategory:'DRAINAGE',matchesDescription:'MATCH',observedDetails_bn:'ড্রেনে বর্জ্য জমে আছে',confidence:0.8};
+      const mock=jest.spyOn(global,'fetch').mockResolvedValue({ok:true,json:async()=>({candidates:[{content:{parts:[{text:JSON.stringify(data)}]}}]})} as Response);
+      const image=parseMedia('data:image/png;base64,iVBORw0KGgo=','image');expect((await checkPhoto('ড্রেনে বর্জ্য জমেছে',image)).matchesDescription).toBe('MATCH');await checkPhoto('ড্রেনে বর্জ্য জমেছে',image);expect(mock).toHaveBeenCalledTimes(1);
+      expect((await request(app).post('/api/v1/ai/check-photo').send({deviceId:randomUUID(),description:'ড্রেনে বর্জ্য জমেছে',imageUrl:'http://127.0.0.1/private'})).status).toBe(400);
+      mock.mockRejectedValue(new Error('offline'));await expect(checkPhoto('ভিন্ন বর্ণনা আছে',image)).rejects.toMatchObject({statusCode:503});
+    }finally{CONFIG.GEMINI_API_KEY=key;}
   });
 });

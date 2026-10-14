@@ -18,6 +18,7 @@ import { deviceHash } from '../middleware/civicLimit';
 import { workflowStatus } from '../services/action.service';
 import { publicText } from '../services/privacy';
 import { nearbySensitive } from '../services/nearby.service';
+import { checkPhoto, uploadedPhoto } from '../services/media-ai.service';
 const router = Router();
 const publicReport = (report: Report) => ({ ...report, actionStatus:workflowStatus(report), reporterId: undefined, reporterName: undefined,
   ...citizenSummary(report),
@@ -164,6 +165,10 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
 
     db.createReport(newReport);
     if(process.env.NODE_ENV!=='test')newReport.nearbySensitive=await nearbySensitive(input.latitude,input.longitude);
+    if(input.imageUrl && process.env.NODE_ENV!=='test'){
+      try{newReport.photoCheck={...await checkPhoto(input.description,await uploadedPhoto(input.imageUrl)),checkedAt:new Date().toISOString()};}
+      catch{newReport.photoCheck={unavailable:true,message:'ছবি যাচাই করা যায়নি; রিপোর্ট গ্রহণ হয়েছে।',checkedAt:new Date().toISOString()};}
+    }
 
     // 3. Save AI Analysis Record
     const aiRecord: AiAnalysisRecord = {

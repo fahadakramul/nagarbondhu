@@ -7,9 +7,12 @@ import { getReport, getPlan, workflowStatus, transition, fail, photoSchema } fro
 import { receiptFor } from '../services/citizen.service';
 import { randomUUID } from 'crypto';
 import { wardScorecard } from '../services/scorecard.service';
+import { checkPhoto, parseMedia, uploadedPhoto } from '../services/media-ai.service';
 import { nearbySensitive, emptyNearby } from '../services/nearby.service';
 import { PriorityService } from '../services/priority.service';
 const router=Router();
+router.get('/nearby',civicLimit,async(req,res,next)=>{try{const q=z.object({latitude:z.coerce.number().min(20).max(28),longitude:z.coerce.number().min(85).max(95)}).strict().parse(req.query);res.json({success:true,data:await nearbySensitive(q.latitude,q.longitude)});}catch(e){next(e);}});
+router.post('/ai/check-photo',civicLimit,async(req,res,next)=>{try{const q=z.object({deviceId:z.string().uuid(),description:z.string().trim().min(5).max(6000),imageBase64:z.string().max(5600000).optional(),imageUrl:z.string().max(2000).optional()}).strict().refine(q=>!!q.imageBase64!==!!q.imageUrl,'একটি ছবি দিন।').parse(req.body);const media=q.imageBase64?parseMedia(q.imageBase64,'image'):await uploadedPhoto(q.imageUrl!);res.json({success:true,data:await checkPhoto(q.description,media),provider:'Google Gemini'});}catch(e){next(e);}});
 router.get('/wards/scorecard',(req,res,next)=>{try{const q=z.object({source:z.enum(['all','demo_seed','citizen_report']).default('citizen_report'),category:z.enum(['ROAD_DAMAGE','WATERLOGGING','DRAINAGE','WASTE','FOOTPATH','STREETLIGHT','OTHER']).optional()}).strict().parse(req.query);res.json({success:true,data:wardScorecard(q.source,q.category),source:q.source,unknownWardCount:Array.from(db.reports.values()).filter(r=>!r.wardId&&!getPlan(r.id)?.wardId&&(q.source==='all'||r.sourceType===q.source)&&(!q.category||r.category===q.category)).length});}catch(e){next(e);}});
 router.post('/reports/:id/affirm',civicLimit,optionalAuthenticate,(req,res,next)=>{
   try{

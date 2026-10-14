@@ -7,9 +7,10 @@ import { publicTracking, receiptFor, hash, resolutionRatingSummary } from '../se
 import { analytics, csvExport } from '../services/analytics.service';
 import { planningInterpretation } from '../services/planning-ai.service';
 import { event, fail, getReport, getPlan, workflowStatus, transition } from '../services/action.service';
+import { civicLimit } from '../middleware/civicLimit';
 
 const router=Router();
-router.post('/reports/:id/rating',(req,res,next)=>{
+router.post('/reports/:id/rating',civicLimit,(req,res,next)=>{
   try {
     const input=z.object({voterToken:z.string().regex(/^[a-f0-9]{64}$/),score:z.number().int().min(1).max(5),afterPhotoUrl:z.string().max(2000)}).strict().parse(req.body);
     getReport(req.params.id);

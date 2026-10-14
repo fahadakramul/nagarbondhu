@@ -97,6 +97,9 @@ model Report {
   actionStatus ActionStatus?  @map("action_status")
   sourceType   String         @default("citizen_report") @map("source_type")
   nearbySensitive Json? @map("nearby_sensitive")
+  affirmations Json?
+  citizenVerification Json? @map("citizen_verification")
+  reopenedCount Int @default(0) @map("reopened_count")
   createdAt    DateTime       @default(now()) @map("created_at")
   updatedAt    DateTime       @updatedAt @map("updated_at")
   resolvedAt   DateTime?      @map("resolved_at")
@@ -311,6 +314,7 @@ model SubmissionReceipt {
   reportId String @map("report_id")
   fingerprint String
   capabilityHash String @map("capability_hash")
+  deviceHash String? @map("device_hash")
   locationConfirmed Boolean @default(false) @map("location_confirmed")
   locationSource String @map("location_source")
   createdAt DateTime @default(now()) @map("created_at")

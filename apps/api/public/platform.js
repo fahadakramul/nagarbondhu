@@ -57,7 +57,7 @@ async function handleFormSubmit(event){
   platformSubmitBusy=true;const button=document.getElementById('btn-submit-report');button.disabled=true;button.textContent='যাচাই ও সংরক্ষণ হচ্ছে…';
   try{
     const pin=pickerMarker.getLatLng();const ward=document.getElementById('form-ward').value;
-    const base={title:document.getElementById('form-title').value.trim(),description:document.getElementById('form-description').value.trim(),userCategory:userOverrideCategory || undefined,latitude:pin.lat,longitude:pin.lng,addressLabel:document.getElementById('form-address').value.trim(),wardId:ward?'ward-'+ward:undefined,locationConfirmed:true,locationSource:platformLocationSource};
+    const base={deviceId:typeof civicDevice==='function'?civicDevice():undefined,title:document.getElementById('form-title').value.trim(),description:document.getElementById('form-description').value.trim(),userCategory:userOverrideCategory || undefined,latitude:pin.lat,longitude:pin.lng,addressLabel:document.getElementById('form-address').value.trim(),wardId:ward?'ward-'+ward:undefined,locationConfirmed:true,locationSource:platformLocationSource};
     const signature=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify({...base,image:selectedImageDataUrl || document.getElementById('form-image')?.value || ''}))))).map(b=>b.toString(16).padStart(2,'0')).join('');
     let pending;try{pending=JSON.parse(sessionStorage.getItem('nagarbondhu-pending') || 'null');}catch{}
     if(!pending || pending.signature!==signature){

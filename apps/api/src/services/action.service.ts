@@ -94,6 +94,7 @@ export function transition(reportId: string, body: unknown, actorId: string) {
   }
   const status = ['SUBMITTED','IN_PROGRESS','RESOLVED','REJECTED'].includes(input.status) ? input.status as Report['status'] : input.status === 'CLOSED' ? 'RESOLVED' : 'UNDER_REVIEW';
   db.updateReport(reportId, { actionStatus: input.status, status, resolvedAt: input.status === 'RESOLVED' || input.status === 'CLOSED' ? (report.resolvedAt || now) : null });
+  if(input.status==='RESOLVED')db.updateReport(reportId,{citizenVerification:{fixedVotes:0,notFixedVotes:0,reporterVerdict:null,lastAt:null,items:[]}});
   if(report.sourceType==='citizen_report') PriorityService.assessReportPriority(reportId);
   db.addStatusHistory({ id: randomUUID(), reportId, previousStatus: report.status, newStatus: status, changedBy: actorId, note: `${current} → ${input.status}: ${input.note}`, createdAt: now });
   event(reportId, actorId, input.status === 'RESOLVED' ? 'RESOLUTION_SUBMITTED' : 'STATUS_CHANGED', input.note, { previousStatus: current, status: input.status });

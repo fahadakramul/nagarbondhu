@@ -73,7 +73,9 @@ export function derivePriority(reportId:string, stored:PriorityAssessmentRecord 
     const isCritical = options?.isCriticalSafety ?? (severity >= 4 && hasSafetyKeywords);
     const corroborating = new Set(db.findDuplicatesForReport(reportId).filter(d=>d.reviewStatus==='CONFIRMED_DUPLICATE').map(d=>d.reportId===reportId?d.candidateReportId:d.reportId)).size;
     const recurrence = options?.recurrence ?? 0;
-    const impact = options?.impact ?? 0;
+    const affirmCount=report.affirmations?.count||0;
+    const citizenImpact=affirmCount>=25?5:affirmCount>=10?4:affirmCount>=3?3:0;
+    const impact = Math.max(options?.impact ?? stored?.impactFactor ?? 0,citizenImpact);
     const severityWeight = Number(process.env.PRIORITY_SEVERITY_WEIGHT || 0.65);
     const ageWeight = Number(process.env.PRIORITY_AGE_WEIGHT || 0.25);
     const evidenceWeight = Number(process.env.PRIORITY_EVIDENCE_WEIGHT || 0.10);
@@ -82,7 +84,8 @@ export function derivePriority(reportId:string, stored:PriorityAssessmentRecord 
     const evidence = Math.min(5,corroborating);
     const rawScore = Math.round(20*(severityWeight*severity+ageWeight*age+evidenceWeight*evidence));
     const bonus=report.nearbySensitive?.bonus || 0;
-    const score=Math.min(100,rawScore+bonus);
+    const impactContribution=6*impact;
+    const score=Math.min(100,rawScore+bonus+impactContribution);
     const priorityLevel: PriorityLevel = isCritical ? 'CRITICAL' : score>=65 ? 'HIGH' : score>=40 ? 'MEDIUM' : 'LOW';
     const explanation = {
       summary: 'Priority Engine 2.0: অভিযোগে বর্ণিত তীব্রতা, বয়স ও যাচাইকৃত সমর্থনের ভিত্তিতে পর্যালোচনার সুপারিশ। মাঠপর্যায়ে যাচাই হয়নি।',
@@ -110,5 +113,6 @@ export function derivePriority(reportId:string, stored:PriorityAssessmentRecord 
     };
 
     record.explanation.factors.push({name:'ঝুঁকিপূর্ণ স্থাপনার নৈকট্য',value:bonus,weight:'বোনাস (সর্বোচ্চ +১৫)',contribution:bonus,note:nearbyNote(report.nearbySensitive)});
+    record.explanation.factors.push({name:'প্রভাবিত নাগরিকের সমর্থন',value:impact,weight:'বাস্তব সমর্থনের বোনাস (সর্বোচ্চ +৩০)',contribution:impactContribution,note:`${affirmCount} জন নাগরিক নিশ্চিত করেছেন যে তারাও ভুক্তভোগী। ৩–৯ জনে ৩, ১০–২৪ জনে ৪, ২৫ বা বেশি হলে ৫। ব্রাউজারভিত্তিক সমর্থন; যাচাইকৃত জনসংখ্যা নয়।`});
     return record;
 }

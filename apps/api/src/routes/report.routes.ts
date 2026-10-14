@@ -13,12 +13,14 @@ import {
 } from '@nagarbondhu/shared';
 
 import { createHmac } from 'crypto';
-import { hash, duplicateSuggestions } from '../services/citizen.service';
+import { hash, duplicateSuggestions, citizenSummary } from '../services/citizen.service';
+import { deviceHash } from '../middleware/civicLimit';
 import { workflowStatus } from '../services/action.service';
 import { publicText } from '../services/privacy';
 import { nearbySensitive } from '../services/nearby.service';
 const router = Router();
 const publicReport = (report: Report) => ({ ...report, actionStatus:workflowStatus(report), reporterId: undefined, reporterName: undefined,
+  ...citizenSummary(report),
   aiAnalysis:report.aiAnalysis?{...report.aiAnalysis,summary:publicText(report.aiAnalysis.summary),reasons:report.aiAnalysis.reasons.map(publicText)}:null,
   title:publicText(report.title),description:publicText(report.description),addressLabel:publicText(report.addressLabel || ''),
   statusHistory:report.statusHistory?.map(h=>({createdAt:h.createdAt,previousStatus:h.previousStatus,newStatus:h.newStatus})),
@@ -53,6 +55,7 @@ const CreateReportSchema = z.object({
   wardId: z.string().optional(),
   imageUrl: z.string().optional().nullable().or(z.literal('')),
   idempotencyKey: z.string().uuid().optional(),
+  deviceId:z.string().uuid().optional(),
   locationConfirmed: z.boolean().optional(),
   locationSource: z.enum(['GPS','MAP_PIN','MANUAL']).default('MAP_PIN'),
 });
@@ -201,7 +204,7 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
       createdAt: new Date().toISOString(),
     });
 
-    db.submissionReceipts.set(key,{id:key,reportId,fingerprint,capabilityHash:hash(trackingToken),locationConfirmed:input.locationConfirmed===true,locationSource:input.locationSource,createdAt:newReport.createdAt});
+    db.submissionReceipts.set(key,{id:key,reportId,fingerprint,capabilityHash:hash(trackingToken),deviceHash:input.deviceId?deviceHash(input.deviceId):null,locationConfirmed:input.locationConfirmed===true,locationSource:input.locationSource,createdAt:newReport.createdAt});
     res.status(201).json({
       success: true,
       report: publicReport(newReport),

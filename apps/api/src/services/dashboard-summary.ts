@@ -19,6 +19,8 @@ export function dashboardSummary(filters: AnalyticsFilters = {}) {
   const count = (status:string) => a.byStatus[status] || 0;
   return {
     source:a.source, demoCount:a.demoCount, realCount:a.realCount,
+    citizenConfirmedSolutions:a.rows.filter(r=>['RESOLVED','CLOSED'].includes(r.status)&&db.reports.get(r.id)?.citizenVerification?.reporterVerdict==='FIXED').length,
+    reopenedReports:a.rows.filter(r=>(db.reports.get(r.id)?.reopenedCount||0)>0).length,
     totalReports:a.total, openReports:unresolved.length, inProgressReports:count('IN_PROGRESS'),
     resolvedReports:count('RESOLVED')+count('CLOSED'), rejectedReports:count('REJECTED'),
     highPriorityReports:unresolved.filter(r=>r.priority==='HIGH').length,

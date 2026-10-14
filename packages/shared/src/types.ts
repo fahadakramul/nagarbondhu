@@ -134,6 +134,9 @@ export interface ReportStatusHistoryRecord {
 
 export interface Report {
   nearbySensitive?: NearbySensitive | null;
+  affirmations?: {count:number;deviceHashes:string[];ipDeviceHashes?:string[]};
+  citizenVerification?: {fixedVotes:number;notFixedVotes:number;reporterVerdict:string|null;lastAt:string|null;items:{voterHash:string;reporter:boolean;verdict:'FIXED'|'NOT_FIXED';note:string;photoUrl:string|null;at:string}[]};
+  reopenedCount?:number;
   id: string;
   reporterId?: string | null;
   reporterName?: string | null;

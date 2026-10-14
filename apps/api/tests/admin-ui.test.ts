@@ -7,6 +7,7 @@ import { app } from '../src/app';
 import { db, DatabaseRepository } from '../src/db';
 import { CONFIG } from '../src/config';
 import { confirmPlan, getPlan } from '../src/services/action.service';
+import * as rainService from '../src/services/rain.service';
 const { JSDOM } = require('jsdom');
 
 describe('Administrator UI connected to the real API',()=>{
@@ -15,6 +16,7 @@ describe('Administrator UI connected to the real API',()=>{
   const el=(id:string)=>window.document.getElementById(id);
   const eventually=async(test:()=>boolean)=>{for(let i=0;i<100;i++){if(test())return;await new Promise(r=>setTimeout(r,10));}expect(test()).toBe(true);};
   beforeEach(async()=>{
+    jest.spyOn(rainService,'rainQueue').mockResolvedValue({forecast:{next24hMm:0,peakHour:'2026-10-14T19:00:00+06:00',peakMm:0,maxProbability:0,fetchedAt:new Date().toISOString()},alert:false,threshold:20,reports:[],source:'citizen_report',attribution:'Weather data: Open-Meteo',boostExplanation:'শুধু এই তালিকার প্রভাব'});
     snapshot=db.snapshot();oldMode=CONFIG.NODE_ENV;oldKey=CONFIG.GEMINI_API_KEY;CONFIG.NODE_ENV='production';CONFIG.GEMINI_API_KEY='';
     db.restore(new DatabaseRepository().snapshot());
     const sample=db.users.get('user-admin-01')!;
@@ -32,7 +34,7 @@ describe('Administrator UI connected to the real API',()=>{
       if(options.body)call=call.send(JSON.parse(options.body));
       const response=await call;return {ok:response.status<400,status:response.status,json:async()=>response.body};
     };
-    context=dom.getInternalVMContext();for(const name of ['app','actions','platform','competition'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../public/'+name+'.js'),'utf8'),context);
+    context=dom.getInternalVMContext();for(const name of ['app','actions','platform','competition','features'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../public/'+name+'.js'),'utf8'),context);
   });
   afterEach(async()=>{await new Promise(r=>setTimeout(r,40));dom?.window.close();CONFIG.NODE_ENV=oldMode;CONFIG.GEMINI_API_KEY=oldKey;db.restore(snapshot);});
   async function login(){
@@ -40,6 +42,12 @@ describe('Administrator UI connected to the real API',()=>{
     await window.activateOperatorSession({preventDefault(){},target:el('operator-email').closest('form')});
     await eventually(()=>!el('operator-login-modal').classList.contains('hidden')?false:run('!!authToken'));
   }
+  test('public scorecard and ward navigation work with the full feature script, voice failure remains usable',async()=>{
+    await window.loadScorecard();expect(el('scorecard-message').textContent).toContain('নাগরিক রিপোর্ট');expect(el('scorecard-cards').querySelectorAll('article').length).toBe(db.wards.size);
+    el('scorecard-source').value='demo_seed';await window.loadScorecard();expect(el('scorecard-message').textContent).toContain('নমুনা');
+    await window.openScorecardWard('ward-12','feed');expect(el('feed-ward').value).toBe('ward-12');expect(run('allReports.every(r=>r.wardId==="ward-12")')).toBe(true);
+    await window.startVoiceComplaint();expect(el('voice-message').textContent).toContain('লিখে অভিযোগ');expect(el('voice-start').disabled).toBe(false);
+  });
   test('citizens see the resolution photo and save or update stars without a submission receipt',async()=>{
     const id='rep-001';
     confirmPlan(id,{actionDescription:'Inspect and repair the damaged road.',wardId:db.reports.get(id)!.wardId!,wardVerified:true,wardVerificationNote:'Ward location confirmed during inspection.',departmentId:'roads',assignmentNote:'Repair team assigned',targetDate:'2026-12-01',priority:'HIGH',urgency:'URGENT',revision:0},'private-operator');

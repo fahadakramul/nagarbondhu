@@ -495,7 +495,7 @@ async function loadData() {
   const sections=['dashboard-recommended-list','dashboard-category-bars','dashboard-hotspots-list','dashboard-duplicates-list','dashboard-distributions'];
   sections.forEach(id=>document.getElementById(id).textContent='লোড হচ্ছে…');
   const get=async path=>{const response=await fetch(path,{signal:AbortSignal.timeout(35000)});const result=await response.json();if(!response.ok || !result.success)throw new Error('তথ্য লোড করা যায়নি');return result;};
-  const results=await Promise.allSettled([get('/api/v1/dashboard/summary?source='+source),get('/api/v1/reports?source='+source+'&limit=50&offset='+feedOffset)]);
+  const results=await Promise.allSettled([get('/api/v1/dashboard/summary?source='+source),get('/api/v1/reports?source='+source+'&limit=50&offset='+feedOffset+(typeof civicWardFilter!=='undefined'&&civicWardFilter?'&wardId='+encodeURIComponent(civicWardFilter):''))]);
   if(sequence!==dataRequestSequence)return;
   const summary=results[0],reports=results[1];
   if(summary.status==='fulfilled' && summary.value.data && statsIds.every((_,i)=>Number.isFinite([summary.value.data.totalReports,summary.value.data.openReports,summary.value.data.highPriorityReports,summary.value.data.resolvedReports,summary.value.data.inProgressReports][i]))) {

@@ -75,7 +75,9 @@ export function derivePriority(reportId:string, stored:PriorityAssessmentRecord 
     const recurrence = options?.recurrence ?? 0;
     const affirmCount=report.affirmations?.count||0;
     const citizenImpact=affirmCount>=25?5:affirmCount>=10?4:affirmCount>=3?3:0;
-    const impact = Math.max(options?.impact ?? stored?.impactFactor ?? 0,citizenImpact);
+    // Legacy fixtures contain guessed population values; preserve only evidence-aware assessments.
+    const existingImpact=stored?.explanation.factors?.some(f=>f.name==='প্রভাবিত নাগরিকের সমর্থন')?stored.impactFactor:0;
+    const impact = Math.max(options?.impact ?? existingImpact,citizenImpact);
     const severityWeight = Number(process.env.PRIORITY_SEVERITY_WEIGHT || 0.65);
     const ageWeight = Number(process.env.PRIORITY_AGE_WEIGHT || 0.25);
     const evidenceWeight = Number(process.env.PRIORITY_EVIDENCE_WEIGHT || 0.10);

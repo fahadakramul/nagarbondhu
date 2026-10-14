@@ -47,6 +47,8 @@ app.get('/api/v1/health', (req, res) => {
     targetCity: 'Rajshahi, Bangladesh',
     timestamp: new Date().toISOString(),
     persistence: persistenceState,
+    release:process.env.RENDER_GIT_COMMIT || 'local',
+    features:['resolution-ratings','nearby-sensitive','citizen-affirmations','citizen-verification','ward-scorecard','photo-check','voice-complaint','rain-queue'],
   });
 });
 

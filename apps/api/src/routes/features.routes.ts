@@ -12,6 +12,8 @@ import { rainQueue } from '../services/rain.service';
 import { nearbySensitive, emptyNearby } from '../services/nearby.service';
 import { PriorityService } from '../services/priority.service';
 const router=Router();
+router.get('/admin/reports/:id/citizen-verification',authenticate,requireRole(['ADMIN','URBAN_PLANNER']),(req,res,next)=>{try{const report=getReport(req.params.id);res.json({success:true,data:report.citizenVerification?{...report.citizenVerification,items:report.citizenVerification.items.map(({voterHash,...item})=>item)}:null});}catch(e){next(e);}});
+let lastBackfillAt=0;
 router.get('/rain-queue',async(req,res,next)=>{try{const q=z.object({source:z.enum(['all','demo_seed','citizen_report']).default('citizen_report')}).strict().parse(req.query);res.json({success:true,data:await rainQueue(q.source)});}catch(e){next(e);}});
 router.post('/ai/transcribe',civicLimit,async(req,res,next)=>{try{const q=z.object({deviceId:z.string().uuid(),audioBase64:z.string().max(7000000)}).strict().parse(req.body);res.json({success:true,data:await transcribeAudio(parseMedia(q.audioBase64,'audio')),provider:'Google Gemini'});}catch(e){next(e);}});
 router.get('/nearby',civicLimit,async(req,res,next)=>{try{const q=z.object({latitude:z.coerce.number().min(20).max(28),longitude:z.coerce.number().min(85).max(95)}).strict().parse(req.query);res.json({success:true,data:await nearbySensitive(q.latitude,q.longitude)});}catch(e){next(e);}});
@@ -58,7 +60,7 @@ router.post('/admin/backfill-nearby',authenticate,requireRole(['ADMIN','URBAN_PL
     const q=z.object({source:z.enum(['all','demo_seed','citizen_report']).default('demo_seed'),offset:z.number().int().min(0).default(0),limit:z.number().int().min(1).max(5).default(3)}).strict().parse(req.body);
     const rows=Array.from(db.reports.values()).filter(r=>q.source==='all'||r.sourceType===q.source).sort((a,b)=>a.id.localeCompare(b.id));
     const batch=rows.slice(q.offset,q.offset+q.limit),results=[];
-    for(const r of batch){if(results.length)await new Promise(resolve=>setTimeout(resolve,2000));const data=await nearbySensitive(r.latitude,r.longitude,8000);db.updateReport(r.id,{nearbySensitive:data});PriorityService.assessReportPriority(r.id);results.push({id:r.id,bonus:data.bonus,unavailable:data.unavailable});}
+    for(const r of batch){const delay=2000-(Date.now()-lastBackfillAt);if(delay>0)await new Promise(resolve=>setTimeout(resolve,delay));lastBackfillAt=Date.now();const data=await nearbySensitive(r.latitude,r.longitude,8000);db.updateReport(r.id,{nearbySensitive:data});PriorityService.assessReportPriority(r.id);results.push({id:r.id,bonus:data.bonus,unavailable:data.unavailable});}
     res.json({success:true,data:{results,nextOffset:q.offset+batch.length,total:rows.length,done:q.offset+batch.length>=rows.length}});
   }catch(e){next(e);}
 });

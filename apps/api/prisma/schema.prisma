@@ -96,6 +96,7 @@ model Report {
   status       ReportStatus   @default(SUBMITTED)
   actionStatus ActionStatus?  @map("action_status")
   sourceType   String         @default("citizen_report") @map("source_type")
+  nearbySensitive Json? @map("nearby_sensitive")
   createdAt    DateTime       @default(now()) @map("created_at")
   updatedAt    DateTime       @updatedAt @map("updated_at")
   resolvedAt   DateTime?      @map("resolved_at")

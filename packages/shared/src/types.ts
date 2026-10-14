@@ -133,6 +133,7 @@ export interface ReportStatusHistoryRecord {
 }
 
 export interface Report {
+  nearbySensitive?: NearbySensitive | null;
   id: string;
   reporterId?: string | null;
   reporterName?: string | null;
@@ -156,6 +157,11 @@ export interface Report {
   priorityAssessment?: PriorityAssessmentRecord | null;
   possibleDuplicates?: PossibleDuplicateRecord[];
   statusHistory?: ReportStatusHistoryRecord[];
+}
+
+export interface NearbySensitive {
+  fetchedAt:string; radius:200; bonus:number; source:string; unavailable?:boolean;
+  groups:Record<string,{count:number;items:{name:string;distanceMeters:number;latitude:number;longitude:number}[]}>;
 }
 
 export interface DashboardSummary {

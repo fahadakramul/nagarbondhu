@@ -15,8 +15,10 @@ import adminRoutes from './routes/admin.routes';
 import actionRoutes from './routes/action.routes';
 import platformRoutes from './routes/platform.routes';
 import competitionRoutes from './routes/competition.routes';
+import featuresRoutes from './routes/features.routes';
 
 export const app = express();
+app.set('trust proxy',1);
 
 // Middlewares
 app.use(cors());
@@ -51,6 +53,7 @@ app.get('/api/v1/health', (req, res) => {
 // Mount Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1', platformRoutes);
+app.use('/api/v1', featuresRoutes);
 app.use('/api/v1/competition', competitionRoutes);
 app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/ai', aiRoutes);

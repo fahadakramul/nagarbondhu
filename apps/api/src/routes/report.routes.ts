@@ -16,6 +16,7 @@ import { createHmac } from 'crypto';
 import { hash, duplicateSuggestions } from '../services/citizen.service';
 import { workflowStatus } from '../services/action.service';
 import { publicText } from '../services/privacy';
+import { nearbySensitive } from '../services/nearby.service';
 const router = Router();
 const publicReport = (report: Report) => ({ ...report, actionStatus:workflowStatus(report), reporterId: undefined, reporterName: undefined,
   aiAnalysis:report.aiAnalysis?{...report.aiAnalysis,summary:publicText(report.aiAnalysis.summary),reasons:report.aiAnalysis.reasons.map(publicText)}:null,
@@ -159,6 +160,7 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
     };
 
     db.createReport(newReport);
+    if(process.env.NODE_ENV!=='test')newReport.nearbySensitive=await nearbySensitive(input.latitude,input.longitude);
 
     // 3. Save AI Analysis Record
     const aiRecord: AiAnalysisRecord = {

@@ -3,6 +3,7 @@ import {
   PriorityLevel,
 } from '@nagarbondhu/shared';
 import { db } from '../db';
+import { nearbyNote } from './nearby.service';
 
 export class PriorityService {
   /**
@@ -80,7 +81,9 @@ export function derivePriority(reportId:string, stored:PriorityAssessmentRecord 
     const age = Math.min(5, 1+Math.floor(ageInDays/7));
     const evidence = Math.min(5,corroborating);
     const rawScore = Math.round(20*(severityWeight*severity+ageWeight*age+evidenceWeight*evidence));
-    const priorityLevel: PriorityLevel = isCritical ? 'CRITICAL' : rawScore>=65 ? 'HIGH' : rawScore>=40 ? 'MEDIUM' : 'LOW';
+    const bonus=report.nearbySensitive?.bonus || 0;
+    const score=Math.min(100,rawScore+bonus);
+    const priorityLevel: PriorityLevel = isCritical ? 'CRITICAL' : score>=65 ? 'HIGH' : score>=40 ? 'MEDIUM' : 'LOW';
     const explanation = {
       summary: 'Priority Engine 2.0: অভিযোগে বর্ণিত তীব্রতা, বয়স ও যাচাইকৃত সমর্থনের ভিত্তিতে পর্যালোচনার সুপারিশ। মাঠপর্যায়ে যাচাই হয়নি।',
       factors: [
@@ -99,12 +102,13 @@ export function derivePriority(reportId:string, stored:PriorityAssessmentRecord 
       impactFactor: impact,
       recurrenceFactor: recurrence,
       ageFactor: age,
-      score: rawScore,
+      score,
       priorityLevel: priorityLevel,
       explanation: explanation,
       assessedAt: new Date().toISOString(),
       ...(stored?.overriddenBy ? {priorityLevel:stored.priorityLevel,overriddenBy:stored.overriddenBy,overrideReason:stored.overrideReason} : {}),
     };
 
+    record.explanation.factors.push({name:'ঝুঁকিপূর্ণ স্থাপনার নৈকট্য',value:bonus,weight:'বোনাস (সর্বোচ্চ +১৫)',contribution:bonus,note:nearbyNote(report.nearbySensitive)});
     return record;
 }

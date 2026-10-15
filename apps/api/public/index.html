@@ -7,8 +7,8 @@
   
   <!-- PWA & Mobile WebAPK Support -->
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0B0F19">
-  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#4338CA">
+  <meta name="color-scheme" content="light">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -32,15 +32,7 @@
       theme: {
         extend: {
           colors: {
-            civic: {
-              50: '#102531',
-              100: '#143344',
-              500: '#22D3EE',
-              600: '#06B6D4',
-              700: '#0891B2',
-              800: '#0E7490',
-              900: '#0F172A',
-            }
+            civic: {50: '#EEF2FF', 100: '#E0E7FF', 500: '#6366F1', 600: '#4F46E5', 700: '#4338CA', 800: '#3730A3', 900: '#312E81'}
           },
           fontFamily: {
             bengali: ['"Hind Siliguri"', 'sans-serif'],
@@ -74,7 +66,7 @@
         </div>
         <div>
           <h1 class="text-xl sm:text-2xl font-bold tracking-tight leading-none">নগরবন্ধু <span class="brand-ai">AI</span></h1>
-          <p class="text-xs text-teal-200 mt-1">Urban Intelligence · রাজশাহী</p>
+          <p class="text-xs text-indigo-200 mt-1">Urban Intelligence · রাজশাহী</p>
         </div>
       </div>
 
@@ -86,7 +78,7 @@
           <span class="text-[10px] bg-black/20 px-1.5 py-0.5 rounded">পরিবর্তন করুন</span>
         </button>
 
-        <a href="#report-section" onclick="switchTab('report')" class="hidden sm:inline-flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg shadow transition">
+        <a href="#report-section" onclick="switchTab('report')" class="hidden sm:inline-flex items-center gap-1.5 header-report-cta bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg shadow transition">
           <i class="fa-solid fa-plus"></i> রিপোর্ট করুন
         </a>
       </div>
@@ -99,7 +91,7 @@
         <span id="navigation-current">হোম</span>
       </button>
       <div id="primary-navigation" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-xs font-semibold">
-        <button onclick="switchTab('home')" id="tab-home" class="nav-tab px-4 py-2 rounded-md text-teal-400 bg-slate-800 transition flex items-center gap-1.5">
+        <button onclick="switchTab('home')" id="tab-home" class="nav-tab px-4 py-2 rounded-md text-indigo-400 bg-slate-800 transition flex items-center gap-1.5">
           <i class="fa-solid fa-house"></i> হোম
         </button>
         <button onclick="switchTab('report')" id="tab-report" class="nav-tab px-4 py-2 rounded-md text-slate-300 hover:text-white transition flex items-center gap-1.5">
@@ -114,7 +106,7 @@
         <button onclick="switchTab('dashboard')" id="tab-dashboard" class="nav-tab px-4 py-2 rounded-md text-slate-300 hover:text-white transition flex items-center gap-1.5">
           <i class="fa-solid fa-chart-pie"></i> প্ল্যানিং ড্যাশবোর্ড
         </button>
-        <button onclick="switchTab('scorecard')" id="tab-scorecard" class="nav-tab px-4 py-2 rounded-md text-slate-300 hover:text-white transition whitespace-nowrap">ওয়ার্ড স্কোরকার্ড</button>
+        <button onclick="switchTab('scorecard')" id="tab-scorecard" class="nav-tab px-4 py-2 rounded-md text-slate-300 hover:text-white transition whitespace-nowrap"><i class="fa-solid fa-table-cells" aria-hidden="true"></i> ওয়ার্ড স্কোরকার্ড</button>
       </div>
     </nav>
   </header>
@@ -125,39 +117,50 @@
     <!-- ==================== TAB 1: HOME ==================== -->
     <div id="app-demo-indicator" class="hidden bg-amber-50 border border-amber-200 text-amber-900 text-xs rounded-lg p-3 mb-4" role="status">আপনি নমুনা রিপোর্ট দেখছেন। নাগরিক রিপোর্ট দেখতে তথ্যের উৎস পরিবর্তন করুন।</div>
     <section id="section-scorecard" class="tab-content hidden space-y-4">
-      <h2 class="font-bold text-xl text-teal-800">ওয়ার্ড স্কোরকার্ড</h2>
+      <h2 class="font-bold text-xl text-indigo-800">ওয়ার্ড স্কোরকার্ড</h2>
       <div class="flex flex-wrap gap-3 text-sm"><label>তথ্যের উৎস<select id="scorecard-source" class="border rounded p-2 block" onchange="loadScorecard()"><option value="citizen_report">নাগরিক রিপোর্ট</option><option value="demo_seed">নমুনা রিপোর্ট</option><option value="all">সব — মিশ্র তথ্য</option></select></label><label>সমস্যার ধরন<select id="scorecard-category" class="border rounded p-2 block" onchange="loadScorecard()"><option value="">সব</option><option value="ROAD_DAMAGE">সড়ক ক্ষতি</option><option value="DRAINAGE">ড্রেনেজ</option><option value="WATERLOGGING">জলাবদ্ধতা</option><option value="WASTE">বর্জ্য</option><option value="FOOTPATH">ফুটপাথ</option><option value="STREETLIGHT">সড়কবাতি</option><option value="OTHER">অন্যান্য</option></select></label></div>
       <p id="scorecard-message" class="text-xs" role="status"></p><div id="scorecard-cards" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
       <p class="text-xs">এই স্কোর শুধু অ্যাপে আসা রিপোর্টের উপর ভিত্তি করে; এটি কোনো ব্যক্তির মূল্যায়ন নয়। তিনটির কম রিপোর্ট হলে গ্রেড দেওয়া হয় না।</p>
     </section>
     <section id="section-home" class="tab-content space-y-6">
       <!-- HERO BANNER -->
-      <div class="home-hero bg-gradient-to-r from-civic-800 via-civic-700 to-teal-800 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
+      <div class="home-hero bg-gradient-to-r from-civic-800 via-civic-700 to-indigo-800 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
         <svg class="hero-city" viewBox="0 0 420 260" fill="none" aria-hidden="true" focusable="false">
           <path d="M0 220H420M0 190H420M45 0V260M130 0V260M215 0V260M300 0V260M385 0V260" stroke="currentColor" stroke-opacity=".12"/>
           <path d="M24 220V132H74V220M90 220V86H148V220M164 220V150H212V220M228 220V54H280V220M298 220V112H354V220M366 220V164H410V220" fill="currentColor" fill-opacity=".07" stroke="currentColor" stroke-opacity=".25" stroke-width="2"/>
           <path d="M35 148H62M35 169H62M102 104H136M102 126H136M102 148H136M242 74H266M242 98H266M242 122H266M310 130H342M310 152H342" stroke="currentColor" stroke-opacity=".25" stroke-width="3"/>
-          <path d="M58 210L120 176L194 190L256 142L326 168L388 118" stroke="#5eead4" stroke-width="3" stroke-linecap="round"/>
-          <g fill="#5eead4"><circle cx="58" cy="210" r="5"/><circle cx="120" cy="176" r="5"/><circle cx="194" cy="190" r="5"/><circle cx="256" cy="142" r="5"/><circle cx="326" cy="168" r="5"/><circle cx="388" cy="118" r="5"/></g>
+          <path d="M58 210L120 176L194 190L256 142L326 168L388 118" stroke="#A5B4FC" stroke-width="3" stroke-linecap="round"/>
+          <g fill="#A5B4FC"><circle cx="58" cy="210" r="5"/><circle cx="120" cy="176" r="5"/><circle cx="194" cy="190" r="5"/><circle cx="256" cy="142" r="5"/><circle cx="326" cy="168" r="5"/><circle cx="388" cy="118" r="5"/></g>
         </svg>
         <div class="max-w-3xl relative z-10 space-y-3">
           <p id="engine-status" class="engine-badge" role="status" title="Application server connection"><span aria-hidden="true"></span> NagarBondhu AI <span id="engine-status-label">সংযোগ যাচাই হচ্ছে</span></p>
           <h2 class="text-2xl sm:text-4xl font-extrabold leading-tight">
-            নাগরিক রিপোর্ট থেকে<br>নগর পরিকল্পনা
+            নাগরিকের অভিযোগ থেকে ডেটা-ভিত্তিক নগর পরিকল্পনা
           </h2>
-          <p class="text-sm sm:text-base text-teal-100 leading-relaxed">
+          <p class="text-sm sm:text-base text-indigo-100 leading-relaxed">
             শহরের সমস্যা জানান। রিপোর্ট, ম্যাপ ও ব্যাখ্যাসহ অগ্রাধিকার দেখে পরিকল্পনার সিদ্ধান্ত নিন।
           </p>
           <div class="hero-actions pt-2 flex flex-wrap gap-3">
             <button onclick="switchTab('report')" class="hero-primary bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold text-sm px-5 py-2.5 rounded-xl shadow-md transition flex items-center gap-2">
               <i class="fa-solid fa-plus-circle"></i> সমস্যা রিপোর্ট করুন
             </button>
-            <button onclick="switchTab('map')" class="bg-teal-900/60 hover:bg-teal-900/90 text-white font-semibold text-sm px-5 py-2.5 rounded-xl border border-teal-400/30 transition flex items-center gap-2">
+            <button onclick="switchTab('map')" class="bg-indigo-900/60 hover:bg-indigo-900/90 text-white font-semibold text-sm px-5 py-2.5 rounded-xl border border-indigo-400/30 transition flex items-center gap-2">
               <i class="fa-solid fa-map"></i> সমস্যার ম্যাপ
             </button>
-            <button onclick="switchTab('dashboard')" class="bg-teal-900/60 hover:bg-teal-900/90 text-white font-semibold text-sm px-5 py-2.5 rounded-xl border border-teal-400/30 transition flex items-center gap-2"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i> প্ল্যানিং ড্যাশবোর্ড</button>
+            <button onclick="switchTab('dashboard')" class="bg-indigo-900/60 hover:bg-indigo-900/90 text-white font-semibold text-sm px-5 py-2.5 rounded-xl border border-indigo-400/30 transition flex items-center gap-2"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i> প্ল্যানিং ড্যাশবোর্ড</button>
           </div>
           <p class="hero-steps">বিবরণ লিখুন <span aria-hidden="true">→</span> স্থান নিশ্চিত করুন <span aria-hidden="true">→</span> রিপোর্ট জমা দিন</p>
+        </div>
+      </div>
+
+      <div class="difference-strip">
+        <p class="font-bold text-sm">কেন আলাদা</p>
+        <div class="difference-chips">
+          <button type="button" onclick="switchTab('report')">প্রতিটি অভিযোগে AI বিশ্লেষণ</button>
+          <button type="button" onclick="switchTab('feed')">অগ্রাধিকার স্কোর</button>
+          <button type="button" onclick="switchTab('feed')">নাগরিক যাচাই</button>
+          <button type="button" onclick="switchTab('scorecard')">ওয়ার্ড স্কোরকার্ড</button>
+          <button type="button" onclick="switchTab('dashboard')">বৃষ্টির আগে কাজ</button>
         </div>
       </div>
 
@@ -189,11 +192,11 @@
         <h3 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
           <i class="fa-solid fa-chart-line text-civic-600"></i> উপলব্ধ রিপোর্টের পরিসংখ্যান
         </h3>
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
+        <div class="home-stats grid grid-cols-2 sm:grid-cols-5 gap-4">
           <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
             <span class="text-xs font-semibold text-slate-500">মোট রিপোর্ট</span>
             <span id="stat-total" class="text-3xl font-extrabold text-civic-700 mt-1">লোড হচ্ছে</span>
-            <span class="text-[11px] text-teal-600 mt-0.5">উপলব্ধ রিপোর্ট</span>
+            <span class="text-[11px] text-indigo-600 mt-0.5">উপলব্ধ রিপোর্ট</span>
           </div>
           <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
             <span class="text-xs font-semibold text-slate-500">অসম্পন্ন রিপোর্ট</span>
@@ -234,8 +237,8 @@
               <p class="text-xs text-slate-500 mt-0.5">বৃষ্টির পরে রাস্তায় জমে থাকা নোংরা পানি ও ডেঙ্গু বিস্তার ঝুঁকি।</p>
             </div>
           </div>
-          <div class="bg-white p-3.5 rounded-xl border-l-4 border-teal-500 border border-slate-200 shadow-sm flex items-start gap-3">
-            <div class="text-teal-500 text-xl mt-1"><i class="fa-solid fa-faucet-drip"></i></div>
+          <div class="bg-white p-3.5 rounded-xl border-l-4 border-indigo-500 border border-slate-200 shadow-sm flex items-start gap-3">
+            <div class="text-indigo-500 text-xl mt-1"><i class="fa-solid fa-faucet-drip"></i></div>
             <div>
               <h4 class="font-bold text-sm text-slate-800">ড্রেনেজ ও নর্দমা সমস্যা (DRAINAGE)</h4>
               <p class="text-xs text-slate-500 mt-0.5">ড্রেন উপচে পড়া, ময়লা জমে নিষ্কাশন বন্ধ ও খোলা ম্যানহোল।</p>
@@ -266,11 +269,11 @@
       </div>
 
       <!-- DEVELOPER CREDIT -->
-      <div class="bg-white border border-teal-100 rounded-2xl p-5 text-center shadow-sm">
-        <p class="text-xs font-semibold uppercase tracking-widest text-teal-600">Developed by</p>
+      <div class="bg-white border border-indigo-100 rounded-2xl p-5 text-center shadow-sm">
+        <p class="text-xs font-semibold uppercase tracking-widest text-indigo-600">Developed by</p>
         <h3 class="mt-2 text-lg font-bold text-slate-800">Fahad MD Akramul Islam</h3>
         <p class="mt-1 text-sm text-slate-600">Department Urban &amp; Regional Planning, RUET</p>
-        <p class="mt-2 inline-block rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700">24 Series</p>
+        <p class="mt-2 inline-block rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">24 Series</p>
       </div>
 
     </section>
@@ -292,8 +295,8 @@
           <div>
             <label for="form-description" class="block text-xs font-bold text-slate-700 mb-1">সমস্যার বিস্তারিত বর্ণনা * (বাংলা বা ইংরেজি)</label>
             <textarea id="form-description" rows="4" required minlength="5" maxlength="6000" class="w-full text-sm p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-civic-500 focus:outline-none" placeholder="যেমন: তালাইমারী শহীদ মিনারের সামনের রাস্তায় ড্রেন উপচে কোমর সমান নোংরা পানি জমে আছে, পথচারীরা চলাচল করতে পারছে না..."></textarea>
-            <div class="vision-check"><p class="input-kicker">Gemini AI Vision Output</p><button type="button" onclick="previewPhotoCheck()" class="text-xs border border-teal-700 text-teal-800 rounded-lg px-3 py-2 mt-2">ছবি ও বিবরণ যাচাই করুন</button><p id="photo-check-message" class="text-xs mt-2" role="status" aria-live="polite"></p></div>
-            <div id="voice-input-card" class="border border-teal-200 rounded-xl p-3 space-y-2 mt-2"><div class="voice-card-heading"><span class="input-kicker">VOICE INPUT</span><div class="voice-waveform" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div><button id="voice-start" type="button" onclick="startVoiceComplaint()" class="bg-teal-700 text-white rounded-lg px-3 py-2 text-sm">🎤 বলে অভিযোগ করুন</button><button id="voice-stop" type="button" onclick="stopVoiceComplaint()" class="hidden bg-red-700 text-white rounded-lg px-3 py-2 text-sm">রেকর্ড বন্ধ করুন</button><p id="voice-message" class="text-xs" role="status" aria-live="polite">সর্বোচ্চ ৬০ সেকেন্ড। লেখা তৈরি হলে দেখে সম্পাদনা করুন।</p><audio id="voice-preview" class="hidden w-full" controls></audio><button id="voice-transcribe" type="button" onclick="sendVoiceComplaint()" class="hidden text-teal-800 border rounded-lg px-3 py-2 text-sm">আবার লেখা তৈরি করুন</button></div>
+            <div class="vision-check"><p class="input-kicker">Gemini AI Vision Output</p><button type="button" onclick="previewPhotoCheck()" class="text-xs border border-indigo-700 text-indigo-800 rounded-lg px-3 py-2 mt-2">ছবি ও বিবরণ যাচাই করুন</button><p id="photo-check-message" class="text-xs mt-2" role="status" aria-live="polite"></p></div>
+            <div id="voice-input-card" class="border border-indigo-200 rounded-xl p-3 space-y-2 mt-2"><div class="voice-card-heading"><span class="input-kicker">VOICE INPUT</span><div class="voice-waveform" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div><button id="voice-start" type="button" onclick="startVoiceComplaint()" class="bg-indigo-700 text-white rounded-lg px-3 py-2 text-sm">🎤 বলে অভিযোগ করুন</button><button id="voice-stop" type="button" onclick="stopVoiceComplaint()" class="hidden bg-red-700 text-white rounded-lg px-3 py-2 text-sm">রেকর্ড বন্ধ করুন</button><p id="voice-message" class="text-xs" role="status" aria-live="polite">সর্বোচ্চ ৬০ সেকেন্ড। লেখা তৈরি হলে দেখে সম্পাদনা করুন।</p><audio id="voice-preview" class="hidden w-full" controls></audio><button id="voice-transcribe" type="button" onclick="sendVoiceComplaint()" class="hidden text-indigo-800 border rounded-lg px-3 py-2 text-sm">আবার লেখা তৈরি করুন</button></div>
           </div>
 
           <!-- AI LIVE PREVIEW BUTTON -->
@@ -306,7 +309,7 @@
 
           <div id="ai-preview-feedback" class="text-xs space-y-2" role="status" aria-live="polite"></div>
           <!-- AI ANALYSIS PREVIEW CARD -->
-          <label class="block text-xs font-bold">সমস্যার ধরন<select id="citizen-category" class="w-full p-2 border rounded-lg" onchange="userOverrideCategory=this.value||null"><option value="">নিশ্চিত নই</option><option value="ROAD_DAMAGE">সড়ক ক্ষতি</option><option value="WATERLOGGING">জলাবদ্ধতা</option><option value="DRAINAGE">ড্রেনেজ</option><option value="WASTE">বর্জ্য</option><option value="FOOTPATH">ফুটপাথ</option><option value="STREETLIGHT">সড়কবাতি</option><option value="OTHER">অন্যান্য</option></select></label><div id="submission-message" class="text-xs text-teal-800" role="status" aria-live="polite"></div>
+          <label class="block text-xs font-bold">সমস্যার ধরন<select id="citizen-category" class="w-full p-2 border rounded-lg" onchange="userOverrideCategory=this.value||null"><option value="">নিশ্চিত নই</option><option value="ROAD_DAMAGE">সড়ক ক্ষতি</option><option value="WATERLOGGING">জলাবদ্ধতা</option><option value="DRAINAGE">ড্রেনেজ</option><option value="WASTE">বর্জ্য</option><option value="FOOTPATH">ফুটপাথ</option><option value="STREETLIGHT">সড়কবাতি</option><option value="OTHER">অন্যান্য</option></select></label><div id="submission-message" class="text-xs text-indigo-800" role="status" aria-live="polite"></div>
           <div id="ai-preview-box" class="hidden bg-purple-50 border border-purple-200 rounded-xl p-4 space-y-3">
             <div class="flex justify-between items-center">
               <span class="text-xs font-bold text-purple-900 flex items-center gap-1.5">
@@ -393,10 +396,10 @@
 
             <!-- Upload Action Buttons Grid -->
             <div class="image-upload-grid grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-              <button type="button" onclick="document.getElementById('camera-file-input').click()" class="bg-teal-50 hover:bg-teal-100 border-2 border-dashed border-teal-400 text-teal-800 p-3 rounded-xl flex flex-col items-center justify-center gap-1 transition">
-                <i class="fa-solid fa-camera text-xl text-teal-600"></i>
+              <button type="button" onclick="document.getElementById('camera-file-input').click()" class="bg-indigo-50 hover:bg-indigo-100 border-2 border-dashed border-indigo-400 text-indigo-800 p-3 rounded-xl flex flex-col items-center justify-center gap-1 transition">
+                <i class="fa-solid fa-camera text-xl text-indigo-600"></i>
                 <span class="text-xs font-bold">ক্যামেরা দিয়ে ছবি তুলুন</span>
-                <span class="text-[10px] text-teal-600">সরাসরি ফটো তুলুন</span>
+                <span class="text-[10px] text-indigo-600">সরাসরি ফটো তুলুন</span>
               </button>
 
               <button type="button" onclick="document.getElementById('gallery-file-input').click()" class="bg-sky-50 hover:bg-sky-100 border-2 border-dashed border-sky-400 text-sky-800 p-3 rounded-xl flex flex-col items-center justify-center gap-1 transition">
@@ -504,7 +507,7 @@
       </div>
 
       <!-- FEED LIST CONTAINER -->
-      <div class="bg-teal-50 border rounded-xl p-3 text-xs space-y-2"><p>এই ডিভাইসে সংরক্ষিত submission receipts — এটি private account বা নিরাপদ “My Reports” নয়। Shared device ব্যবহার করলে অন্যরাও receipt ব্যবহার করতে পারবেন।</p><button class="bg-teal-700 text-white px-3 py-2 rounded" onclick="showDeviceReceipts()">এই ডিভাইসের রিপোর্ট references</button><div id="device-receipts" class="space-y-2"></div><form onsubmit="event.preventDefault();openDetailModal(document.getElementById('tracking-reference').value.trim())" class="flex gap-2"><label class="flex-1">Report reference<input id="tracking-reference" required class="border p-2 rounded w-full" placeholder="rep-…"></label><button class="border p-2 rounded">Track</button></form></div>
+      <div class="bg-indigo-50 border rounded-xl p-3 text-xs space-y-2"><p>এই ডিভাইসে সংরক্ষিত submission receipts — এটি private account বা নিরাপদ “My Reports” নয়। Shared device ব্যবহার করলে অন্যরাও receipt ব্যবহার করতে পারবেন।</p><button class="bg-indigo-700 text-white px-3 py-2 rounded" onclick="showDeviceReceipts()">এই ডিভাইসের রিপোর্ট references</button><div id="device-receipts" class="space-y-2"></div><form onsubmit="event.preventDefault();openDetailModal(document.getElementById('tracking-reference').value.trim())" class="flex gap-2"><label class="flex-1">Report reference<input id="tracking-reference" required class="border p-2 rounded w-full" placeholder="rep-…"></label><button class="border p-2 rounded">Track</button></form></div>
       <div class="flex gap-2 text-xs"><button onclick="feedOffset=Math.max(0,feedOffset-50);loadData()" class="border rounded p-2">আগের পৃষ্ঠা</button><button onclick="feedOffset+=50;loadData()" class="border rounded p-2">পরের পৃষ্ঠা</button><span id="feed-page" aria-live="polite"></span></div><div id="reports-feed-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Injected via JS -->
       </div>
@@ -514,7 +517,7 @@
     <section id="section-dashboard" class="tab-content hidden space-y-6">
       <div class="bg-white border rounded-xl p-3 text-xs space-y-2"><label>তথ্যের উৎস<select id="dashboard-source" class="border rounded p-2 ml-2" onchange="document.getElementById('stats-source').value=this.value;feedOffset=0;loadData()"><option value="citizen_report">নাগরিক রিপোর্ট</option><option value="demo_seed">নমুনা রিপোর্ট</option><option value="all">সব — মিশ্র তথ্য</option></select></label><button class="border rounded px-3 py-2" onclick="loadData()">আবার লোড করুন</button><p id="dashboard-data-message" role="status"></p><div id="dashboard-distributions" class="flex flex-wrap gap-4"></div></div>
       <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-md">
-        <span class="text-[11px] font-bold text-teal-400 uppercase tracking-widest">নাগরিক সমস্যার চিত্র</span>
+        <span class="text-[11px] font-bold text-indigo-400 uppercase tracking-widest">নাগরিক সমস্যার চিত্র</span>
         <h2 class="text-xl sm:text-2xl font-extrabold mt-1">রাজশাহী আরবান প্ল্যানিং সাপোর্ট ড্যাশবোর্ড</h2>
         <p class="text-xs text-slate-400 mt-1">প্রকৃত ডাটাবেজ কোয়েরির ওপর ভিত্তি করে পরিসংখ্যান, হটস্পট ও ডুপ্লিকেট সনাক্তকরণ কিউ।</p>
       </div>
@@ -526,7 +529,7 @@
         <h3 class="font-bold text-slate-800">প্রশাসনিক করণীয় ও দায়িত্ব ব্যবস্থাপনা</h3>
         <p class="text-xs text-slate-500">অ্যাডমিন নিশ্চিতকরণ, দায়িত্ব অর্পণ ও সমাধান যাচাইয়ের নথি।</p>
         <div id="action-storage-status" class="text-xs"></div>
-        <p class="text-xs text-amber-800">পরিকল্পনা, দায়িত্ব ও অগ্রগতি সংরক্ষণ করতে অ্যাডমিন হিসেবে লগইন করুন।</p><button type="button" onclick="showOperatorLogin()" class="bg-teal-700 text-white px-3 py-2 rounded text-xs">অ্যাডমিন লগইন</button><button type="button" onclick="logoutOperator()" class="border px-3 py-2 rounded text-xs">লগআউট</button><div id="operator-login-modal" class="hidden fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4"><div class="bg-white rounded-2xl p-6 w-full max-w-sm space-y-3"><h3 class="font-bold">অ্যাডমিন লগইন</h3><form onsubmit="activateOperatorSession(event)" class="space-y-2 mt-2"><label class="block text-xs">Email<input id="operator-email" type="email" required class="border p-2 rounded w-full" autocomplete="username"></label><label class="block text-xs">Password<input id="operator-password" type="password" required class="border p-2 rounded w-full" autocomplete="current-password"></label><button class="bg-teal-700 text-white px-3 py-2 rounded text-xs">লগইন করুন</button><p id="operator-message" class="text-xs" role="status"></p></form><button type="button" onclick="closeOperatorLogin()" class="text-sm underline">ফিরে যান</button></div></div><div id="action-dashboard-cards" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+        <p class="text-xs text-amber-800">পরিকল্পনা, দায়িত্ব ও অগ্রগতি সংরক্ষণ করতে অ্যাডমিন হিসেবে লগইন করুন।</p><button type="button" onclick="showOperatorLogin()" class="bg-indigo-700 text-white px-3 py-2 rounded text-xs">অ্যাডমিন লগইন</button><button type="button" onclick="logoutOperator()" class="border px-3 py-2 rounded text-xs">লগআউট</button><div id="operator-login-modal" class="hidden fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4"><div class="bg-white rounded-2xl p-6 w-full max-w-sm space-y-3"><h3 class="font-bold">অ্যাডমিন লগইন</h3><form onsubmit="activateOperatorSession(event)" class="space-y-2 mt-2"><label class="block text-xs">Email<input id="operator-email" type="email" required class="border p-2 rounded w-full" autocomplete="username"></label><label class="block text-xs">Password<input id="operator-password" type="password" required class="border p-2 rounded w-full" autocomplete="current-password"></label><button class="bg-indigo-700 text-white px-3 py-2 rounded text-xs">লগইন করুন</button><p id="operator-message" class="text-xs" role="status"></p></form><button type="button" onclick="closeOperatorLogin()" class="text-sm underline">ফিরে যান</button></div></div><div id="action-dashboard-cards" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
         <div id="action-dashboard-filters" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
         <h4 class="text-sm font-bold">সুপারিশকৃত করণীয় ও ফলো-আপ (Recommended Actions &amp; Follow-ups)</h4>
         <div class="flex gap-2 text-xs"><button onclick="queueOffset=Math.max(0,queueOffset-50);loadActionDashboard()" class="border rounded px-3 py-2">আগের পৃষ্ঠা</button><button onclick="queueOffset+=50;loadActionDashboard()" class="border rounded px-3 py-2">পরের পৃষ্ঠা</button><span id="queue-page"></span></div><div id="action-dashboard-list" class="space-y-3" aria-live="polite">লোড হচ্ছে…</div>
@@ -609,7 +612,7 @@
         <p id="modal-description" class="text-sm text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-200">--</p>
       </div>
 
-      <div id="public-tracking" class="bg-teal-50 border rounded-xl p-4 text-xs space-y-2" aria-live="polite"></div>
+      <div id="public-tracking" class="bg-indigo-50 border rounded-xl p-4 text-xs space-y-2" aria-live="polite"></div>
       <!-- AI ANALYSIS CARD -->
       <div class="bg-purple-50 border border-purple-200 rounded-xl p-4 space-y-2">
         <h4 class="text-xs font-bold text-purple-900 flex items-center gap-1.5">
@@ -633,7 +636,7 @@
         <h4 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
           <i class="fa-solid fa-shield-halved text-amber-600"></i> অভিযোগের ব্যবস্থা নিন
         </h4>
-        <button id="request-information-button" onclick="requestMoreInformation()" class="bg-teal-700 text-white px-3 py-2 rounded text-xs">প্রকাশ্য তথ্য-অনুরোধ</button><div id="report-action-workspace" class="space-y-4" aria-live="polite">করণীয় নথি লোড হচ্ছে…</div>
+        <button id="request-information-button" onclick="requestMoreInformation()" class="bg-indigo-700 text-white px-3 py-2 rounded text-xs">প্রকাশ্য তথ্য-অনুরোধ</button><div id="report-action-workspace" class="space-y-4" aria-live="polite">করণীয় নথি লোড হচ্ছে…</div>
       </div>
     </div>
   </div>

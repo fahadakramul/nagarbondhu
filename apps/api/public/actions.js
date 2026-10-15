@@ -12,7 +12,7 @@ const URGENCY_LABELS = { ROUTINE:'নিয়মিত', SOON:'শীঘ্র', U
 const actionEscape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const actionDate = value => value ? new Date(value).toLocaleDateString('bn-BD',{timeZone:'Asia/Dhaka'}) : 'নির্ধারিত নয়';
 const inputClass = 'w-full rounded-lg border border-slate-300 p-2 text-xs bg-white';
-const buttonClass = 'bg-teal-700 text-white px-3 py-2 rounded-lg text-xs font-semibold disabled:opacity-50';
+const buttonClass = 'bg-indigo-700 text-white px-3 py-2 rounded-lg text-xs font-semibold disabled:opacity-50';
 const directoryLabel = row => `${row.displayName}${row.verificationStatus ? ` (${row.verificationStatus === 'VERIFIED' ? 'অ্যাডমিন-যাচাইকৃত' : row.verificationStatus})` : ''}${row.active === false ? ' — নিষ্ক্রিয়' : ''}`;
 function actionOptions(rows, value, placeholder) {
   return `<option value="">${actionEscape(placeholder)}</option>` + rows.map(row => `<option value="${actionEscape(row.id)}" ${row.id===value?'selected':''}>${actionEscape(row.wardName || directoryLabel(row))}</option>`).join('');
@@ -97,8 +97,8 @@ function renderActionWorkspace(data,directory) {
       <label class="block text-xs">সমাধানের নোট (Resolved হলে বাধ্যতামূলক)<textarea id="action-resolution-note" class="${inputClass}"></textarea></label>
       <label class="block text-xs">ছবি না থাকলে বিকল্প যাচাই পদ্ধতি<input id="action-verification-method" class="${inputClass}" placeholder="পরিদর্শনের নথি, তারিখ ও যাচাই পদ্ধতি"></label>
       <label class="block text-xs">সমাধান-পরবর্তী ছবি<input id="action-after-photo" type="file" accept="image/png,image/jpeg,image/webp" class="${inputClass}"></label>
-      ${plan?.beforePhotoUrl ? `<a class="text-xs text-teal-700 underline" href="${actionEscape(plan.beforePhotoUrl)}" target="_blank" rel="noopener">সমস্যার আগের ছবি</a>` : ''}
-      ${plan?.afterPhotoUrl ? `<a class="text-xs text-teal-700 underline" href="${actionEscape(plan.afterPhotoUrl)}" target="_blank" rel="noopener">সমাধান-পরবর্তী ছবি</a>` : ''}
+      ${plan?.beforePhotoUrl ? `<a class="text-xs text-indigo-700 underline" href="${actionEscape(plan.beforePhotoUrl)}" target="_blank" rel="noopener">সমস্যার আগের ছবি</a>` : ''}
+      ${plan?.afterPhotoUrl ? `<a class="text-xs text-indigo-700 underline" href="${actionEscape(plan.afterPhotoUrl)}" target="_blank" rel="noopener">সমাধান-পরবর্তী ছবি</a>` : ''}
       <button id="save-action-status" class="${buttonClass}" ${!data.allowedTransitions.length?'disabled':''}>অবস্থা পরিবর্তন নথিভুক্ত করুন</button>
       <p id="action-status-message" class="text-xs" role="status"></p>
     </form>
@@ -114,7 +114,7 @@ function renderActionWorkspace(data,directory) {
       <p class="text-xs">যাচাই নিশ্চিত হলে আলাদাভাবে Closed নির্বাচন করুন।</p></form>` : ''}
     <details class="border-t pt-3"><summary class="font-bold text-sm cursor-pointer">অগ্রগতি ও অডিট ইতিহাস</summary><div class="space-y-2 mt-2">
       ${data.progress.map(p=>`<div class="text-xs border-l-2 border-sky-400 pl-2">${actionEscape(p.note)} • ${actionDate(p.createdAt)}${p.photoUrl?` <a href="${actionEscape(p.photoUrl)}" target="_blank" rel="noopener" class="underline">ছবি</a>`:''}</div>`).join('')}
-      ${data.history.map(h=>`<div class="text-xs border-l-2 border-teal-500 pl-2"><strong>${actionEscape(h.type)}</strong> • ${actionDate(h.createdAt)}<p>${actionEscape(h.note)}</p>${h.type==='DUE_DATE_CHANGED'?`<p>${actionDate(h.details.previousDate)} → ${actionDate(h.details.targetDate)}</p>`:''}</div>`).join('') || '<p class="text-xs">এখনও কোনো প্রশাসনিক অ্যাকশন নথিভুক্ত হয়নি।</p>'}
+      ${data.history.map(h=>`<div class="text-xs border-l-2 border-indigo-500 pl-2"><strong>${actionEscape(h.type)}</strong> • ${actionDate(h.createdAt)}<p>${actionEscape(h.note)}</p>${h.type==='DUE_DATE_CHANGED'?`<p>${actionDate(h.details.previousDate)} → ${actionDate(h.details.targetDate)}</p>`:''}</div>`).join('') || '<p class="text-xs">এখনও কোনো প্রশাসনিক অ্যাকশন নথিভুক্ত হয়নি।</p>'}
       ${data.reportHistory?.map(h=>`<p class="text-xs text-slate-500">রিপোর্ট: ${actionEscape(h.previousStatus)} → ${actionEscape(h.newStatus)} • ${actionDate(h.createdAt)} • ${actionEscape(h.note || '')}</p>`).join('') || ''}
     </div></details>`;
   updatePlanOfficerOptions(plan?.officerId);
@@ -186,9 +186,9 @@ async function loadActionDashboard() {
     document.getElementById('action-storage-status').textContent=storageMessage(result.persistence);
     document.getElementById('queue-page').textContent=(statsSource()==='demo_seed'?'নমুনা রিপোর্ট • ':'নাগরিক রিপোর্ট • ')+`${result.data.total?queueOffset+1:0}–${Math.min(queueOffset+50,result.data.total)} / ${result.data.total}`;
     const labels={totalReports:'মোট রিপোর্ট',closed:'যাচাই শেষে বন্ধ',unassigned:'দায়িত্বহীন রিপোর্ট',awaitingVerification:'মাঠে যাচাই প্রয়োজন',assigned:'দায়িত্ব অর্পিত',inProgress:'কাজ চলছে',overdue:'লক্ষ্য তারিখ পেরিয়েছে',resolvedAwaitingVerification:'সমাধান যাচাই বাকি',highPriorityUnresolved:'উচ্চ অগ্রাধিকারে অসম্পন্ন'};
-    document.getElementById('action-dashboard-cards').innerHTML=Object.entries(labels).map(([key,label])=>`<div class="rounded-xl bg-teal-50 p-3"><p class="text-xs">${label}</p><p class="text-xl font-bold text-teal-800">${result.data.summary[key]}</p></div>`).join('');
+    document.getElementById('action-dashboard-cards').innerHTML=Object.entries(labels).map(([key,label])=>`<div class="rounded-xl bg-indigo-50 p-3"><p class="text-xs">${label}</p><p class="text-xl font-bold text-indigo-800">${result.data.summary[key]}</p></div>`).join('');
     list.innerHTML=result.data.rows.map(row=>`<div class="border border-slate-200 rounded-xl p-3 space-y-1 text-xs">
-      <button class="font-bold text-left text-teal-800 hover:underline" data-open-action-report="${actionEscape(row.reportId)}">${actionEscape(row.title)}</button><span class="text-slate-500"> • ${actionEscape(row.reportId)}${row.sourceType==='demo_seed'?' • DEMO':''}</span>
+      <button class="font-bold text-left text-indigo-800 hover:underline" data-open-action-report="${actionEscape(row.reportId)}">${actionEscape(row.title)}</button><span class="text-slate-500"> • ${actionEscape(row.reportId)}${row.sourceType==='demo_seed'?' • DEMO':''}</span>
       <p>${actionEscape(row.wardName || 'ওয়ার্ড যাচাই প্রয়োজন')} • ${actionEscape(row.location || 'অবস্থান অসম্পূর্ণ')}</p>
       <p><strong>AI/খসড়া:</strong> ${actionEscape(row.recommendedAction || 'এখনও তৈরি হয়নি')}</p>
       ${row.confirmedAction?`<p><strong>অ্যাডমিন নিশ্চিত:</strong> ${actionEscape(row.confirmedAction)}</p>`:''}

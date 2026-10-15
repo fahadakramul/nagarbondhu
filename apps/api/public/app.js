@@ -54,7 +54,7 @@ const CATEGORY_NAMES_BN = {
 const CATEGORY_COLORS = {
   ROAD_DAMAGE: '#F59E0B',
   WATERLOGGING: '#38BDF8',
-  DRAINAGE: '#22D3EE',
+  DRAINAGE: '#4338CA',
   WASTE: '#FB7185',
   FOOTPATH: '#A78BFA',
   STREETLIGHT: '#FACC15',
@@ -74,7 +74,7 @@ function switchTab(tabId) {
   currentTab = tabId;
   document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
   document.querySelectorAll('.nav-tab').forEach(el => {
-    el.classList.remove('text-teal-400', 'bg-slate-800');
+    el.classList.remove('text-indigo-400', 'bg-slate-800');
     el.classList.add('text-slate-300');
   });
 
@@ -84,7 +84,7 @@ function switchTab(tabId) {
   const targetNav = document.getElementById(`tab-${tabId}`);
   if (targetNav) {
     targetNav.classList.remove('text-slate-300');
-    targetNav.classList.add('text-teal-400', 'bg-slate-800');
+    targetNav.classList.add('text-indigo-400', 'bg-slate-800');
   }
 
   if (tabId === 'report') {
@@ -276,8 +276,8 @@ function trackLiveLocation() {
         }
         pickerAccuracyCircle = L.circle([lat, lng], {
           radius: accuracy,
-          color: '#0D9488',
-          fillColor: '#14B8A6',
+          color: '#4F46E5',
+          fillColor: '#6366F1',
           fillOpacity: 0.2,
           weight: 1.5
         }).addTo(pickerMap);
@@ -380,7 +380,7 @@ function renderMapMarkers() {
     const prioLevel = r.priorityAssessment?.priorityLevel || 'অনুপলব্ধ';
     if (prioFilter !== 'ALL' && prioLevel !== prioFilter) return;
 
-    const color = CATEGORY_COLORS[r.category] || '#0F766E';
+    const color = CATEGORY_COLORS[r.category] || '#4338CA';
 
     // Custom HTML Marker Icon
     const customIcon = L.divIcon({
@@ -403,7 +403,7 @@ function renderMapMarkers() {
         <p style="font-size: 11px; color: #64748B;">📍 ${escapeHtml(r.addressLabel || 'রাজশাহী')}</p>
         <p style="font-size: 11px; font-weight: bold; color: #D97706;">অগ্রাধিকার স্কোর: ${r.priorityAssessment?.score ?? 'অনুপলব্ধ'}/১০০</p>
         ${photoThumb}
-        <button onclick="openDetailModal('${r.id}')" style="margin-top: 8px; width: 100%; background-color: #0F766E; color: white; font-size: 11px; font-weight: bold; padding: 5px 8px; border-radius: 6px; border: none; cursor: pointer;">
+        <button onclick="openDetailModal('${r.id}')" style="margin-top: 8px; width: 100%; background-color: #4338CA; color: white; font-size: 11px; font-weight: bold; padding: 5px 8px; border-radius: 6px; border: none; cursor: pointer;">
           বিস্তারিত বিবরণ দেখুন
         </button>
       </div>
@@ -530,7 +530,7 @@ function renderReportsFeed(reports) {
   if (!reports.length) container.textContent = 'এখনও কোনো রিপোর্ট নেই।';
 
   reports.forEach(r => {
-    const color = CATEGORY_COLORS[r.category] || '#0F766E';
+    const color = CATEGORY_COLORS[r.category] || '#4338CA';
     const prioLevel = r.priorityAssessment?.priorityLevel || 'অনুপলব্ধ';
     const prioColor = prioLevel === 'CRITICAL' ? 'bg-red-100 text-red-700' : prioLevel === 'HIGH' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800';
 
@@ -588,7 +588,7 @@ function renderDashboard(data) {
   const catBars = document.getElementById('dashboard-category-bars');
   catBars.innerHTML = '';
   data.byCategory.forEach(cat => {
-    const color = CATEGORY_COLORS[cat.category] || '#0F766E';
+    const color = CATEGORY_COLORS[cat.category] || '#4338CA';
     const div = document.createElement('div');
     div.className = 'space-y-1';
     div.innerHTML = `

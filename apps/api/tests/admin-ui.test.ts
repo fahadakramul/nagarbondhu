@@ -35,7 +35,7 @@ describe('Administrator UI connected to the real API',()=>{
       const response=await call;return {ok:response.status<400,status:response.status,json:async()=>response.body};
     };
     const originalIds=Array.from(window.document.querySelectorAll('[id]')).map((e:any)=>e.id);
-    context=dom.getInternalVMContext();for(const name of ['app','actions','platform','competition','features','polish','theme','assistant','experience','wizard','finish']){vm.runInContext(fs.readFileSync(path.join(__dirname,'../public/'+name+'.js'),'utf8'),context);if(name==='platform')window.originalSubmitHandler=window.handleFormSubmit;}
+    context=dom.getInternalVMContext();for(const name of ['app','actions','platform','competition','features','polish','theme','assistant','experience','wizard','finish','moderation','authority']){vm.runInContext(fs.readFileSync(path.join(__dirname,'../public/'+name+'.js'),'utf8'),context);if(name==='platform')window.originalSubmitHandler=window.handleFormSubmit;}
     window.originalElementIds=originalIds;
     window.initMainMap=jest.fn(); // Leaflet's CDN renderer is verified in the browser, not JSDOM.
     window.initPickerMap=jest.fn();
@@ -90,6 +90,10 @@ describe('Administrator UI connected to the real API',()=>{
     expect(el('assistant-turns').textContent).toContain('এই মুহূর্তে সহায়ক উত্তর দিতে পারছে না');
     const count=db.reports.size;el('assistant-turns').querySelector('.assistant-actions button').click();
     expect(el('form-description').value).toContain('পানি');expect(run('currentTab')).toBe('report');expect(db.reports.size).toBe(count);
+  });
+  test('authority corner demo login, status, delete, restore and citizen return',async()=>{
+    await window.openAuthorityCorner();el('authority-demo-login').click();await eventually(()=>window.document.body.classList.contains('authority-mode'));await eventually(()=>!!el('authority-queue-list').querySelector('.authority-row'));expect(el('authority-banner').textContent).toContain('ডেমো মোড');
+    const row=el('authority-queue-list').querySelector('.authority-row');row.querySelectorAll('button')[2].click();const dialog=window.document.querySelector('dialog[open]:not(#assistant-panel)');expect(dialog).not.toBeNull();dialog.querySelector('textarea').value='ভুল স্থানের রিপোর্ট সরানো';dialog.querySelector('form').dispatchEvent(new window.Event('submit',{cancelable:true}));await eventually(()=>!!el('deleted-reports')?.querySelector('button'));el('deleted-reports').querySelector('button').click();await eventually(()=>!el('deleted-reports').querySelector('button'));await window.leaveAuthorityCorner();expect(window.document.body.classList.contains('authority-mode')).toBe(false);expect(run('currentTab')).toBe('home');
   });
   test('assistant threads persist, switch, and delete through a confirmation modal',async()=>{
     window.openCivicAssistant('আমার এলাকার পানি জমে থাকে');await eventually(()=>!!el('assistant-turns').querySelector('.assistant-answer'));

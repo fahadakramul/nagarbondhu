@@ -1,10 +1,22 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { AuthService } from '../services/auth.service';
+import { db } from '../db';
 import { authenticate } from '../middleware/auth';
 
 const router = Router();
 
+const demoBuckets=new Map<string,{count:number;until:number}>();
+router.post('/demo',(req,res)=>{
+ const now=Date.now();for(const [ip,b]of demoBuckets)if(b.until<=now)demoBuckets.delete(ip);
+ const ip=req.ip||'unknown',bucket=demoBuckets.get(ip)||{count:0,until:now+3600000};
+ if(bucket.count>=10)return res.status(429).json({success:false,error:'এক ঘণ্টায় সর্বোচ্চ ১০ বার ডেমো প্রবেশ।'});
+ bucket.count++;demoBuckets.set(ip,bucket);
+ const id='user-demo-authority';if(!db.users.has(id))db.users.set(id,{id,displayName:'ডেমো কর্তৃপক্ষ',role:'ADMIN',passwordHash:require('bcryptjs').hashSync(require('crypto').randomUUID(),4),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
+ const user={id,displayName:'ডেমো কর্তৃপক্ষ',role:'demo_authority'};
+ const token=require('jsonwebtoken').sign(user,require('../config').CONFIG.JWT_SECRET,{expiresIn:'2h'});
+ res.json({success:true,user,token,expiresIn:7200});
+});
 const RegisterSchema = z.object({
   displayName: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email().optional(),

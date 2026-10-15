@@ -17,7 +17,7 @@ export type ReportStatus =
 
 export type PriorityLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
-export type UserRole = 'CITIZEN' | 'ADMIN' | 'URBAN_PLANNER';
+export type UserRole = 'CITIZEN' | 'ADMIN' | 'URBAN_PLANNER' | 'demo_authority';
 
 export type ReviewStatus = 'PENDING' | 'CONFIRMED_DUPLICATE' | 'DISMISSED';
 

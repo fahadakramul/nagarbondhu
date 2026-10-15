@@ -17,9 +17,9 @@ const directoryLabel = row => `${row.displayName}${row.verificationStatus ? ` ($
 function actionOptions(rows, value, placeholder) {
   return `<option value="">${actionEscape(placeholder)}</option>` + rows.map(row => `<option value="${actionEscape(row.id)}" ${row.id===value?'selected':''}>${actionEscape(row.wardName || directoryLabel(row))}</option>`).join('');
 }
-async function actionApi(path, body, method='GET') {
+async function actionApi(path, body, method='GET', confirmed=false) {
   if (!authToken) { showOperatorLogin(); throw new Error('এই কাজের জন্য অ্যাডমিন হিসেবে লগইন করুন।'); }
-  if (method!=='GET' && !path.startsWith('/copilot') && !path.endsWith('/action-recommendations') && !await mvpConfirm('এই পরিবর্তন সংরক্ষণ করবেন?')) throw new Error('পরিবর্তন বাতিল করেছেন।');
+  if (!confirmed && method!=='GET' && !path.startsWith('/copilot') && !path.endsWith('/action-recommendations') && !await mvpConfirm('এই পরিবর্তন সংরক্ষণ করবেন?')) throw new Error('পরিবর্তন বাতিল করেছেন।');
   const response=await fetch(`/api/v1/admin${path}`,{method,headers:{'Content-Type':'application/json',Authorization:`Bearer ${authToken}`}, ...(body===undefined?{}:{body:JSON.stringify(body)})});
   const result=await response.json();
   if (response.status===401) { authToken=null; sessionStorage.removeItem('nagarbondhu-operator-token'); actionDirectory=null; showOperatorLogin(); }

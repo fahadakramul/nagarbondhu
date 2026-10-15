@@ -838,7 +838,7 @@ async function toggleUserRole() {
       const savedToken = sessionStorage.getItem('nagarbondhu-operator-token');
       const res = savedToken && await fetch('/api/v1/auth/me', { headers: { Authorization: `Bearer ${savedToken}` } });
       const data = res && await res.json();
-      if (res?.ok && ['ADMIN','URBAN_PLANNER'].includes(data.user?.role) && data.user?.id !== 'user-admin-01') authToken = savedToken;
+      if (res?.ok && ['ADMIN','URBAN_PLANNER','demo_authority'].includes(data.user?.role) && data.user?.id !== 'user-admin-01') authToken = savedToken;
       else { sessionStorage.removeItem('nagarbondhu-operator-token'); authToken = null; showOperatorLogin(); }
     } catch (e) { authToken = null; showOperatorLogin(); }
   } else {

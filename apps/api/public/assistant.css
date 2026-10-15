@@ -1,0 +1,47 @@
+/* Civic assistant: isolated styles; existing forms and map controls remain intact. */
+.civic-icon { width: 21px; height: 21px; display: inline-block; vertical-align: middle; flex-shrink: 0; }
+#assistant-fab { position: fixed; right: 18px; bottom: 88px; width: 60px; height: 60px; border-radius: 50%; background: #F59E0B; color: #1F1300; box-shadow: 0 4px 18px #1E1B4B33; z-index: 52; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border: 2px solid #FFFFFF; font-size: 11px; font-weight: 700; }
+#assistant-fab .civic-icon { width: 24px; height: 24px; }
+#assistant-fab.first-pulse { animation: assistant-welcome .8s ease-out 1; }
+#assistant-panel { margin: 0; position: fixed; inset: 84px 16px 16px auto; width: 400px; max-width: calc(100vw - 32px); height: calc(100dvh - 100px); max-height: none; border: 1px solid #C7D2FE; border-radius: 24px; padding: 0; background: #F8FAFC; color: #1E293B; box-shadow: 0 24px 80px #1E1B4B33; overflow: hidden; }
+#assistant-panel[open] { display: flex; flex-direction: column; }
+#assistant-panel::backdrop { background: #1E1B4B55; }
+.assistant-handle { width: 44px; height: 5px; border-radius: 10px; background: #A5B4FC; margin: 10px auto 0; flex-shrink: 0; touch-action: none; }
+.assistant-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding: 14px 18px; background: #FFFFFF; border-bottom: 1px solid #E0E7FF; }
+.assistant-header h2 { color: #312E81; font-size: 19px; font-weight: 700; }
+.assistant-header p { color: #475569; font-size: 12px; }
+.theme-obsidian #assistant-panel .assistant-header { position: static; background: #FFFFFF; color: #1E293B; box-shadow: none; }
+.theme-obsidian #assistant-panel .assistant-header p { color: #475569; }
+.assistant-header button { width: 44px; height: 44px; border-radius: 50%; background: #EEF2FF; color: #4338CA; flex-shrink: 0; }
+#assistant-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 16px; min-height: 0; }
+.assistant-starters { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; }
+.assistant-starters button { padding: 12px; border: 1px solid #C7D2FE; background: #FFFFFF; border-radius: 16px; text-align: left; font-size: 13px; line-height: 1.6; color: #312E81; }
+.assistant-starters .civic-icon { display: block; margin-bottom: 8px; color: #4338CA; }
+.assistant-question { padding: 12px 0 8px; font-size: 14px; color: #475569; }
+.assistant-answer { margin: 8px 0 18px; background: #FFFFFF; border: 1px solid #C7D2FE; border-radius: 20px; padding: 16px; font-size: 14px; line-height: 1.65; overflow-wrap: anywhere; }
+.assistant-answer h3 { color: #312E81; font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+.assistant-answer h4 { font-weight: 700; margin: 12px 0 5px; }
+.assistant-answer li { margin: 5px 0; }
+.assistant-answer ul { list-style: disc; padding-left: 20px; }
+.assistant-fact { padding: 9px; margin-top: 7px; border-radius: 12px; background: #EEF2FF; }
+.assistant-fact small { display: block; color: #4338CA; font-weight: 600; font-size: 11px; }
+.assistant-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.assistant-actions button { border-radius: 12px; padding: 9px 12px; background: #4338CA; color: #FFFFFF; font-size: 13px; }
+.assistant-followups { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.assistant-followups button { border: 1px solid #C7D2FE; border-radius: 99px; color: #3730A3; padding: 6px 10px; background: #EEF2FF; font-size: 12px; }
+.assistant-fallback { color: #92400E; font-size: 12px; margin-bottom: 8px; }
+.assistant-composer { padding: 12px 16px; border-top: 1px solid #E0E7FF; background: #FFFFFF; }
+.assistant-composer form { display: flex; gap: 8px; align-items: flex-end; }
+.assistant-composer textarea { min-height: 48px; height: 48px; max-height: 100px; resize: vertical; flex: 1; min-width: 0; padding: 10px; font-size: 16px; border: 1px solid #A5B4FC; border-radius: 12px; }
+.assistant-composer button { flex-shrink: 0; width: 44px; height: 48px; border-radius: 12px; background: #EEF2FF; color: #4338CA; }
+.assistant-composer button[type="submit"] { background: #4338CA; color: #FFFFFF; }
+.assistant-composer button:disabled { opacity: .6; }
+.assistant-note { margin-top: 8px; font-size: 11px; line-height: 1.6; color: #475569; }
+.assistant-reset { font-size: 12px; color: #4338CA; text-decoration: underline; margin-top: 8px; min-height: 44px; }
+#assistant-progress { font-size: 13px; color: #4338CA; padding: 10px 0; }
+#assistant-rain-card { background: #EEF2FF; border: 1px solid #C7D2FE; border-radius: 18px; padding: 16px; }
+@keyframes assistant-welcome { 50% { box-shadow: 0 0 0 12px #F59E0B33; } }
+@media(max-width:767px) {
+  #assistant-panel { inset: auto 0 0; width: 100%; max-width: 100%; height: 85dvh; border-radius: 24px 24px 0 0; padding-bottom: env(safe-area-inset-bottom); }
+}
+@media(prefers-reduced-motion:reduce) { #assistant-fab { animation: none !important; } }

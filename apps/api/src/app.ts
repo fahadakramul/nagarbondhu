@@ -16,6 +16,7 @@ import actionRoutes from './routes/action.routes';
 import platformRoutes from './routes/platform.routes';
 import competitionRoutes from './routes/competition.routes';
 import featuresRoutes from './routes/features.routes';
+import assistantRoutes from './routes/assistant.routes';
 
 export const app = express();
 app.set('trust proxy',1);
@@ -59,6 +60,7 @@ app.use('/api/v1', featuresRoutes);
 app.use('/api/v1/competition', competitionRoutes);
 app.use('/api/v1/reports', reportRoutes);
 app.use('/api/v1/ai', aiRoutes);
+app.use('/api/v1/ai', assistantRoutes);
 app.use('/api/v1/map', mapRoutes);
 app.use('/api/v1/duplicates', duplicateRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);

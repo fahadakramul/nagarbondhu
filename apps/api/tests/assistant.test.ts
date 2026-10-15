@@ -28,11 +28,11 @@ describe('Data-grounded assistant',()=>{
   test('real tools ground facts, cap calls at three, redact messages and reject invented report actions',async()=>{
     CONFIG.GEMINI_API_KEY='test-only';jest.spyOn(weather,'rainForecast').mockResolvedValue({next24hMm:12,peakHour:'2026-10-15T13:00:00+06:00',peakMm:3,maxProbability:60,fetchedAt:'2026-10-15T05:00:00Z'});
     const calls=[{name:'get_city_summary',args:{}},{name:'get_rain_forecast',args:{}},{name:'get_responsible_department',args:{category:'WATERLOGGING'}},{name:'get_report_status',args:{idOrReceipt:'rep-001'}}];
-    const fetch=jest.spyOn(global,'fetch').mockResolvedValueOnce(result(calls.map(functionCall=>({functionCall})))).mockResolvedValueOnce(result([{text:JSON.stringify(answer)}]));
+    const fetch=jest.spyOn(global,'fetch').mockResolvedValueOnce(result(calls.map(functionCall=>({functionCall})))).mockResolvedValueOnce(result([{text:JSON.stringify({...answer,app_facts:['untrusted reference placeholder']})}]));
     const r=await request(app).post('/api/v1/ai/assistant').send(payload('পানি জমে আছে। test@example.com 01712345678 '+ 'a'.repeat(64)));
     expect(r.status).toBe(200);expect(r.body.fallback).toBe(false);expect(fetch).toHaveBeenCalledTimes(2);
     expect(r.body.data.app_facts.some((f:any)=>f.source==='Open-Meteo'&&f.text_bn.includes('১২'))).toBe(true);
-    expect(JSON.stringify(r.body.data)).not.toContain('৯৯৯৯');expect(r.body.data.contact_bn[0]).toContain('নমুনা');expect(r.body.data.actions.some((a:any)=>a.id==='nonexistent-private-id')).toBe(false);
+    expect(JSON.stringify(r.body.data)).not.toContain('৯৯৯৯');expect(JSON.stringify(r.body.data)).not.toContain('untrusted reference placeholder');expect(r.body.data.contact_bn[0]).toContain('নমুনা');expect(r.body.data.actions.some((a:any)=>a.id==='nonexistent-private-id')).toBe(false);
     const outgoing=JSON.stringify(fetch.mock.calls);expect(outgoing).not.toContain('test@example.com');expect(outgoing).not.toContain('01712345678');expect(outgoing).not.toContain('a'.repeat(64));
   });
   test('provider malformed JSON or failure returns schema-safe fallback',async()=>{

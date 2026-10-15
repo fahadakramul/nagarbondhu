@@ -35,7 +35,7 @@ describe('Administrator UI connected to the real API',()=>{
       const response=await call;return {ok:response.status<400,status:response.status,json:async()=>response.body};
     };
     const originalIds=Array.from(window.document.querySelectorAll('[id]')).map((e:any)=>e.id);
-    context=dom.getInternalVMContext();for(const name of ['app','actions','platform','competition','features','polish','theme','assistant','experience','wizard']){vm.runInContext(fs.readFileSync(path.join(__dirname,'../public/'+name+'.js'),'utf8'),context);if(name==='platform')window.originalSubmitHandler=window.handleFormSubmit;}
+    context=dom.getInternalVMContext();for(const name of ['app','actions','platform','competition','features','polish','theme','assistant','experience','wizard','finish']){vm.runInContext(fs.readFileSync(path.join(__dirname,'../public/'+name+'.js'),'utf8'),context);if(name==='platform')window.originalSubmitHandler=window.handleFormSubmit;}
     window.originalElementIds=originalIds;
     window.initMainMap=jest.fn(); // Leaflet's CDN renderer is verified in the browser, not JSDOM.
     window.initPickerMap=jest.fn();
@@ -46,6 +46,16 @@ describe('Administrator UI connected to the real API',()=>{
     await window.activateOperatorSession({preventDefault(){},target:el('operator-email').closest('form')});
     await eventually(()=>!el('operator-login-modal').classList.contains('hidden')?false:run('!!authToken'));
   }
+  test('nonblocking toast replaces native alerts without changing the message',()=>{
+    window.alert('ডিভাইসের লোকেশন পাওয়া যায়নি; লিখে স্থান দিন।');expect(el('civic-toast').hidden).toBe(false);expect(el('civic-toast').textContent).toContain('লোকেশন পাওয়া যায়নি');
+    el('civic-toast').querySelector('button').click();expect(el('civic-toast').hidden).toBe(true);
+  });
+  test('report card preserves its real score, keyboard detail action and affirm workflow',async()=>{
+    const response=await request(app).get('/api/v1/reports/rep-004');const report=response.body.report;window.renderReportsFeed([report]);
+    const card=el('reports-feed-container').querySelector('.civic-report-card');expect(card).not.toBeNull();expect(card.querySelector('h3 button').textContent).toBe(report.title);expect(card.querySelector('.mini-priority-ring').textContent).toBe(Number(report.priorityAssessment.score).toLocaleString('bn-BD'));
+    expect(card.querySelectorAll('i[class*="fa-"]').length).toBe(0);const vote=card.querySelector('.citizen-upvote');vote.click();await eventually(()=>vote.textContent.includes('আপনি যুক্ত হয়েছেন'));
+    expect(db.reports.get(report.id)?.affirmations?.count).toBeGreaterThan(0);
+  });
   test('wizard preserves every original ID and submit handler; validates steps and creates a real receipt',async()=>{
     expect(window.handleFormSubmit).toBe(window.originalSubmitHandler);
     for(const id of window.originalElementIds){expect(window.document.querySelectorAll('[id="'+id+'"]').length).toBe(1);}
@@ -111,7 +121,7 @@ describe('Administrator UI connected to the real API',()=>{
       window.openPlanningModule(module);
       await eventually(()=>!!el('mvp-content'));
       expect(run('currentTab')).toBe('dashboard');expect(run('mvpTab')).toBe(module);
-      const headings:any={scenarios:'What-If Urban Planner',clusters:'Root-Cause Cluster Intelligence',coverage:'Urban Voice',missions:'Smart Field Mission Planner'};
+      const headings:any={scenarios:'What-If Urban Planner',clusters:'Root-Cause Cluster Intelligence',coverage:'Urban Voice',missions:'স্মার্ট ফিল্ড পরিদর্শন পরিকল্পনা'};
       await eventually(()=>el('mvp-content')?.textContent.includes(headings[module]));
     }
   });

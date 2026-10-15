@@ -1,6 +1,6 @@
 # নাগরিক অংশগ্রহণ ও পরিকল্পনার ছয়টি ফিচার
 
-The server UI is shared by the browser and existing WebView APK. No APK rebuild is needed. The six phases and resolution-photo star ratings have separate commits. All new persisted fields are added with non-destructive Prisma migrations, applied by the existing Render start command.
+The server UI is shared by the browser and existing WebView APK. Web UI updates do not need an APK rebuild; native permission changes do. The six phases and resolution-photo star ratings have separate commits. All new persisted fields are added with non-destructive Prisma migrations, applied by the existing Render start command.
 
 | Phase | Feature | Endpoints |
 | --- | --- | --- |
@@ -21,6 +21,8 @@ OSM results are cached for 24 hours, persisted per report and reusable by rounde
 New participation/media POST endpoints have a 20/hour limit per hashed IP and supplied browser/receipt identity. Support identities are browser-based, not verified people. Clearing local storage creates a new identity. Raw device IDs, IP addresses and vote identities are excluded from public reports; comments/photos on verification are retained privately for review. Reporter receipts remain bearer capabilities on the submitting device. Raw audio is not saved on the server; only hashed request keys and validated transcription responses are cached in memory for 30 minutes.
 
 Photo checks accept uploaded local images or image data up to 4 MB. Arbitrary external URLs are not fetched. Gemini errors and unclear images are explicitly labelled. Speech accepts browser-supported WebM/MP4/Ogg and supported audio data up to 5 MB. Microphone availability and permission depend on the browser/WebView. Failed transcription can be retried or replaced by typing.
+
+Android WebView audio needs both `RECORD_AUDIO` (user-approved microphone access) and `MODIFY_AUDIO_SETTINGS` (normal install-time permission for Chromium audio-device routing). APK 1.0.4 / versionCode 5 declares both. The WebView requests microphone access when the citizen starts recording; there is no recording permission request on app launch. Verify both permissions in the built APK, then test permission grant, recording, stop, transcription, and denial on a physical phone. A successful build or manifest check alone does not establish that recording works on a device. See [Chromium's audio permission checks](https://chromium.googlesource.com/chromium/src/media/+/refs/heads/main/base/android/java/src/org/chromium/media/AudioManagerAndroid.java).
 
 Ward grades require at least three reports. Missing resolution timestamps do not earn a timeliness bonus. Unknown wards are counted separately. The score measures only reports received by this app, not individual performance or all city problems. Fictional source data stays labelled নমুনা, including scorecards and rain queues.
 

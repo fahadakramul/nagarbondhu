@@ -3,7 +3,7 @@
     "name": "NagarBondhu AI",
     "slug": "nagarbondhu-ai",
     "owner": "fahad_akramul",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -21,13 +21,14 @@
     },
     "android": {
       "package": "com.nagarbondhu.ai",
-      "versionCode": 4,
+      "versionCode": 5,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0F766E"
       },
       "permissions": [
         "RECORD_AUDIO",
+        "MODIFY_AUDIO_SETTINGS",
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",

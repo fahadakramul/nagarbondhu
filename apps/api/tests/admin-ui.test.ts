@@ -40,7 +40,7 @@ describe('Administrator UI connected to the real API',()=>{
     window.initMainMap=jest.fn(); // Leaflet's CDN renderer is verified in the browser, not JSDOM.
     window.initPickerMap=jest.fn();
   });
-  afterEach(async()=>{await new Promise(r=>setTimeout(r,40));dom?.window.close();CONFIG.NODE_ENV=oldMode;CONFIG.GEMINI_API_KEY=oldKey;db.restore(snapshot);});
+  afterEach(async()=>{if(context)await run('loadData()');await new Promise(r=>setTimeout(r,250));dom?.window.close();CONFIG.NODE_ENV=oldMode;CONFIG.GEMINI_API_KEY=oldKey;db.restore(snapshot);});
   async function login(){
     await run('toggleUserRole()');el('operator-email').value='operator@example.test';el('operator-password').value='PrivatePassword123!';
     await window.activateOperatorSession({preventDefault(){},target:el('operator-email').closest('form')});
@@ -90,6 +90,12 @@ describe('Administrator UI connected to the real API',()=>{
     expect(el('assistant-turns').textContent).toContain('এই মুহূর্তে সহায়ক উত্তর দিতে পারছে না');
     const count=db.reports.size;el('assistant-turns').querySelector('.assistant-actions button').click();
     expect(el('form-description').value).toContain('পানি');expect(run('currentTab')).toBe('report');expect(db.reports.size).toBe(count);
+  });
+  test('assistant threads persist, switch, and delete through a confirmation modal',async()=>{
+    window.openCivicAssistant('আমার এলাকার পানি জমে থাকে');await eventually(()=>!!el('assistant-turns').querySelector('.assistant-answer'));
+    const saved=JSON.parse(window.localStorage.getItem('nagarbondhu-threads'));expect(saved).toHaveLength(1);expect(saved[0].messages).toHaveLength(2);expect(el('assistant-turns').querySelector('.assistant-time').textContent).toMatch(/[০-৯]/);
+    el('assistant-reset').click();expect(el('assistant-turns').children.length).toBe(0);window.openCivicAssistant('রাস্তার বাতি নষ্ট');await eventually(()=>!!el('assistant-turns').querySelector('.assistant-answer'));
+    el('assistant-history').click();const rows=el('assistant-thread-drawer').querySelectorAll('div');expect(rows.length).toBe(2);rows[1].querySelector('button').click();expect(el('assistant-turns').textContent).toContain('আমার এলাকার পানি জমে থাকে');
   });
   test('filter sheet supports multiple categories while retaining the original select handlers',async()=>{
     const row=el('section-map').querySelector('.filter-chips');row.querySelector('button').click();
@@ -184,7 +190,7 @@ describe('Administrator UI connected to the real API',()=>{
     expect(el('resolution-rating').querySelector('img').getAttribute('src')).toBe('/uploads/resolved.png');
     const form=el('resolution-rating-form');form.elements['resolution-score'].value='4';
     await window.submitResolutionRating({preventDefault(){},target:form},id,'/uploads/resolved.png');
-    expect(el('rating-summary').textContent).toContain('4/৫');expect(el('rating-message').textContent).toContain('সংরক্ষিত');
+    expect(el('rating-summary').textContent).toContain('৪/৫');expect(el('rating-message').textContent).toContain('সংরক্ষিত');
     await window.openDetailModal(id);
     expect(el('resolution-rating-form').elements['resolution-score'].value).toBe('4');
     el('resolution-rating-form').elements['resolution-score'].value='2';

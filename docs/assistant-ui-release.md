@@ -9,6 +9,8 @@ Release date: 15 October 2026. Indigo `#4338CA` and Mango `#F59E0B` remain the b
 3. `270e1af` — three-step report wizard and receipt card; deployed and health checked.
 4. Final polish — report cards, Lucide SVG subset, skeletons, nonblocking toasts, accessibility and provider-format correction. The deployed commit is available from `/api/v1/health`.
 
+Post-rollout checks also corrected summary-first assistant scrolling, reused already validated model answers to avoid redundant calls, bounded redacted output text, and made the filter reset clear date filters while retaining its explicitly labelled source selection.
+
 Checkpoint before work: `checkpoint/assistant-ui-2026-10-15`.
 
 ## Differentiation self-check
@@ -42,7 +44,7 @@ The existing `handleFormSubmit` function is unchanged, as verified by the UI int
 
 ## Verification
 
-- 13 suites / 93 tests passed, including assistant schema/grounding/privacy/rate limits, all original IDs, unchanged submit handler, wizard validation/real submission/receipt, token-free sharing, multi-select filters, role/login, affirming, report scores and existing admin workflows.
+- 13 suites / 94 tests passed, including assistant schema/grounding/privacy/rate limits, all original IDs, unchanged submit handler, wizard validation/real submission/receipt, token-free sharing, multi-select filters, role/login, affirming, report scores and existing admin workflows.
 - Production build and changed browser JavaScript syntax checks passed.
 - Local browser: 390px mobile and 1280px desktop, all six main screens, populated planning modules, area card, filter sheets, assistant starter cards/actions, photo upload/automatic check, analysis/fallback, location confirmation, duplicate affirm, report submission, receipt/share/tracking and authority login.
 - No new console errors or page horizontal overflow in the final main-screen checks. Text contrast samples passed 4.5:1; raster map imagery is outside this DOM sampling check.

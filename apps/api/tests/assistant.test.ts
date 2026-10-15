@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { app } from '../src/app';
 import { CONFIG } from '../src/config';
 import { db } from '../src/db';
+import { AssistantAnswer } from '../src/services/assistant.service';
 import * as weather from '../src/services/rain.service';
 const payload=(text='তালাইমারীতে পানি জমে, কী করবো?')=>({deviceId:randomUUID(),messages:[{role:'user',text}],context:{tab:'home'}});
 const result=(parts:any[])=>({ok:true,json:async()=>({candidates:[{content:{role:'model',parts}}]})}) as Response;
@@ -15,6 +16,7 @@ describe('Data-grounded assistant',()=>{
     CONFIG.GEMINI_API_KEY='';const before=JSON.stringify(db.snapshot());
     const r=await request(app).post('/api/v1/ai/assistant').send(payload());
     expect(r.status).toBe(200);expect(r.body.fallback).toBe(true);expect(r.body.data.summary_bn).toBe('এই মুহূর্তে সহায়ক উত্তর দিতে পারছে না');expect(r.body.data.do_bn).toHaveLength(3);expect(r.body.data.app_facts).toEqual([]);expect(r.body.data.actions).toEqual(expect.arrayContaining([expect.objectContaining({type:'start_report',category:'WATERLOGGING'}),expect.objectContaining({type:'open_map'})]));expect(JSON.stringify(db.snapshot())).toBe(before);
+    const long=await request(app).post('/api/v1/ai/assistant').send(payload(('পানি '+Array(80).fill('01712345678').join(' ')).slice(0,1000)));expect(AssistantAnswer.safeParse(long.body.data).success).toBe(true);expect(long.body.data.actions[0].description.length).toBeLessThanOrEqual(1000);
   });
   test('ward request has the actual configured ward action; off topic and emergencies bypass Gemini',async()=>{
     CONFIG.GEMINI_API_KEY='';const ward=await request(app).post('/api/v1/ai/assistant').send(payload('ওয়ার্ড ১২ কেমন?'));
@@ -38,6 +40,11 @@ describe('Data-grounded assistant',()=>{
   test('provider malformed JSON or failure returns schema-safe fallback',async()=>{
     CONFIG.GEMINI_API_KEY='test-only';jest.spyOn(global,'fetch').mockRejectedValue(new Error('private provider detail'));
     const r=await request(app).post('/api/v1/ai/assistant').send(payload());expect(r.status).toBe(200);expect(r.body.fallback).toBe(true);expect(JSON.stringify(r.body)).not.toContain('private provider detail');
+  });
+  test('ward facts use the existing scorecard and a validated completed answer needs no redundant model call',async()=>{
+    CONFIG.GEMINI_API_KEY='test-only';const fetch=jest.spyOn(global,'fetch').mockResolvedValueOnce(result([{functionCall:{name:'get_ward_scorecard',args:{wardId:'ward-12'}}}])).mockResolvedValueOnce(result([{text:JSON.stringify({...answer,actions:[{type:'open_scorecard',wardId:'ward-12'}],app_facts:['untrusted model reference']})}]));
+    const r=await request(app).post('/api/v1/ai/assistant').send({...payload('ওয়ার্ড ১২ কেমন?'),context:{tab:'home',wardId:'ward-12'}});
+    expect(r.body.fallback).toBe(false);expect(fetch).toHaveBeenCalledTimes(2);expect(r.body.data.app_facts[0].source).toBe('ওয়ার্ড স্কোরকার্ড');expect(r.body.data.actions).toContainEqual({type:'open_scorecard',wardId:'ward-12'});
   });
   test('validates payload and enforces twenty requests per IP in ten minutes',async()=>{
     CONFIG.GEMINI_API_KEY='';const invalid=await request(app).post('/api/v1/ai/assistant').send({...payload(),messages:[{role:'user',text:'x'.repeat(1001)}]});expect(invalid.status).toBe(400);

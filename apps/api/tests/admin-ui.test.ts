@@ -99,6 +99,10 @@ describe('Administrator UI connected to the real API',()=>{
     el('map-category-filter').value='DRAINAGE';window.renderMapMarkers();
     expect(row.querySelector('button').textContent).toContain('১');
     expect(el('map-source')).not.toBeNull();expect(el('twin-at')).not.toBeNull();
+    el('map-from').value='2026-10-01';el('twin-at').value='2026-10-05';
+    const clear:any=Array.from(el('map-filter-sheet').querySelectorAll('button')).find((b:any)=>b.textContent.startsWith('সব ফিল্টার মুছুন'));clear.click();
+    expect(el('map-from').value).toBe('');expect(el('twin-at').value).toBe('');expect(el('map-category-filter').value).toBe('ALL');
+    await eventually(()=>!el('twin-summary').textContent.includes('লোড'));
   });
   test('mobile menu exposes every section, closes on navigation and supports Escape',async()=>{
     expect(el('primary-navigation').dataset.enhanced).toBe('true');

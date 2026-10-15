@@ -35,7 +35,7 @@ export function detectCategory(s:string):typeof categories[number]{
 const emergency=/আগুন|অগ্নি|ধস|ধসে|উন্মুক্ত.*তার|ছেঁড়া.*তার|বিদ্যুৎস্পৃষ্ট|আহত|রক্তপাত|অপরাধ|হামলা|fire|collapse|live wire|injur|crime/i;
 const scope=/পানি|জল|বন্যা|ড্রেন|নর্দমা|ময়লা|ময়লা|বর্জ্য|আবর্জনা|রাস্তা|সড়ক|সড়ক|বাতি|ফুটপাথ|ডেঙ্গু|মশা|গরম|তাপ|বৃষ্টি|নগর|শহর|ওয়ার্ড|ওয়ার্ড|রিপোর্ট|অভিযোগ|পরিকল্পনা|বাসা|ভবন|দালান|ট্রাফিক|যান|নিরাপত্তা|আবাসন|সেবা|পার্ক|উন্মুক্ত|রাজশাহী|তালাইমারী|রুয়েট|রুয়েট|urban|civic|drain|water|waste|road|ward|report|rain|dengue|heat|housing|traffic|planning|sdg|city|streetlight|footpath|mosquito|building|public space/i;
 function defaults(input:Input):Action[]{
-  const s=input.messages.at(-1)!.text,category=detectCategory(s),actions:Action[]=[{type:'start_report',category,title:'নাগরিক সমস্যার অভিযোগ',description:clean(s)}];
+  const s=input.messages.at(-1)!.text,category=detectCategory(s),actions:Action[]=[{type:'start_report',category,title:'নাগরিক সমস্যার অভিযোগ',description:clean(s).slice(0,1000)}];
   const digits=s.replace(/[০-৯]/g,c=>String('০১২৩৪৫৬৭৮৯'.indexOf(c)));
   const number=digits.match(/(?:ওয়া?র্ড|ওয়ার্ড|ward)\s*([0-9]{1,2})/i)?.[1];
   const ward=number?Array.from(db.wards.values()).find(w=>w.wardNumber===Number(number)):db.wards.get(input.context.wardId||'');
@@ -88,18 +88,19 @@ export async function answerAssistant(input:Input){
       if(Date.now()-began>=50000)throw new Error('Turn timeout');const response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent`,{method:'POST',signal:AbortSignal.timeout(Math.max(1,Math.min(15000,50000-(Date.now()-began)))),headers:{'Content-Type':'application/json','x-goog-api-key':CONFIG.GEMINI_API_KEY},body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents,...(!final?{tools:[{functionDeclarations:declarations}],toolConfig:{functionCallingConfig:{mode:'AUTO'}}}:{generationConfig:{responseMimeType:'application/json'}})})});
       if(!response.ok)throw new Error('Provider unavailable');const raw:any=await response.json();const content=raw.candidates?.[0]?.content;if(!content?.parts?.length)throw new Error('Empty response');return content;
     };
-    while(calls<3){const content=await generate();const requested=content.parts.filter((p:any)=>p.functionCall);contents.push(content);if(!requested.length)break;const responses=[];for(const part of requested){const c=part.functionCall;let data:any={unavailable:true};if(calls<3){calls++;try{data=await deadline(runTool(c.name,c.args||{}),Math.max(1,Math.min(8000,50000-(Date.now()-began))));}catch{data={unavailable:true,message:'তথ্য আনা যায়নি।'};}}responses.push({functionResponse:{name:c.name,response:{data}}});}contents.push({role:'user',parts:responses});}
+    let prepared:Answer|null=null;
+    while(calls<3){const content=await generate();const requested=content.parts.filter((p:any)=>p.functionCall);contents.push(content);if(!requested.length){try{const raw=JSON.parse(content.parts.filter((p:any)=>typeof p.text==='string').map((p:any)=>p.text).join(''));const parsed=AssistantAnswer.safeParse({...raw,app_facts:facts.slice(0,12),contact_bn:contacts.slice(0,4)});if(parsed.success)prepared=parsed.data;}catch{}break;}const responses=[];for(const part of requested){const c=part.functionCall;let data:any={unavailable:true};if(calls<3){calls++;try{data=await deadline(runTool(c.name,c.args||{}),Math.max(1,Math.min(8000,50000-(Date.now()-began))));}catch{data={unavailable:true,message:'তথ্য আনা যায়নি।'};}}responses.push({functionResponse:{name:c.name,response:{data}}});}contents.push({role:'user',parts:responses});}
     contents.push({role:'user',parts:[{text:'এখন schema অনুযায়ী শেষ JSON উত্তর দিন। কেবল tool থেকে পাওয়া facts ব্যবহার করুন; নতুন তথ্য বানাবেন না।'}]});
-    const result=await generate(true);const raw=JSON.parse(result.parts.filter((p:any)=>typeof p.text==='string').map((p:any)=>p.text).join(''));
+    const result=prepared?null:await generate(true);const raw=prepared||JSON.parse(result.parts.filter((p:any)=>typeof p.text==='string').map((p:any)=>p.text).join(''));
     // The model may summarize tool references in a different format. Never accept its fact/contact text.
     const answer=AssistantAnswer.parse({...raw,app_facts:facts.slice(0,12),contact_bn:contacts.slice(0,4)});
     answer.app_facts=facts.slice(0,12);answer.contact_bn=contacts.slice(0,4); // Local facts and contacts are server-authored, never model inventions.
     answer.actions=answer.actions.filter(a=>a.type==='open_scorecard'?!a.wardId||db.wards.has(a.wardId):a.type==='track_report'||a.type==='affirm_report'?allowedReports.has(a.id):true);
     for(const action of defaults(input).filter(a=>a.type!=='start_report'||detectCategory(last)!=='OTHER'))if(!answer.actions.some(a=>a.type===action.type))answer.actions.push(action);
-    answer.actions=answer.actions.slice(0,5).map(a=>a.type==='start_report'?{...a,description:clean(last)}:a);
+    answer.actions=answer.actions.slice(0,5).map(a=>a.type==='start_report'?{...a,description:clean(last).slice(0,1000),title:clean(a.title).slice(0,200)}:a);
     if(!answer.actions.length)answer.actions=defaults(input);
-    answer.summary_bn=clean(answer.summary_bn);answer.do_bn=answer.do_bn.map(clean);answer.dont_bn=answer.dont_bn.map(clean);
-    return {data:answer,fallback:false};
+    answer.summary_bn=clean(answer.summary_bn).slice(0,600);answer.do_bn=answer.do_bn.map(s=>clean(s).slice(0,600));answer.dont_bn=answer.dont_bn.map(s=>clean(s).slice(0,600));answer.followup_chips_bn=answer.followup_chips_bn.map(s=>clean(s).slice(0,120));
+    return {data:AssistantAnswer.parse(answer),fallback:false};
   }catch{fallback=true;return {data:assistantFallback(input),fallback:true};}
   finally{console.info('[Assistant]',JSON.stringify({calls,fallback,latencyMs:Date.now()-began}));}
 }

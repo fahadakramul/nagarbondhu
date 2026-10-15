@@ -45,6 +45,7 @@ export interface Ward {
 }
 
 export interface AiAnalysisData {
+  title_bn?: string;
   keywords?: string[];
   clearerDescription?: string;
   fieldVerificationNecessary?: boolean;

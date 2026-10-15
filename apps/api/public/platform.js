@@ -29,6 +29,7 @@ async function runAiPreview(allowFallback=false){
   try{
     const result=await platformApi('/ai/analyze-complaint',{text,title,allowFallback}),d=result.data;
     if(title!==document.getElementById('form-title').value.trim() || text!==document.getElementById('form-description').value.trim()){setPlatformMessage('বিবরণ বদলেছে; নতুন তথ্যের জন্য আবার Preview নিন।');return;}
+    document.getElementById('form-title').value=d.title_bn || d.summary.slice(0,60);
     setPlatformMessage(result.metadata.isFallback?'নিয়মভিত্তিক সারাংশ তৈরি হয়েছে।':'সারাংশ তৈরি হয়েছে। জমা দেওয়ার আগে দেখে নিন।');
     document.getElementById('ai-preview-box').classList.remove('hidden');
     document.getElementById('ai-preview-category-badge').textContent=CATEGORY_NAMES_BN[d.category];

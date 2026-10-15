@@ -30,7 +30,7 @@ const publicReport = (report: Report) => ({ ...report, actionStatus:workflowStat
 });
 
 const CreateReportSchema = z.object({
-  title: z.string().trim().min(3, 'Title is required').max(200),
+  title: z.string().trim().max(200).optional(),
   description: z.string().trim().min(5, 'Description must be at least 5 characters').max(6000),
   category: z.enum([
     'ROAD_DAMAGE',
@@ -130,7 +130,8 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
     const reporterName = req.user?.displayName || 'সচেতন নাগরিক';
 
     // 1. Run AI Analysis on Bengali complaint text
-    const aiResult = await analyzeBengaliComplaint(input.title+'\n'+input.description);
+    const aiResult = await analyzeBengaliComplaint((input.title || '')+'\n'+input.description);
+    const title = input.title && input.title.length >= 4 ? input.title : aiResult.data.title_bn || aiResult.data.summary?.slice(0,60) || input.description.slice(0,60);
     const finalCategory: ReportCategory = input.userCategory || input.category || aiResult.data.category;
 
     // Resolve Ward if not provided, by nearest ward center
@@ -146,7 +147,7 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
       id: reportId,
       reporterId,
       reporterName,
-      title: input.title,
+      title,
       description: input.description,
       category: finalCategory,
       userCategory: input.userCategory || null,
@@ -179,6 +180,7 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
       category: aiResult.data.category,
       suggestedCategory: aiResult.data.category,
       summary: aiResult.data.summary,
+      title_bn: aiResult.data.title_bn,
       severity: aiResult.data.severity,
       confidence: aiResult.data.confidence,
       reasons: aiResult.data.reasons,
@@ -224,7 +226,7 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
 router.post('/duplicate-suggestions', (req,res,next)=>{
   try {
     const input=CreateReportSchema.pick({title:true,description:true,category:true,latitude:true,longitude:true}).extend({category:CreateReportSchema.shape.category.unwrap()}).strict().parse(req.body);
-    res.json({success:true,data:duplicateSuggestions(input)});
+    res.json({success:true,data:duplicateSuggestions({...input,title:input.title || input.description.slice(0,60)})});
   } catch(error) {next(error);}
 });
 

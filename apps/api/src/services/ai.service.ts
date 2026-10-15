@@ -5,6 +5,7 @@ import { AiAnalysisData, ReportCategory } from '@nagarbondhu/shared';
 
 // Strict Zod schema for AI output
 export const AiAnalysisSchema = z.object({
+  title_bn: z.string().trim().min(4).max(200).transform(value => value.split(/\s+/).slice(0,8).join(' ')).optional(),
   category: z.enum([
     'ROAD_DAMAGE',
     'WATERLOGGING',
@@ -80,6 +81,7 @@ function analyzeWithRuleFallback(text: string): AiAnalysisData {
   }
 
   return {
+    title_bn: text.trim().split(/\s+/).slice(0,8).join(' '),
     category,
     keywords: t.split(/[\s,।.]+/).filter(w=>w.length>3).slice(0,8),
     clearerDescription: text.trim(),
@@ -123,6 +125,7 @@ Return ONLY valid JSON with this exact schema (no markdown, no backticks, just r
 {
   "category": "ROAD_DAMAGE" | "WATERLOGGING" | "DRAINAGE" | "WASTE" | "FOOTPATH" | "STREETLIGHT" | "OTHER",
   "summary": "Concise 1-2 sentence Bengali summary of the problem",
+  "title_bn": "Neutral Bengali title, maximum 8 words, include the place if mentioned; no invented facts",
   "severity": <integer 1 to 5>,
   "confidence": <float 0.0 to 1.0>,
   "reasons": ["Bengali bullet point reason 1", "Bengali bullet point reason 2"],

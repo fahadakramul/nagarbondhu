@@ -7,7 +7,8 @@
   
   <!-- PWA & Mobile WebAPK Support -->
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0F766E">
+  <meta name="theme-color" content="#0B0F19">
+  <meta name="color-scheme" content="dark">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -32,13 +33,13 @@
         extend: {
           colors: {
             civic: {
-              50: '#F0FDFA',
-              100: '#CCFBF1',
-              500: '#14B8A6',
-              600: '#0D9488',
-              700: '#0F766E',
-              800: '#115E59',
-              900: '#134E4A',
+              50: '#102531',
+              100: '#143344',
+              500: '#22D3EE',
+              600: '#06B6D4',
+              700: '#0891B2',
+              800: '#0E7490',
+              900: '#0F172A',
             }
           },
           fontFamily: {
@@ -60,19 +61,20 @@
     }
   </style>
   <link rel="stylesheet" href="/polish.css">
+  <link rel="stylesheet" href="/theme.css">
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-bengali">
+<body class="theme-obsidian bg-slate-50 text-slate-800 min-h-screen flex flex-col font-bengali">
 
   <!-- TOP HEADER -->
   <header class="bg-civic-700 text-white shadow-md sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap justify-between items-center gap-3">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-xl font-bold border border-white/20 shadow-inner">
-          🏙️
+          <i class="fa-solid fa-city" aria-hidden="true"></i>
         </div>
         <div>
-          <h1 class="text-xl sm:text-2xl font-bold tracking-tight leading-none">নগরবন্ধু</h1>
-          <p class="text-xs text-teal-200 mt-1">রাজশাহীর নাগরিক সেবা</p>
+          <h1 class="text-xl sm:text-2xl font-bold tracking-tight leading-none">নগরবন্ধু <span class="brand-ai">AI</span></h1>
+          <p class="text-xs text-teal-200 mt-1">Urban Intelligence · রাজশাহী</p>
         </div>
       </div>
 
@@ -139,7 +141,7 @@
           <g fill="#5eead4"><circle cx="58" cy="210" r="5"/><circle cx="120" cy="176" r="5"/><circle cx="194" cy="190" r="5"/><circle cx="256" cy="142" r="5"/><circle cx="326" cy="168" r="5"/><circle cx="388" cy="118" r="5"/></g>
         </svg>
         <div class="max-w-3xl relative z-10 space-y-3">
-          <p class="hero-eyebrow"><span aria-hidden="true"></span> NagarBondhu AI <span class="hero-city-label">রাজশাহী</span></p>
+          <p id="engine-status" class="engine-badge" role="status" title="Application server connection"><span aria-hidden="true"></span> NagarBondhu AI <span id="engine-status-label">সংযোগ যাচাই হচ্ছে</span></p>
           <h2 class="text-2xl sm:text-4xl font-extrabold leading-tight">
             নাগরিক রিপোর্ট থেকে<br>নগর পরিকল্পনা
           </h2>
@@ -288,10 +290,10 @@
         <form id="report-form" onsubmit="handleFormSubmit(event)" class="space-y-4">
           <!-- DESCRIPTION & AI TRIGGER -->
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">সমস্যার বিস্তারিত বর্ণনা * (বাংলা বা ইংরেজি)</label>
+            <label for="form-description" class="block text-xs font-bold text-slate-700 mb-1">সমস্যার বিস্তারিত বর্ণনা * (বাংলা বা ইংরেজি)</label>
             <textarea id="form-description" rows="4" required minlength="5" maxlength="6000" class="w-full text-sm p-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-civic-500 focus:outline-none" placeholder="যেমন: তালাইমারী শহীদ মিনারের সামনের রাস্তায় ড্রেন উপচে কোমর সমান নোংরা পানি জমে আছে, পথচারীরা চলাচল করতে পারছে না..."></textarea>
-            <button type="button" onclick="previewPhotoCheck()" class="text-xs border border-teal-700 text-teal-800 rounded-lg px-3 py-2 mt-2">ছবি ও বিবরণ যাচাই করুন</button><p id="photo-check-message" class="text-xs mt-2" role="status" aria-live="polite"></p>
-            <div class="border border-teal-200 rounded-xl p-3 space-y-2 mt-2"><button id="voice-start" type="button" onclick="startVoiceComplaint()" class="bg-teal-700 text-white rounded-lg px-3 py-2 text-sm">🎤 বলে অভিযোগ করুন</button><button id="voice-stop" type="button" onclick="stopVoiceComplaint()" class="hidden bg-red-700 text-white rounded-lg px-3 py-2 text-sm">রেকর্ড বন্ধ করুন</button><p id="voice-message" class="text-xs" role="status" aria-live="polite">সর্বোচ্চ ৬০ সেকেন্ড। লেখা তৈরি হলে দেখে সম্পাদনা করুন।</p><audio id="voice-preview" class="hidden w-full" controls></audio><button id="voice-transcribe" type="button" onclick="sendVoiceComplaint()" class="hidden text-teal-800 border rounded-lg px-3 py-2 text-sm">আবার লেখা তৈরি করুন</button></div>
+            <div class="vision-check"><p class="input-kicker">Gemini AI Vision Output</p><button type="button" onclick="previewPhotoCheck()" class="text-xs border border-teal-700 text-teal-800 rounded-lg px-3 py-2 mt-2">ছবি ও বিবরণ যাচাই করুন</button><p id="photo-check-message" class="text-xs mt-2" role="status" aria-live="polite"></p></div>
+            <div id="voice-input-card" class="border border-teal-200 rounded-xl p-3 space-y-2 mt-2"><div class="voice-card-heading"><span class="input-kicker">VOICE INPUT</span><div class="voice-waveform" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div><button id="voice-start" type="button" onclick="startVoiceComplaint()" class="bg-teal-700 text-white rounded-lg px-3 py-2 text-sm">🎤 বলে অভিযোগ করুন</button><button id="voice-stop" type="button" onclick="stopVoiceComplaint()" class="hidden bg-red-700 text-white rounded-lg px-3 py-2 text-sm">রেকর্ড বন্ধ করুন</button><p id="voice-message" class="text-xs" role="status" aria-live="polite">সর্বোচ্চ ৬০ সেকেন্ড। লেখা তৈরি হলে দেখে সম্পাদনা করুন।</p><audio id="voice-preview" class="hidden w-full" controls></audio><button id="voice-transcribe" type="button" onclick="sendVoiceComplaint()" class="hidden text-teal-800 border rounded-lg px-3 py-2 text-sm">আবার লেখা তৈরি করুন</button></div>
           </div>
 
           <!-- AI LIVE PREVIEW BUTTON -->
@@ -332,20 +334,20 @@
 
           <!-- TITLE -->
           <div>
-            <label class="block text-xs font-bold text-slate-700 mb-1">সংক্ষিপ্ত শিরোনাম *</label>
+            <label for="form-title" class="block text-xs font-bold text-slate-700 mb-1">সংক্ষিপ্ত শিরোনাম *</label>
             <input type="text" id="form-title" required minlength="3" maxlength="200" class="w-full text-sm p-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-civic-500 focus:outline-none" placeholder="যেমন: তালাইমারীতে ড্রেন উপচে তীব্র জলাবদ্ধতা">
           </div>
 
           <!-- RAJSHAHI WARD SELECTOR -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">রাজশাহীর এলাকা / ওয়ার্ড (অজানা রাখা যায়)</label>
+              <label for="form-ward" class="block text-xs font-bold text-slate-700 mb-1">রাজশাহীর এলাকা / ওয়ার্ড (অজানা রাখা যায়)</label>
               <select id="form-ward" onchange="onWardSelect(this.value)" class="w-full text-sm p-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-civic-500 focus:outline-none bg-white">
                 <!-- Injected via JS -->
               </select>
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-700 mb-1">নির্দিষ্ট ঠিকানা লেবেল</label>
+              <label for="form-address" class="block text-xs font-bold text-slate-700 mb-1">নির্দিষ্ট ঠিকানা লেবেল</label>
               <input type="text" id="form-address" class="w-full text-sm p-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-civic-500 focus:outline-none" value="">
             </div>
           </div>
@@ -390,7 +392,7 @@
             <input type="file" id="gallery-file-input" accept="image/*" class="hidden" onchange="handleFilePicked(event)">
 
             <!-- Upload Action Buttons Grid -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <div class="image-upload-grid grid grid-cols-2 sm:grid-cols-3 gap-2.5">
               <button type="button" onclick="document.getElementById('camera-file-input').click()" class="bg-teal-50 hover:bg-teal-100 border-2 border-dashed border-teal-400 text-teal-800 p-3 rounded-xl flex flex-col items-center justify-center gap-1 transition">
                 <i class="fa-solid fa-camera text-xl text-teal-600"></i>
                 <span class="text-xs font-bold">ক্যামেরা দিয়ে ছবি তুলুন</span>
@@ -456,7 +458,7 @@
 
         <!-- FILTERS -->
         <div class="flex flex-wrap items-center gap-2">
-          <select id="map-category-filter" onchange="renderMapMarkers()" class="text-xs p-2 rounded-lg border border-slate-300 bg-white">
+          <select id="map-category-filter" aria-label="সমস্যার ক্যাটাগরি" onchange="renderMapMarkers()" class="text-xs p-2 rounded-lg border border-slate-300 bg-white">
             <option value="ALL">সব ক্যাটাগরি</option>
             <option value="ROAD_DAMAGE">সড়ক ক্ষতি ও খানাখন্দ</option>
             <option value="WATERLOGGING">জলাবদ্ধতা ও পানি জমা</option>
@@ -466,7 +468,7 @@
             <option value="STREETLIGHT">অচল সড়কবাতি</option>
           </select>
 
-          <select id="map-priority-filter" onchange="renderMapMarkers()" class="text-xs p-2 rounded-lg border border-slate-300 bg-white">
+          <select id="map-priority-filter" aria-label="সমস্যার অগ্রাধিকার" onchange="renderMapMarkers()" class="text-xs p-2 rounded-lg border border-slate-300 bg-white">
             <option value="ALL">সব অগ্রাধিকার</option>
             <option value="CRITICAL">জরুরি নিরাপত্তা সতর্কতা</option>
             <option value="HIGH">উচ্চ অগ্রাধিকার</option>
@@ -487,7 +489,7 @@
       </div>
 
       <!-- FULL LEAFLET MAP -->
-      <div class="flex gap-2 flex-wrap text-xs my-2"><label>অবস্থা<select id="map-status" onchange="renderMapMarkers()" class="border p-2 rounded"><option value="">সব</option><option value="SUBMITTED">জমা দেওয়া</option><option value="UNDER_REVIEW">পর্যালোচনাধীন</option><option value="AWAITING_FIELD_VERIFICATION">মাঠে যাচাই প্রয়োজন</option><option value="READY_FOR_ASSIGNMENT">দায়িত্বের জন্য প্রস্তুত</option><option value="ASSIGNED">দায়িত্ব অর্পিত</option><option value="IN_PROGRESS">কাজ চলছে</option><option value="ON_HOLD">স্থগিত</option><option value="RESOLVED">সমাধান জমা</option><option value="CLOSED">বন্ধ</option><option value="REJECTED">বাতিল</option></select></label><label>শুরু<input id="map-from" type="date" onchange="renderMapMarkers()" class="border p-2 rounded"></label><label>শেষ<input id="map-to" type="date" onchange="renderMapMarkers()" class="border p-2 rounded"></label><label>তথ্যের উৎস<select id="map-source" onchange="loadMapRecords()" class="border p-2 rounded"><option value="citizen_report">নাগরিক</option><option value="">সব</option><option value="demo_seed">নমুনা</option></select></label></div><p id="map-coverage" class="text-xs my-2" aria-live="polite">মানচিত্রের তথ্য লোড হচ্ছে…</p><p class="text-xs mb-2">একসঙ্গে থাকা চিহ্নের সংখ্যা রিপোর্টের সংখ্যা; রং সমস্যার ধরন অনুযায়ী।</p><div id="twin-controls"></div><div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]"><div id="main-map" class="w-full h-[500px] rounded-2xl border border-slate-300 shadow-sm z-10"></div><aside id="twin-panel" class="bg-white rounded-2xl border p-4 text-sm overflow-auto max-h-[600px]" aria-live="polite">মানচিত্র থেকে রিপোর্ট নির্বাচন করুন।</aside></div>
+      <details id="map-filters" class="map-filters"><summary>ফিল্টার ও সময়ভিত্তিক তুলনা <small id="map-filter-source">নাগরিক</small></summary><div class="flex gap-2 flex-wrap text-xs my-2"><label>অবস্থা<select id="map-status" onchange="renderMapMarkers()" class="border p-2 rounded"><option value="">সব</option><option value="SUBMITTED">জমা দেওয়া</option><option value="UNDER_REVIEW">পর্যালোচনাধীন</option><option value="AWAITING_FIELD_VERIFICATION">মাঠে যাচাই প্রয়োজন</option><option value="READY_FOR_ASSIGNMENT">দায়িত্বের জন্য প্রস্তুত</option><option value="ASSIGNED">দায়িত্ব অর্পিত</option><option value="IN_PROGRESS">কাজ চলছে</option><option value="ON_HOLD">স্থগিত</option><option value="RESOLVED">সমাধান জমা</option><option value="CLOSED">বন্ধ</option><option value="REJECTED">বাতিল</option></select></label><label>শুরু<input id="map-from" type="date" onchange="renderMapMarkers()" class="border p-2 rounded"></label><label>শেষ<input id="map-to" type="date" onchange="renderMapMarkers()" class="border p-2 rounded"></label><label>তথ্যের উৎস<select id="map-source" onchange="loadMapRecords()" class="border p-2 rounded"><option value="citizen_report">নাগরিক</option><option value="">সব</option><option value="demo_seed">নমুনা</option></select></label></div><div id="twin-controls"></div></details><p id="map-coverage" class="text-xs my-2" aria-live="polite">মানচিত্রের তথ্য লোড হচ্ছে…</p><p class="text-xs mb-2">একসঙ্গে থাকা চিহ্নের সংখ্যা রিপোর্টের সংখ্যা; রং সমস্যার ধরন অনুযায়ী।</p><div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]"><div id="main-map" class="w-full h-[500px] rounded-2xl border border-slate-300 shadow-sm z-10"></div><aside id="twin-panel" class="bg-white rounded-2xl border p-4 text-sm overflow-auto max-h-[600px]" aria-live="polite">মানচিত্র থেকে রিপোর্ট নির্বাচন করুন।</aside></div>
     </section>
 
     <!-- ==================== TAB 4: REPORTS FEED & DETAILS ==================== -->
@@ -657,5 +659,6 @@
   <script src="/competition.js"></script>
   <script src="/features.js"></script>
   <script src="/polish.js"></script>
+  <script src="/theme.js"></script>
 </body>
 </html>

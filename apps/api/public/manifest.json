@@ -4,8 +4,8 @@
   "description": "AI-Powered Urban Problem Intelligence Platform for Rajshahi, Bangladesh",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0F172A",
-  "theme_color": "#0F766E",
+  "background_color": "#0B0F19",
+  "theme_color": "#0B0F19",
   "orientation": "portrait-primary",
   "icons": [
     {

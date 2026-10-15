@@ -34,7 +34,8 @@ describe('Administrator UI connected to the real API',()=>{
       if(options.body)call=call.send(JSON.parse(options.body));
       const response=await call;return {ok:response.status<400,status:response.status,json:async()=>response.body};
     };
-    context=dom.getInternalVMContext();for(const name of ['app','actions','platform','competition','features','polish'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../public/'+name+'.js'),'utf8'),context);
+    context=dom.getInternalVMContext();for(const name of ['app','actions','platform','competition','features','polish','theme'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../public/'+name+'.js'),'utf8'),context);
+    window.initMainMap=jest.fn(); // Leaflet's CDN renderer is verified in the browser, not JSDOM.
   });
   afterEach(async()=>{await new Promise(r=>setTimeout(r,40));dom?.window.close();CONFIG.NODE_ENV=oldMode;CONFIG.GEMINI_API_KEY=oldKey;db.restore(snapshot);});
   async function login(){
@@ -79,6 +80,33 @@ describe('Administrator UI connected to the real API',()=>{
     expect(el('voice-stop').classList.contains('hidden')).toBe(true);
     delete window.ReactNativeWebView;await window.startVoiceComplaint();
     expect(el('voice-message').textContent).toContain('site permissions');
+  });
+  test('recording animation waits for a recording and stops when it ends',async()=>{
+    el('voice-start').disabled=true;window.syncVoiceAppearance();expect(el('voice-input-card').classList.contains('is-recording')).toBe(false);
+    run("voiceRecorder={state:'recording'}");el('voice-stop').classList.remove('hidden');
+    await eventually(()=>el('voice-input-card').classList.contains('is-recording'));
+    run("voiceRecorder=null");el('voice-stop').classList.add('hidden');
+    await eventually(()=>!el('voice-input-card').classList.contains('is-recording'));
+  });
+  test('timeline shortcut opens the mobile filter disclosure and shows its actual source',async()=>{
+    expect(el('map-filters').open).toBe(false);
+    run("mvpSource='demo_seed'");window.openTimelineMap();
+    expect(el('map-filters').open).toBe(true);
+    await eventually(()=>el('map-filter-source').textContent.includes('নমুনা'));
+    expect(el('map-source').value).toBe('demo_seed');
+  });
+  test('theme displays real status and scores without implying progress for held reports',async()=>{
+    await eventually(()=>el('engine-status').classList.contains('is-live'));
+    await window.openDetailModal(reportId);
+    expect(el('report-stepper').querySelector('[aria-current="step"]').textContent).toBe('রিপোর্ট গ্রহণ');
+    await window.openDetailModal('rep-004');
+    expect(el('modal-prio-score').dataset.risk).toBe('CRITICAL');
+    expect(el('modal-priority-level').textContent).toBe('CRITICAL');
+    window.decorateReportPresentation({actionStatus:'RESOLVED',priorityAssessment:{score:90,priorityLevel:'CRITICAL'}});
+    expect(el('report-stepper').querySelector('[aria-current="step"]').textContent).toBe('সমাধান রিপোর্ট');
+    expect(el('modal-prio-score').dataset.risk).toBe('CRITICAL');expect(el('modal-prio-score').style.getPropertyValue('--score-angle')).toBe('324deg');
+    window.decorateReportPresentation({actionStatus:'ON_HOLD'});
+    expect(el('report-stepper')).toBeNull();expect(el('modal-prio-score').classList.contains('risk-score')).toBe(false);
   });
   test('public scorecard and ward navigation work with the full feature script, voice failure remains usable',async()=>{
     await window.loadScorecard();expect(el('scorecard-message').textContent).toContain('নাগরিক রিপোর্ট');expect(el('scorecard-cards').querySelectorAll('article').length).toBe(db.wards.size);

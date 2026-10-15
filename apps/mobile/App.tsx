@@ -44,7 +44,7 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F766E" />
+      <StatusBar barStyle="light-content" backgroundColor="#0B0F19" />
 
       {hasError ? (
         <View style={styles.errorContainer}>
@@ -78,7 +78,7 @@ export default function App() {
             startInLoadingState={true}
             renderLoading={() => (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#0F766E" />
+                <ActivityIndicator size="large" color="#22D3EE" />
                 <Text style={styles.loadingText}>নগরবন্ধু এআই লোড হচ্ছে...</Text>
               </View>
             )}
@@ -104,11 +104,11 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F766E',
+    backgroundColor: '#0B0F19',
   },
   webContainer: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#0B0F19',
   },
   webView: {
     flex: 1,
@@ -121,21 +121,21 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#111827',
     zIndex: 10,
   },
   loadingText: {
     marginTop: 12,
     fontSize: 15,
     fontWeight: '600',
-    color: '#0F766E',
+    color: '#22D3EE',
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#111827',
   },
   errorIcon: {
     fontSize: 48,
@@ -144,34 +144,34 @@ const styles = StyleSheet.create({
   errorTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#1E293B',
+    color: '#F8FAFC',
     textAlign: 'center',
     marginBottom: 8,
   },
   errorSubtitle: {
     fontSize: 14,
-    color: '#64748B',
+    color: '#94A3B8',
     textAlign: 'center',
     marginBottom: 12,
     lineHeight: 20,
   },
   errorUrl: {
     fontSize: 12,
-    color: '#0F766E',
-    backgroundColor: '#F0FDFA',
+    color: '#22D3EE',
+    backgroundColor: '#172235',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 6,
     marginBottom: 24,
   },
   retryButton: {
-    backgroundColor: '#0F766E',
+    backgroundColor: '#06B6D4',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
   },
   retryButtonText: {
-    color: '#FFFFFF',
+    color: '#0B0F19',
     fontSize: 15,
     fontWeight: '600',
   },

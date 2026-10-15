@@ -52,13 +52,13 @@ const CATEGORY_NAMES_BN = {
 };
 
 const CATEGORY_COLORS = {
-  ROAD_DAMAGE: '#D97706',
-  WATERLOGGING: '#0284C7',
-  DRAINAGE: '#0D9488',
-  WASTE: '#E11D48',
-  FOOTPATH: '#7C3AED',
-  STREETLIGHT: '#CA8A04',
-  OTHER: '#64748B',
+  ROAD_DAMAGE: '#F59E0B',
+  WATERLOGGING: '#38BDF8',
+  DRAINAGE: '#22D3EE',
+  WASTE: '#FB7185',
+  FOOTPATH: '#A78BFA',
+  STREETLIGHT: '#FACC15',
+  OTHER: '#94A3B8',
 };
 
 // Initialize Application
@@ -184,6 +184,7 @@ function initPickerMap() {
   pickerMap = L.map('picker-map').setView([initialLat, initialLng], 15);
 
   pickerStreetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    className: 'obsidian-street-tiles',
     attribution: '&copy; OpenStreetMap'
   });
 
@@ -315,6 +316,7 @@ function initMainMap() {
   mainMap = L.map('main-map').setView([24.3680, 88.6180], 13);
   
   mainStreetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    className: 'obsidian-street-tiles',
     attribution: '&copy; OpenStreetMap contributors • NagarBondhu AI'
   });
 

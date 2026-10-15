@@ -34,7 +34,7 @@ describe('Administrator UI connected to the real API',()=>{
       if(options.body)call=call.send(JSON.parse(options.body));
       const response=await call;return {ok:response.status<400,status:response.status,json:async()=>response.body};
     };
-    context=dom.getInternalVMContext();for(const name of ['app','actions','platform','competition','features','polish','theme'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../public/'+name+'.js'),'utf8'),context);
+    context=dom.getInternalVMContext();for(const name of ['app','actions','platform','competition','features','polish','theme','assistant','experience'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../public/'+name+'.js'),'utf8'),context);
     window.initMainMap=jest.fn(); // Leaflet's CDN renderer is verified in the browser, not JSDOM.
   });
   afterEach(async()=>{await new Promise(r=>setTimeout(r,40));dom?.window.close();CONFIG.NODE_ENV=oldMode;CONFIG.GEMINI_API_KEY=oldKey;db.restore(snapshot);});
@@ -43,6 +43,31 @@ describe('Administrator UI connected to the real API',()=>{
     await window.activateOperatorSession({preventDefault(){},target:el('operator-email').closest('form')});
     await eventually(()=>!el('operator-login-modal').classList.contains('hidden')?false:run('!!authToken'));
   }
+  test('new navigation keeps the existing IDs and exposes authority login through More',async()=>{
+    expect(el('primary-navigation').closest('#civic-sidebar')).not.toBeNull();
+    const more=el('civic-bottom-nav').querySelector('[data-nav-tab="more"]');more.click();expect(el('more-sheet').hasAttribute('open')).toBe(true);
+    const loginButton=Array.from(el('more-sheet').querySelectorAll('button')).find((b:any)=>b.textContent==='কর্তৃপক্ষ লগইন') as any;
+    loginButton.click();expect(el('operator-login-modal').classList.contains('hidden')).toBe(false);expect(el('more-sheet').hasAttribute('open')).toBe(false);
+    window.closeOperatorLogin();
+    el('civic-bottom-nav').querySelector('[data-nav-tab="report"]').click();expect(run('currentTab')).toBe('report');
+    expect(el('civic-bottom-nav').querySelector('[aria-current]').dataset.navTab).toBe('report');
+  });
+  test('assistant uses honest fallback and its action prefills without submitting',async()=>{
+    window.openCivicAssistant();const first=el('assistant-starters').querySelector('button');first.click();
+    await eventually(()=>!!el('assistant-turns').querySelector('.assistant-answer'));
+    expect(el('assistant-turns').textContent).toContain('এই মুহূর্তে সহায়ক উত্তর দিতে পারছে না');
+    const count=db.reports.size;el('assistant-turns').querySelector('.assistant-actions button').click();
+    expect(el('form-description').value).toContain('পানি');expect(run('currentTab')).toBe('report');expect(db.reports.size).toBe(count);
+  });
+  test('filter sheet supports multiple categories while retaining the original select handlers',async()=>{
+    const row=el('section-map').querySelector('.filter-chips');row.querySelector('button').click();
+    const choices=el('map-filter-sheet').querySelectorAll('.filter-options:first-of-type button');choices[0].click();choices[1].click();
+    expect(el('map-category-filter').value).toBe('ALL');expect(el('map-filter-sheet').querySelectorAll('.filter-options:first-of-type [aria-pressed="true"]').length).toBe(2);
+    expect(row.querySelector('button').textContent).toContain('২');
+    el('map-category-filter').value='DRAINAGE';window.renderMapMarkers();
+    expect(row.querySelector('button').textContent).toContain('১');
+    expect(el('map-source')).not.toBeNull();expect(el('twin-at')).not.toBeNull();
+  });
   test('mobile menu exposes every section, closes on navigation and supports Escape',async()=>{
     expect(el('primary-navigation').dataset.enhanced).toBe('true');
     for(const tab of ['home','report','map','feed','dashboard','scorecard']){
@@ -89,7 +114,7 @@ describe('Administrator UI connected to the real API',()=>{
     await eventually(()=>!el('voice-input-card').classList.contains('is-recording'));
   });
   test('timeline shortcut opens the mobile filter disclosure and shows its actual source',async()=>{
-    expect(el('map-filters').open).toBe(false);
+    expect(el('map-filter-sheet').hasAttribute('open')).toBe(false);
     run("mvpSource='demo_seed'");window.openTimelineMap();
     expect(el('map-filters').open).toBe(true);
     await eventually(()=>el('map-filter-source').textContent.includes('নমুনা'));
@@ -172,7 +197,7 @@ describe('Administrator UI connected to the real API',()=>{
   });
   test('information request uses a WebView-compatible form and appears in citizen tracking',async()=>{
     await login();await window.openDetailModal(reportId);window.mvpConfirm=async()=>true;
-    const pending=window.requestMoreInformation();const dialog=window.document.querySelector('dialog');expect(dialog).toBeTruthy();
+    const pending=window.requestMoreInformation();const dialog=window.document.querySelector('dialog[open]');expect(dialog).toBeTruthy();
     dialog.querySelector('textarea').value='Please add a recent photograph and the obstruction location.';
     dialog.querySelector('form').dispatchEvent(new window.Event('submit',{bubbles:true,cancelable:true}));await pending;
     expect(window.prompt).not.toHaveBeenCalled();expect(el('public-tracking').textContent).toContain('Please add a recent photograph');

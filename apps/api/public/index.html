@@ -55,6 +55,7 @@
   <link rel="stylesheet" href="/polish.css">
   <link rel="stylesheet" href="/theme.css">
   <link rel="stylesheet" href="/assistant.css">
+  <link rel="stylesheet" href="/experience.css">
 </head>
 <body class="theme-obsidian bg-slate-50 text-slate-800 min-h-screen flex flex-col font-bengali">
 
@@ -493,7 +494,7 @@
       </div>
 
       <!-- FULL LEAFLET MAP -->
-      <details id="map-filters" class="map-filters"><summary>ফিল্টার ও সময়ভিত্তিক তুলনা <small id="map-filter-source">নাগরিক</small></summary><div class="flex gap-2 flex-wrap text-xs my-2"><label>অবস্থা<select id="map-status" onchange="renderMapMarkers()" class="border p-2 rounded"><option value="">সব</option><option value="SUBMITTED">জমা দেওয়া</option><option value="UNDER_REVIEW">পর্যালোচনাধীন</option><option value="AWAITING_FIELD_VERIFICATION">মাঠে যাচাই প্রয়োজন</option><option value="READY_FOR_ASSIGNMENT">দায়িত্বের জন্য প্রস্তুত</option><option value="ASSIGNED">দায়িত্ব অর্পিত</option><option value="IN_PROGRESS">কাজ চলছে</option><option value="ON_HOLD">স্থগিত</option><option value="RESOLVED">সমাধান জমা</option><option value="CLOSED">বন্ধ</option><option value="REJECTED">বাতিল</option></select></label><label>শুরু<input id="map-from" type="date" onchange="renderMapMarkers()" class="border p-2 rounded"></label><label>শেষ<input id="map-to" type="date" onchange="renderMapMarkers()" class="border p-2 rounded"></label><label>তথ্যের উৎস<select id="map-source" onchange="loadMapRecords()" class="border p-2 rounded"><option value="citizen_report">নাগরিক</option><option value="">সব</option><option value="demo_seed">নমুনা</option></select></label></div><div id="twin-controls"></div></details><p id="map-coverage" class="text-xs my-2" aria-live="polite">মানচিত্রের তথ্য লোড হচ্ছে…</p><p class="text-xs mb-2">একসঙ্গে থাকা চিহ্নের সংখ্যা রিপোর্টের সংখ্যা; রং সমস্যার ধরন অনুযায়ী।</p><div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]"><div id="main-map" class="w-full h-[500px] rounded-2xl border border-slate-300 shadow-sm z-10"></div><aside id="twin-panel" class="bg-white rounded-2xl border p-4 text-sm overflow-auto max-h-[600px]" aria-live="polite">মানচিত্র থেকে রিপোর্ট নির্বাচন করুন।</aside></div>
+      <details id="map-filters" class="map-filters"><summary>ফিল্টার ও সময়ভিত্তিক তুলনা <small id="map-filter-source">নাগরিক</small></summary><div class="flex gap-2 flex-wrap text-xs my-2"><label>অবস্থা<select id="map-status" onchange="renderMapMarkers()" class="border p-2 rounded"><option value="">সব</option><option value="SUBMITTED">জমা দেওয়া</option><option value="UNDER_REVIEW">পর্যালোচনাধীন</option><option value="AWAITING_FIELD_VERIFICATION">মাঠে যাচাই প্রয়োজন</option><option value="READY_FOR_ASSIGNMENT">দায়িত্বের জন্য প্রস্তুত</option><option value="ASSIGNED">দায়িত্ব অর্পিত</option><option value="IN_PROGRESS">কাজ চলছে</option><option value="ON_HOLD">স্থগিত</option><option value="RESOLVED">সমাধান জমা</option><option value="CLOSED">বন্ধ</option><option value="REJECTED">বাতিল</option></select></label><label>শুরু<input id="map-from" type="date" onchange="renderMapMarkers()" class="border p-2 rounded"></label><label>শেষ<input id="map-to" type="date" onchange="renderMapMarkers()" class="border p-2 rounded"></label><label>তথ্যের উৎস<select id="map-source" onchange="loadMapRecords()" class="border p-2 rounded"><option value="citizen_report">নাগরিক</option><option value="">সব</option><option value="demo_seed">নমুনা</option></select></label></div><div id="twin-controls"></div></details><p id="map-coverage" class="text-xs my-2" aria-live="polite">মানচিত্রের তথ্য লোড হচ্ছে…</p><p class="text-xs mb-2">একসঙ্গে থাকা চিহ্নের সংখ্যা রিপোর্টের সংখ্যা; পিনের রং সর্বোচ্চ অগ্রাধিকার অনুযায়ী।</p><div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]"><div id="main-map" class="w-full h-[500px] rounded-2xl border border-slate-300 shadow-sm z-10"></div><aside id="twin-panel" class="bg-white rounded-2xl border p-4 text-sm overflow-auto max-h-[600px]" aria-live="polite">মানচিত্র থেকে রিপোর্ট নির্বাচন করুন।</aside></div>
     </section>
 
     <!-- ==================== TAB 4: REPORTS FEED & DETAILS ==================== -->
@@ -665,5 +666,6 @@
   <script src="/polish.js"></script>
   <script src="/theme.js"></script>
   <script src="/assistant.js"></script>
+  <script src="/experience.js"></script>
 </body>
 </html>

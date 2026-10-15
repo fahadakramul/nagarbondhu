@@ -199,7 +199,7 @@ describe('Administrator UI connected to the real API',()=>{
     expect(el('resolution-rating-form').elements['resolution-score'].value).toBe('4');
     el('resolution-rating-form').elements['resolution-score'].value='2';
     await window.submitResolutionRating({preventDefault(){},target:el('resolution-rating-form')},id,'/uploads/resolved.png');
-    expect(el('rating-summary').textContent).toContain('2/৫');expect(db.resolutionRatings.size).toBe(1);
+    expect(el('rating-summary').textContent).toContain('২/৫');expect(db.resolutionRatings.size).toBe(1);
     db.actionPlans.set(plan.id,{...getPlan(id)!,status:'UNDER_REVIEW'});
     await window.openDetailModal(id);expect(el('resolution-rating')).toBeNull();
   });

@@ -134,6 +134,8 @@ export interface ReportStatusHistoryRecord {
 }
 
 export interface Report {
+  deletedAt?: string | null;
+  deletedReason?: string | null;
   nearbySensitive?: NearbySensitive | null;
   photoCheck?: {photoShowsIssue?:boolean;observedCategory?:string;matchesDescription?:string;observedDetails_bn?:string;confidence?:number;unavailable?:boolean;message?:string;checkedAt:string}|null;
   affirmations?: {count:number;deviceHashes:string[];ipDeviceHashes?:string[]};

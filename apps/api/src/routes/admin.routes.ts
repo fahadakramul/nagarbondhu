@@ -84,4 +84,18 @@ router.patch(
   }
 );
 
+
+router.get('/reports/deleted',authenticate,requireRole(['ADMIN']),(_req,res)=>res.json({success:true,data:Array.from(db.reports.values()).filter(r=>r.deletedAt).map(r=>({id:r.id,title:r.title,deletedAt:r.deletedAt,deletedReason:r.deletedReason}))}));
+router.delete('/reports/:id',authenticate,requireRole(['ADMIN']),(req,res,next)=>{try{
+  const {reason}=z.object({reason:z.string().trim().min(5).max(2000)}).strict().parse(req.body);
+  const r=db.findReportById(req.params.id);if(!r)return res.status(404).json({success:false,error:'রিপোর্ট পাওয়া যায়নি।'});
+  const now=new Date().toISOString();db.updateReport(r.id,{deletedAt:now,deletedReason:reason});
+  db.addStatusHistory({id:require('crypto').randomUUID(),reportId:r.id,previousStatus:r.status,newStatus:r.status,changedBy:req.user!.id,note:'কর্তৃপক্ষ মুছে ফেলেছে: '+reason,createdAt:now});event(r.id,req.user!.id,'REPORT_SOFT_DELETED',reason);
+  res.json({success:true});
+}catch(e){next(e);}});
+router.post('/reports/:id/restore',authenticate,requireRole(['ADMIN']),(req,res,next)=>{try{
+  const r=db.reports.get(req.params.id);if(!r||!r.deletedAt)return res.status(404).json({success:false,error:'মুছে ফেলা রিপোর্ট পাওয়া যায়নি।'});
+  db.updateReport(r.id,{deletedAt:null,deletedReason:null});event(r.id,req.user!.id,'REPORT_RESTORED','রিপোর্ট ফিরিয়ে আনা হয়েছে');res.json({success:true});
+}catch(e){next(e);}});
+
 export default router;

@@ -7,7 +7,7 @@ export const emptyNearby=(unavailable=false):NearbySensitive=>({fetchedAt:new Da
 const resultSchema=z.object({elements:z.array(z.object({type:z.string(),id:z.number(),lat:z.number().optional(),lon:z.number().optional(),center:z.object({lat:z.number(),lon:z.number()}).optional(),tags:z.record(z.string()).default({})})).max(2000)});
 export async function nearbySensitive(lat:number,lon:number,timeout=2800):Promise<NearbySensitive>{
   const key=lat.toFixed(4)+','+lon.toFixed(4),fresh=(r:NearbySensitive)=>Date.now()-Date.parse(r.fetchedAt)<(r.unavailable?60000:86400000);
-  const stored=cache.get(key)||Array.from(db.reports.values()).find(r=>r.latitude.toFixed(4)+','+r.longitude.toFixed(4)===key && r.nearbySensitive && fresh(r.nearbySensitive))?.nearbySensitive;
+  const stored=cache.get(key)||db.activeReports().find(r=>r.latitude.toFixed(4)+','+r.longitude.toFixed(4)===key && r.nearbySensitive && fresh(r.nearbySensitive))?.nearbySensitive;
   if(stored&&fresh(stored))return stored;
   try{
     const at=`around:200,${lat},${lon}`;

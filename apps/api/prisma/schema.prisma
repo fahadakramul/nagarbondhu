@@ -82,6 +82,8 @@ model Ward {
 }
 
 model Report {
+  deletedAt DateTime? @map("deleted_at")
+  deletedReason String? @map("deleted_reason")
   id           String         @id @default(uuid())
   reporterId   String?        @map("reporter_id")
   title        String

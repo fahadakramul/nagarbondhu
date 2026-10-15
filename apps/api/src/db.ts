@@ -522,9 +522,11 @@ export class DatabaseRepository {
     return updated;
   }
 
+  activeReports(): Report[] { return Array.from(this.reports.values()).filter(r=>!r.deletedAt); }
+
   findReportById(id: string): Report | null {
     const report = this.reports.get(id);
-    if (!report) return null;
+    if (!report || report.deletedAt) return null;
     const clone = { ...report };
     clone.wardName = report.wardId ? this.findWardById(report.wardId)?.wardName : null;
     clone.aiAnalysis = this.findAiAnalysisByReportId(id);
@@ -544,7 +546,7 @@ export class DatabaseRepository {
     limit?: number;
     offset?: number;
   }): { reports: Report[]; total: number } {
-    let list = Array.from(this.reports.values());
+    let list = this.activeReports();
 
     if (filters?.category) {
       list = list.filter((r) => r.category === filters.category);
@@ -603,7 +605,7 @@ export class DatabaseRepository {
   findPriorityAssessmentByReportId(reportId: string): PriorityAssessmentRecord | null {
     const stored = Array.from(this.priorityAssessments.values()).find(p=>p.reportId===reportId) || null;
     const report = this.reports.get(reportId);
-    if (!report) return null;
+    if (!report || report.deletedAt) return null;
     // Live age is derived without writing on GET; fictional fixture scores remain explicit.
     const assessment = report.sourceType==='citizen_report' ? derivePriority(reportId, stored) : stored;
     const plan = Array.from(this.actionPlans.values()).find(p=>p.reportId===reportId);
@@ -622,10 +624,12 @@ export class DatabaseRepository {
   // Duplicates
   findDuplicatesForReport(reportId: string): PossibleDuplicateRecord[] {
     const results: PossibleDuplicateRecord[] = [];
+    if(this.reports.get(reportId)?.deletedAt)return results;
     for (const d of this.possibleDuplicates.values()) {
       if (d.reportId === reportId || d.candidateReportId === reportId) {
         const otherId = d.reportId === reportId ? d.candidateReportId : d.reportId;
         const candidate = this.reports.get(otherId);
+        if(!candidate || candidate.deletedAt)continue;
         results.push({
           ...d,
           candidateReport: candidate ? { ...candidate } : undefined,

@@ -113,7 +113,7 @@ export function verifyResolution(reportId: string, body: unknown, actorId: strin
 }
 export function isOverdue(plan: ActionPlan | null, now = Date.now()) { return !!plan && !['RESOLVED','CLOSED','REJECTED'].includes(plan.status) && Date.parse(plan.targetDate) < now; }
 export function actionDashboard(filters: Record<string, string | undefined>, now = Date.now()) {
-  const rows = Array.from(db.reports.values()).map(r => {
+  const rows = db.activeReports().map(r => {
     const report = db.findReportById(r.id)!, plan = getPlan(r.id);
     const recommendations = Array.from(db.recommendations.values()).filter(rec => rec.reportId === r.id).sort((a,b) => b.createdAt.localeCompare(a.createdAt));
     return { reportId: r.id, title: r.title, category: r.category, sourceType: r.sourceType, location: r.addressLabel,

@@ -84,7 +84,7 @@ openDetailModal=async function(id){
   const sequence=++detailRequestSequence;
   try{
     const result=await platformApi('/reports/'+encodeURIComponent(id));if(sequence!==detailRequestSequence)return;const index=allReports.findIndex(r=>r.id===id);if(index>=0)allReports[index]=result.report;else allReports.push(result.report);
-    originalOpenDetailModal(id);const assessment=selectedReport.priorityAssessment;
+    await originalOpenDetailModal(id);if(sequence!==detailRequestSequence||selectedReport?.id!==id)return;const assessment=selectedReport.priorityAssessment;
     const factors=assessment?.explanation?.factors || [];
     document.getElementById('modal-prio-summary').innerHTML='রিপোর্টের তীব্রতা, অপেক্ষার সময় ও যাচাইকৃত মিলের ভিত্তিতে অগ্রাধিকার নির্ধারিত হয়েছে। মাঠে যাচাই করে সিদ্ধান্ত নিন।'+(factors.length?`<details class="mt-2"><summary class="cursor-pointer">হিসাবের বিবরণ</summary>${factors.map((f,i)=>`<p class="mt-1">${(['তীব্রতা','অপেক্ষার সময়','যাচাইকৃত মিল'][i] || platformEscape(f.name))}: ${f.value}/৫ • গুরুত্ব ${Number.isFinite(Number(f.weight))?Math.round(Number(f.weight)*100)+'%':platformEscape(f.weight)} • ${platformEscape(f.note)}</p>`).join('')}</details>`:'');
     document.getElementById('public-tracking').textContent='অগ্রগতি লোড হচ্ছে…';

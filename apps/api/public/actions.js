@@ -138,7 +138,7 @@ function useActionDraft() {
 async function actionCommand(buttonId,messageId,run) {
   const button=document.getElementById(buttonId), message=document.getElementById(messageId), reportId=selectedReport?.id;
   button.disabled=true; message.textContent='সংরক্ষণ/প্রসেসিং হচ্ছে…';
-  try { await run(reportId); if (selectedReport?.id===reportId) await loadReportActions(reportId); await loadData(); if(selectedReport?.id===reportId)await openDetailModal(reportId); }
+  try { await run(reportId); await loadData(); if(selectedReport?.id===reportId)await openDetailModal(reportId); }
   catch(error) { if (selectedReport?.id===reportId) message.textContent=error.message; }
   finally { if (button.isConnected) button.disabled=false; }
 }

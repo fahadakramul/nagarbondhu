@@ -9,12 +9,12 @@ async function checkEngineConnection() {
     const health = await response.json();
     if (!response.ok || health.status !== 'healthy') throw new Error('Unavailable');
     badge.classList.add('is-live');
-    label.textContent = '• Live Engine';
-    badge.title = 'Application server online; AI availability is shown with each analysis.';
+    label.textContent = 'সংযুক্ত';
+    badge.title = 'অ্যাপের সার্ভার চালু আছে। আবহাওয়ার সময় নিচে দেখুন।';
   } catch {
     badge.classList.remove('is-live');
     label.textContent = '• সংযোগ অনুপলব্ধ';
-    badge.title = 'Application server connection unavailable';
+    badge.title = 'অ্যাপের সার্ভারে সংযোগ পাওয়া যাচ্ছে না';
   } finally {
     clearTimeout(timer);
   }

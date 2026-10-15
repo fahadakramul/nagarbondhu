@@ -136,8 +136,8 @@ export function scenarios(raw:z.input<typeof ScenarioInput>) {
   const score=(r:typeof rows[number])=>db.findPriorityAssessmentByReportId(r.id)?.score || 0;
   const capacity=Math.min(input.maxCases,input.teams*input.days*2);
   const cost=(id:string)=>isCanonicalDemo(id)?demoCases.find(c=>c.id===id)?.cost ?? null:null;
-  const definitions=[['PRIORITY','উচ্চ অগ্রাধিকার আগে'],['NEARBY','কাছাকাছি যৌথ পরিদর্শন'],['RECURRING','পুনরাবৃত্ত পর্যবেক্ষণ আগে'],['SEVERITY','উচ্চ তীব্রতার অসমাধিত'],['CUSTOM','নির্বাচিত ওয়ার্ড / category']] as const;
-  return {facts:{eligible:rows.length,source:input.filters.source},assumptions:{...input,capacity,casesPerTeamDay:2,costs:'Only canonical fictional demo cases have illustrative BDT costs. Unknown costs are deferred in budget mode; capacity-only mode selects cases without claiming budget feasibility.',routeDiscount:'Nearby scenario: illustrative 20% shared-visit cost reduction for stops within 300 m. Not a repair-cost estimate.'},label:MODE_LABEL,
+  const definitions=[['PRIORITY','উচ্চ অগ্রাধিকার আগে'],['NEARBY','কাছাকাছি যৌথ পরিদর্শন'],['RECURRING','পুনরাবৃত্ত পর্যবেক্ষণ আগে'],['SEVERITY','উচ্চ তীব্রতার অসমাধিত'],['CUSTOM','বাছাই করা ওয়ার্ড ও ধরন']] as const;
+  return {facts:{eligible:rows.length,source:input.filters.source},assumptions:{...input,capacity,casesPerTeamDay:2,costs:'শুধু নমুনা রিপোর্টের জন্য আনুমানিক খরচ দেওয়া আছে। বাজেট চালু থাকলে অজানা খরচের কাজ পরে রাখা হবে। বাজেট বন্ধ থাকলে শুধু দলের সময় ধরে কাজ বাছাই হবে।',routeDiscount:'কাছাকাছি কাজের তুলনায় ৩০০ মিটারের মধ্যে যৌথ পরিদর্শনের খরচ আনুমানিক ২০% কম ধরা হয়েছে। এটি মেরামতের খরচ নয়।'},label:MODE_LABEL,
     scenarios:definitions.map(([key,title])=>{
       let candidates=rows.slice();
       if(key==='RECURRING')candidates=candidates.filter(r=>recurring.has(r.id));
@@ -145,15 +145,15 @@ export function scenarios(raw:z.input<typeof ScenarioInput>) {
       candidates.sort((a,b)=>score(b)-score(a) || a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
       if(key==='NEARBY' && candidates.length){const anchors=candidates.filter(r=>!input.useBudget || cost(r.id)!==null);anchors.sort((a,b)=>anchors.filter(r=>distance(r,b)<=300).length-anchors.filter(r=>distance(r,a)<=300).length || score(b)-score(a));const anchor=anchors[0] || candidates[0];candidates.sort((a,b)=>distance(a,anchor)-distance(b,anchor) || score(b)-score(a));}
       const selected:any[]=[], deferred:any[]=[];let spent=0;
-      for(const r of rows)if(!candidates.some(c=>c.id===r.id))deferred.push({id:r.id,reason:key==='RECURRING'?'No time-separated nearby pattern': 'Reported severity below 4 or unavailable'});
+      for(const r of rows)if(!candidates.some(c=>c.id===r.id))deferred.push({id:r.id,reason:key==='RECURRING'?'সময়ের ব্যবধানে কাছাকাছি সমস্যার তথ্য নেই': 'তীব্রতা ৪-এর কম বা তথ্য নেই'});
       for(const r of candidates) {
         const base=cost(r.id), shared=key==='NEARBY' && selected.some(s=>distance(r,s)<=300), estimated=base===null?null:Math.round(base*(shared?0.8:1));
-        const reason=selected.length>=capacity?'Team / case capacity reached':input.useBudget && estimated===null?'No configured cost assumption; budget feasibility unknown':input.useBudget && spent+estimated!>input.budget?'Hypothetical budget exceeded':null;
+        const reason=selected.length>=capacity?'দলের সময় বা কাজের সংখ্যা পূর্ণ হয়েছে':input.useBudget && estimated===null?'খরচ জানা নেই; বাজেটে হবে কি না নিশ্চিত নয়':input.useBudget && spent+estimated!>input.budget?'আনুমানিক বাজেট ছাড়িয়ে যাচ্ছে':null;
         if(reason){deferred.push({id:r.id,reason});continue;}
-        spent+=estimated || 0;selected.push({...r,illustrativeCost:estimated,reason:key==='NEARBY'?(shared?'Nearby shared-visit assumption':'Suggested visit anchor or separate stop'):key==='RECURRING'?'Nearby observations at least 7 days apart':key==='SEVERITY'?'Reported severity ≥ 4':key==='CUSTOM'?'User-selected scope, ordered by recorded priority':'Recorded priority score first'});
+        spent+=estimated || 0;selected.push({...r,illustrativeCost:estimated,reason:key==='NEARBY'?(shared?'কাছাকাছি যৌথ পরিদর্শন ধরা হয়েছে':'পরিদর্শনের প্রথম বা আলাদা স্থান'):key==='RECURRING'?'অন্তত ৭ দিন ব্যবধানে কাছাকাছি সমস্যা পাওয়া গেছে':key==='SEVERITY'?'রিপোর্টের তীব্রতা অন্তত ৪':key==='CUSTOM'?'আপনার বাছাই করা কাজ, অগ্রাধিকার অনুযায়ী সাজানো':'বেশি অগ্রাধিকারের কাজ আগে'});
       }
-      return {key,title,selected,deferred,illustrativeCost:selected.some(r=>r.illustrativeCost===null)?null:spent,unusedBudget:input.useBudget?input.budget-spent:null,workload:{cases:selected.length,illustrativeTeamDays:selected.length/2},groups:groupStops(selected),tradeOff:key==='NEARBY'?'Groups nearby observations; may defer a distant urgent case':key==='RECURRING'?'Examines repeated observations; may defer isolated severe cases':'Focuses selected criteria; inspection duration and costs are assumptions, not guaranteed outcomes'};
-    }),limitation:'Human planning support only; no official spending approval, verified population benefits or guaranteed outcomes.'};
+      return {key,title,selected,deferred,illustrativeCost:selected.some(r=>r.illustrativeCost===null)?null:spent,unusedBudget:input.useBudget?input.budget-spent:null,workload:{cases:selected.length,illustrativeTeamDays:selected.length/2},groups:groupStops(selected),tradeOff:key==='NEARBY'?'কাছাকাছি কাজ একসঙ্গে দেখা যাবে। তবে দূরের জরুরি কাজ পরে পড়তে পারে।':key==='RECURRING'?'একই জায়গার বারবার হওয়া সমস্যা আগে দেখা হবে। অন্য জায়গার গুরুতর কাজ পরে পড়তে পারে।':'বাছাইয়ের শর্ত ধরে কাজ সাজানো হয়েছে। সময় ও খরচ আনুমানিক; বাস্তবে বদলাতে পারে।'};
+    }),limitation:'এই তুলনা পরিকল্পনা করতে সাহায্য করে। খরচ অনুমোদনের আগে মাঠের অবস্থা ও প্রকৃত খরচ যাচাই করুন।'};
 }
 
 export function groupStops(rows:{id:string;latitude:number;longitude:number}[]) {

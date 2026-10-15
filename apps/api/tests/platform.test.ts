@@ -11,9 +11,9 @@ import { provisionOperator } from '../src/services/operator.service';
 import bcrypt from 'bcryptjs';
 
 describe('Citizen tracking, analytics and production protection',()=>{
-  let snapshot:ReturnType<typeof db.snapshot>,adminToken:string;
-  beforeEach(async()=>{snapshot=db.snapshot();adminToken=(await request(app).post('/api/v1/auth/login').send({email:'admin@nagarbondhu.gov.bd',password:'DemoAdmin123!'})).body.token;});
-  afterEach(()=>db.restore(snapshot));
+  let snapshot:ReturnType<typeof db.snapshot>,adminToken:string,oldKey:string;
+  beforeEach(async()=>{oldKey=CONFIG.GEMINI_API_KEY;CONFIG.GEMINI_API_KEY='';snapshot=db.snapshot();adminToken=(await request(app).post('/api/v1/auth/login').send({email:'admin@nagarbondhu.gov.bd',password:'DemoAdmin123!'})).body.token;});
+  afterEach(()=>{db.restore(snapshot);CONFIG.GEMINI_API_KEY=oldKey;});
   const submission=()=>({title:'Drain blockage report',description:'The drain is blocked near the road.',category:'DRAINAGE',latitude:24.36,longitude:88.62,locationConfirmed:true,idempotencyKey:randomUUID()});
   test('retry returns one persisted report, prevents changed-payload reuse and never guesses ward',async()=>{
     const payload=submission(),before=db.reports.size;

@@ -755,7 +755,7 @@ async function handleFormSubmit(e) {
 }
 
 // Open Detail Modal
-function openDetailModal(reportId) {
+async function openDetailModal(reportId) {
   const r = allReports.find(x => x.id === reportId);
   if (!r) return;
   selectedReport = r;
@@ -806,11 +806,12 @@ function openDetailModal(reportId) {
   const adminBox = document.getElementById('modal-admin-controls');
   if (isAdminMode) {
     adminBox.classList.remove('hidden');
-    loadReportActions(reportId);
+    await loadReportActions(reportId);
   } else {
     adminBox.classList.add('hidden');
   }
 
+  if(selectedReport?.id!==reportId)return;
   document.getElementById('report-modal').classList.remove('hidden');
 }
 

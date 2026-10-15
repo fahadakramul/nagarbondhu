@@ -32,7 +32,7 @@ describe('Competition MVP integrity and integration',()=>{
     for(const s of result.scenarios){expect(s.illustrativeCost).toBeLessThanOrEqual(6000);expect(s.selected.length).toBeLessThanOrEqual(4);expect(s.selected.length+s.deferred.length).toBe(result.facts.eligible);}
     expect(new Set(result.scenarios.map(s=>s.selected.map(r=>r.id).join('|'))).size).toBeGreaterThanOrEqual(3);
     const real={...db.reports.get('mvp-demo-water-2')!,id:'actual-unknown-cost',sourceType:'citizen_report' as const};db.reports.set(real.id,real);
-    const realResult=scenarios({filters:{source:'citizen_report'},budget:100000,teams:1,maxCases:4,days:2});expect(realResult.scenarios[0].selected.length).toBe(0);expect(realResult.scenarios[0].deferred[0].reason).toContain('unknown');
+    const realResult=scenarios({filters:{source:'citizen_report'},budget:100000,teams:1,maxCases:4,days:2});expect(realResult.scenarios[0].selected.length).toBe(0);expect(realResult.scenarios[0].deferred[0].reason).toContain('খরচ জানা নেই');
     const capacityOnly=scenarios({filters:{source:'citizen_report'},useBudget:false,teams:1,maxCases:4,days:2});expect(capacityOnly.scenarios[0].selected.length).toBe(1);expect(capacityOnly.scenarios[0].illustrativeCost).toBeNull();expect(capacityOnly.scenarios[0].unusedBudget).toBeNull();
   });
   test('coverage includes zero-report configured wards, transparent components and weight validation',async()=>{

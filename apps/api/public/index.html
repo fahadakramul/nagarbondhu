@@ -58,6 +58,7 @@
   <link rel="stylesheet" href="/wizard.css">
   <link rel="stylesheet" href="/finish.css">
   <link rel="stylesheet" href="/authority.css">
+  <link rel="stylesheet" href="/desktop-polish.css">
 </head>
 <body class="theme-obsidian bg-slate-50 text-slate-800 min-h-screen flex flex-col font-bengali">
 
@@ -324,7 +325,7 @@
             <p id="ai-preview-summary" class="text-xs text-purple-800 font-medium">--</p>
             <div class="flex items-center gap-4 text-xs text-purple-900">
               <span>তীব্রতা: <strong id="ai-preview-severity" class="text-rose-600 font-bold">--</strong> / ৫</span>
-              <span>Confidence (uncalibrated): <strong id="ai-preview-confidence">--</strong></span>
+              <span>AI-এর অনুমান: <strong id="ai-preview-confidence">--</strong></span>
             </div>
             <div>
               <span class="text-[11px] font-bold text-purple-900">চিহ্নিত কারণসমূহ:</span>
@@ -369,7 +370,7 @@
             <!-- MAP TOOLBAR: GPS TRACKER & SATELLITE TOGGLE -->
             <div class="flex flex-wrap items-center justify-between gap-2 p-1.5 bg-slate-100 rounded-xl border border-slate-200">
               <button type="button" onclick="trackLiveLocation()" id="btn-live-gps" class="bg-civic-700 hover:bg-civic-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition flex items-center gap-1.5">
-                <i class="fa-solid fa-location-crosshairs text-amber-400"></i> 📍 আমার লাইভ অবস্থান ট্র্যাক করুন (Live GPS)
+                <i class="fa-solid fa-location-crosshairs text-amber-400"></i> 📍 আমার বর্তমান অবস্থান দেখান
               </button>
 
               <div class="flex items-center gap-1 bg-white p-0.5 rounded-lg border border-slate-300">
@@ -377,7 +378,7 @@
                   🗺️ সাধারণ
                 </button>
                 <button type="button" id="btn-tile-satellite" onclick="setPickerTileLayer('satellite')" class="text-[11px] font-semibold px-2.5 py-1 rounded-md text-slate-600 hover:bg-slate-100 transition">
-                  🛰️ স্যাটেলাইট (Satellite)
+                  🛰️ স্যাটেলাইট ছবি
                 </button>
               </div>
             </div>
@@ -389,7 +390,7 @@
             </p>
           </div>
 
-          <label class="flex items-start gap-2 text-xs"><input type="checkbox" id="location-confirmed" required> Pin-এর অবস্থান ও নির্বাচিত/অজানা ওয়ার্ড নিশ্চিত করেছি। ওয়ার্ড কেন্দ্র থেকে সীমানা নির্ধারণ করা যায় না।</label>
+          <label class="flex items-start gap-2 text-xs"><input type="checkbox" id="location-confirmed" required> ম্যাপের পিনের জায়গা ও ওয়ার্ড দেখে নিয়েছি। ওয়ার্ড জানা না থাকলে অজানা রাখুন।</label>
           <!-- ENHANCED IMAGE UPLOAD & CAMERA SECTION -->
           <div class="space-y-2">
             <label class="block text-xs font-bold text-slate-700">সমস্যার ছবি যোগ করুন (ঐচ্ছিক)</label>
@@ -446,7 +447,7 @@
           <div class="pt-2">
             <div id="duplicate-preview" class="text-xs text-amber-900 space-y-2" aria-live="polite"></div><button type="button" onclick="checkDuplicatePreview().catch(e=>setPlatformMessage(e.message))" class="bg-amber-100 px-3 py-2 rounded-lg text-xs">সম্ভাব্য একই সমস্যা দেখুন</button>
             <button type="submit" id="btn-submit-report" class="w-full bg-civic-700 hover:bg-civic-800 text-white font-bold text-sm py-3 rounded-xl shadow-md transition flex items-center justify-center gap-2">
-              <i class="fa-solid fa-paper-plane"></i> রিপোর্ট জমা দিন (Submit Report)
+              <i class="fa-solid fa-paper-plane"></i> রিপোর্ট জমা দিন
             </button>
           </div>
         </form>
@@ -673,5 +674,6 @@
   <script src="/finish.js"></script>
   <script src="/moderation.js"></script>
   <script src="/authority.js"></script>
+  <script src="/environment.js"></script>
 </body>
 </html>

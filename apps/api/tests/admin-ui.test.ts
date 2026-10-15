@@ -8,6 +8,7 @@ import { db, DatabaseRepository } from '../src/db';
 import { CONFIG } from '../src/config';
 import { confirmPlan, getPlan } from '../src/services/action.service';
 import * as rainService from '../src/services/rain.service';
+import * as environmentService from '../src/services/environment.service';
 const { JSDOM } = require('jsdom');
 
 describe('Administrator UI connected to the real API',()=>{
@@ -16,6 +17,7 @@ describe('Administrator UI connected to the real API',()=>{
   const el=(id:string)=>window.document.getElementById(id);
   const eventually=async(test:()=>boolean)=>{for(let i=0;i<100;i++){if(test())return;await new Promise(r=>setTimeout(r,10));}expect(test()).toBe(true);};
   beforeEach(async()=>{
+    jest.spyOn(environmentService,'cityEnvironment').mockResolvedValue({city:'রাজশাহী',timezone:'Asia/Dhaka',weather:{available:true,stale:false,fetchedAt:new Date().toISOString(),data:JSON.parse(fs.readFileSync(path.join(__dirname,'../data/rajshahi-weather-full.json'),'utf8')).data},air:{available:true,stale:false,fetchedAt:new Date().toISOString(),data:JSON.parse(fs.readFileSync(path.join(__dirname,'../data/rajshahi-air-full.json'),'utf8')).data},providerUrls:{weather:environmentService.CITY_WEATHER_URL,air:environmentService.CITY_AIR_URL}});
     jest.spyOn(rainService,'rainQueue').mockResolvedValue({forecast:{next24hMm:0,peakHour:'2026-10-14T19:00:00+06:00',peakMm:0,maxProbability:0,fetchedAt:new Date().toISOString()},alert:false,threshold:20,reports:[],source:'citizen_report',attribution:'Weather data: Open-Meteo',boostExplanation:'শুধু এই তালিকার প্রভাব'});
     snapshot=db.snapshot();oldMode=CONFIG.NODE_ENV;oldKey=CONFIG.GEMINI_API_KEY;CONFIG.NODE_ENV='production';CONFIG.GEMINI_API_KEY='';
     db.restore(new DatabaseRepository().snapshot());
@@ -35,7 +37,7 @@ describe('Administrator UI connected to the real API',()=>{
       const response=await call;return {ok:response.status<400,status:response.status,json:async()=>response.body};
     };
     const originalIds=Array.from(window.document.querySelectorAll('[id]')).map((e:any)=>e.id);
-    context=dom.getInternalVMContext();for(const name of ['app','actions','platform','competition','features','polish','theme','assistant','experience','wizard','finish','moderation','authority']){vm.runInContext(fs.readFileSync(path.join(__dirname,'../public/'+name+'.js'),'utf8'),context);if(name==='platform')window.originalSubmitHandler=window.handleFormSubmit;}
+    context=dom.getInternalVMContext();for(const name of ['app','actions','platform','competition','features','polish','theme','assistant','experience','wizard','finish','moderation','authority','environment']){vm.runInContext(fs.readFileSync(path.join(__dirname,'../public/'+name+'.js'),'utf8'),context);if(name==='platform')window.originalSubmitHandler=window.handleFormSubmit;}
     window.originalElementIds=originalIds;
     window.initMainMap=jest.fn(); // Leaflet's CDN renderer is verified in the browser, not JSDOM.
     window.initPickerMap=jest.fn();
@@ -95,6 +97,22 @@ describe('Administrator UI connected to the real API',()=>{
     await window.openAuthorityCorner();el('authority-demo-login').click();await eventually(()=>window.document.body.classList.contains('authority-mode'));await eventually(()=>!!el('authority-queue-list').querySelector('.authority-row'));expect(el('authority-banner').textContent).toContain('ডেমো মোড');
     const row=el('authority-queue-list').querySelector('.authority-row');row.querySelectorAll('button')[2].click();const dialog=window.document.querySelector('dialog[open]:not(#assistant-panel)');expect(dialog).not.toBeNull();dialog.querySelector('textarea').value='ভুল স্থানের রিপোর্ট সরানো';dialog.querySelector('form').dispatchEvent(new window.Event('submit',{cancelable:true}));await eventually(()=>!!el('deleted-reports')?.querySelector('button'));el('deleted-reports').querySelector('button').click();await eventually(()=>!el('deleted-reports').querySelector('button'));await window.leaveAuthorityCorner();expect(window.document.body.classList.contains('authority-mode')).toBe(false);expect(run('currentTab')).toBe('home');
   });
+  test('weather and air-quality panel preserves PM labels and shows actual provider forecast data',async()=>{
+    await eventually(()=>!!el('environment-content').querySelector('.environment-air'));
+    expect(el('environment-content').textContent).toContain('PM₂.₅');expect(el('environment-content').textContent).toContain('US AQI');
+    expect(el('environment-content').textContent).toContain('Copernicus CAMS');expect(el('environment-content').textContent).not.toContain('অপরাহ্ণ₂');
+    expect(el('environment-content').querySelectorAll('.environment-days > div').length).toBe(5);
+  });
+  test('switching modes closes menus, reuses the scoped demo session, and restores the selected corner tab',async()=>{
+    window.showOperatorLogin();el('authority-demo-login').click();await eventually(()=>window.document.body.classList.contains('authority-mode'));
+    const token=window.sessionStorage.getItem('nagarbondhu-operator-token');expect(token).toBeTruthy();
+    el('authority-sidebar-nav').querySelector('[data-corner-tab="score"]').click();await eventually(()=>!!el('authority-csv'));
+    el('more-sheet').showModal();await window.leaveAuthorityCorner();expect(el('more-sheet').open).toBe(false);expect(run('authToken')).toBeNull();
+    expect(window.sessionStorage.getItem('nagarbondhu-operator-token')).toBe(token);await window.openAuthorityCorner();
+    expect(window.document.body.classList.contains('authority-mode')).toBe(true);expect(el('authority-score').hidden).toBe(false);
+    expect(el('operator-login-modal').classList.contains('hidden')).toBe(true);expect(el('more-sheet').textContent).toContain('নাগরিক ভিউতে ফিরুন');
+    await window.leaveAuthorityCorner();expect(el('more-sheet').textContent).toContain('কর্তৃপক্ষ লগইন');
+  });
   test('assistant threads persist, switch, and delete through a confirmation modal',async()=>{
     window.openCivicAssistant('আমার এলাকার পানি জমে থাকে');await eventually(()=>!!el('assistant-turns').querySelector('.assistant-answer'));
     const saved=JSON.parse(window.localStorage.getItem('nagarbondhu-threads'));expect(saved).toHaveLength(1);expect(saved[0].messages).toHaveLength(2);expect(el('assistant-turns').querySelector('.assistant-time').textContent).toMatch(/[০-৯]/);
@@ -135,7 +153,7 @@ describe('Administrator UI connected to the real API',()=>{
       window.openPlanningModule(module);
       await eventually(()=>!!el('mvp-content'));
       expect(run('currentTab')).toBe('dashboard');expect(run('mvpTab')).toBe(module);
-      const headings:any={scenarios:'What-If Urban Planner',clusters:'Root-Cause Cluster Intelligence',coverage:'Urban Voice',missions:'স্মার্ট ফিল্ড পরিদর্শন পরিকল্পনা'};
+      const headings:any={scenarios:'বিকল্প কাজের পরিকল্পনা',clusters:'কাছাকাছি সমস্যার সম্ভাব্য যোগসূত্র',coverage:'Urban Voice',missions:'স্মার্ট ফিল্ড পরিদর্শন পরিকল্পনা'};
       await eventually(()=>el('mvp-content')?.textContent.includes(headings[module]));
     }
   });

@@ -1,8 +1,12 @@
 import request from 'supertest';
 import { app } from '../src/app';
+import { CONFIG } from '../src/config';
 
 describe('Reports & Planning Dashboard Integration Tests', () => {
   let adminToken: string;
+  const oldKey=CONFIG.GEMINI_API_KEY;
+  beforeAll(()=>{CONFIG.GEMINI_API_KEY='';});
+  afterAll(()=>{CONFIG.GEMINI_API_KEY=oldKey;});
 
   beforeAll(async () => {
     // Obtain admin token for protected endpoints

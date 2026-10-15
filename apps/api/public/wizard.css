@@ -1,0 +1,39 @@
+.wizard-stepper { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; padding: 12px 0 20px; }
+.wizard-stepper button { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; min-height: 56px; text-align: left; color: #475569; font-size: 13px; border-bottom: 3px solid #E0E7FF; }
+.wizard-stepper button[aria-current="step"] { color: #4338CA; border-color: #4338CA; font-weight: 700; }
+.wizard-stepper .step-number { display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 50%; background: #EEF2FF; color: #4338CA; font-family: Inter,sans-serif; }
+.wizard-stepper button[aria-current="step"] .step-number { background: #4338CA; color: #FFFFFF; }
+.wizard-step[hidden] { display: none !important; }
+.wizard-step { min-width: 0; display: flex; flex-direction: column; gap: 18px; border: 0; padding: 0; margin: 0; }
+.wizard-step > legend { font-size: 20px; font-weight: 700; color: #312E81; padding-bottom: 16px; }
+.wizard-step .vision-check { margin-top: 0; }
+.wizard-controls { display: flex; gap: 12px; justify-content: space-between; position: sticky; bottom: 16px; background: #FFFFFFF5; padding: 12px 0 4px; border-top: 1px solid #E0E7FF; z-index: 20; }
+.wizard-controls button { min-height: 48px; border-radius: 14px; padding: 10px 20px; font-weight: 600; }
+#wizard-back { border: 1px solid #C7D2FE; color: #3730A3; }
+#wizard-next { background: #4338CA; color: #FFFFFF; margin-left: auto; }
+#wizard-errors { color: #991B1B; font-size: 14px; }
+.wizard-correction { color: #4338CA; font-size: 13px; text-decoration: underline; align-self: flex-start; }
+.wizard-summary { display: grid; grid-template-columns: 1fr auto; gap: 14px; background: #EEF2FF; border: 1px solid #C7D2FE; padding: 18px; border-radius: 20px; overflow-wrap: anywhere; }
+.wizard-summary h3 { font-size: 18px; font-weight: 700; color: #312E81; }
+.wizard-summary p { font-size: 14px; margin-top: 7px; }
+.wizard-summary img { grid-column: 1/-1; max-height: 180px; object-fit: contain; border-radius: 12px; }
+.score-pending { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; border: 5px solid #C7D2FE; border-radius: 50%; font-size: 24px; font-family: Inter,sans-serif; color: #4338CA; }
+#wizard-nearby { background: #EEF2FF; border-radius: 18px; padding: 14px; }
+#wizard-nearby > button { color: #4338CA; text-decoration: underline; }
+#wizard-duplicate-affirm { display: flex; flex-wrap: wrap; gap: 8px; }
+.receipt-card { border: 1px solid #C7D2FE; border-top: 6px solid #4338CA; border-radius: 24px; background: #FFFFFF; padding: 28px; max-width: 720px; margin: 12px auto; overflow-wrap: anywhere; }
+.receipt-card h2 { font-size: 26px; font-weight: 700; color: #312E81; }
+.receipt-card .receipt-kicker { font-size: 12px; font-weight: 600; letter-spacing: .05em; color: #047857; margin-bottom: 8px; }
+.receipt-id { padding: 14px; background: #EEF2FF; border-radius: 14px; margin: 18px 0; font-family: Inter,sans-serif; font-size: 13px; color: #312E81; }
+.receipt-result { display: flex; align-items: center; gap: 18px; margin: 18px 0; }
+.receipt-ring { display: flex; align-items: center; justify-content: center; width: 80px; height: 80px; border-radius: 50%; background: radial-gradient(circle,#FFFFFF 60%,transparent 62%),conic-gradient(var(--receipt-color,#6366F1) var(--receipt-angle,0deg),#E0E7FF 0); color: #312E81; font: 700 26px/1 Inter,sans-serif; flex-shrink: 0; }
+.receipt-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.receipt-actions button { border-radius: 14px; background: #4338CA; color: #FFFFFF; padding: 12px 16px; font-weight: 600; }
+.receipt-actions button:nth-child(2) { background: #F59E0B; color: #1F1300; }
+.receipt-new { display: block; color: #4338CA; padding: 12px 0; text-decoration: underline; margin-top: 10px; }
+@media(max-width:767px) {
+  .wizard-controls { bottom: calc(82px + env(safe-area-inset-bottom)); padding: 10px 0; }
+  body.wizard-active #assistant-fab { bottom: calc(158px + env(safe-area-inset-bottom)); }
+  .receipt-card { padding: 20px; }
+  .receipt-card h2 { font-size: 23px; }
+}

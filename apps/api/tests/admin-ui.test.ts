@@ -34,8 +34,11 @@ describe('Administrator UI connected to the real API',()=>{
       if(options.body)call=call.send(JSON.parse(options.body));
       const response=await call;return {ok:response.status<400,status:response.status,json:async()=>response.body};
     };
-    context=dom.getInternalVMContext();for(const name of ['app','actions','platform','competition','features','polish','theme','assistant','experience'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../public/'+name+'.js'),'utf8'),context);
+    const originalIds=Array.from(window.document.querySelectorAll('[id]')).map((e:any)=>e.id);
+    context=dom.getInternalVMContext();for(const name of ['app','actions','platform','competition','features','polish','theme','assistant','experience','wizard']){vm.runInContext(fs.readFileSync(path.join(__dirname,'../public/'+name+'.js'),'utf8'),context);if(name==='platform')window.originalSubmitHandler=window.handleFormSubmit;}
+    window.originalElementIds=originalIds;
     window.initMainMap=jest.fn(); // Leaflet's CDN renderer is verified in the browser, not JSDOM.
+    window.initPickerMap=jest.fn();
   });
   afterEach(async()=>{await new Promise(r=>setTimeout(r,40));dom?.window.close();CONFIG.NODE_ENV=oldMode;CONFIG.GEMINI_API_KEY=oldKey;db.restore(snapshot);});
   async function login(){
@@ -43,6 +46,25 @@ describe('Administrator UI connected to the real API',()=>{
     await window.activateOperatorSession({preventDefault(){},target:el('operator-email').closest('form')});
     await eventually(()=>!el('operator-login-modal').classList.contains('hidden')?false:run('!!authToken'));
   }
+  test('wizard preserves every original ID and submit handler; validates steps and creates a real receipt',async()=>{
+    expect(window.handleFormSubmit).toBe(window.originalSubmitHandler);
+    for(const id of window.originalElementIds){expect(window.document.querySelectorAll('[id="'+id+'"]').length).toBe(1);}
+    window.startWizardDraft();el('wizard-next').click();expect(el('wizard-errors').textContent.length).toBeGreaterThan(0);
+    expect(window.document.querySelector('[data-wizard-step="0"]').hidden).toBe(false);
+    el('form-description').value='An unlit streetlight in the local test area needs inspection.';el('form-title').value='Local wizard streetlight test';el('citizen-category').value='STREETLIGHT';el('citizen-category').dispatchEvent(new window.Event('change'));
+    run("pickerMarker={getLatLng(){return {lat:24.36,lng:88.62};}}");
+    el('wizard-next').click();expect(window.document.querySelector('[data-wizard-step="1"]').hidden).toBe(false);
+    el('wizard-next').click();expect(window.document.querySelector('[data-wizard-step="1"]').hidden).toBe(false);
+    el('location-confirmed').checked=true;el('wizard-next').click();expect(window.document.querySelector('[data-wizard-step="2"]').hidden).toBe(false);
+    Object.defineProperty(window.crypto,'subtle',{value:require('crypto').webcrypto.subtle,configurable:true});
+    window.TextEncoder=require('util').TextEncoder;
+    const before=new Set(db.reports.keys());await window.handleFormSubmit({preventDefault(){}});
+    const saved=Array.from(db.reports.values()).find(r=>!before.has(r.id));expect(saved).toBeTruthy();
+    expect(el('civic-receipt').classList.contains('hidden')).toBe(false);expect(el('civic-receipt').textContent).toContain(saved!.id);expect(el('civic-receipt').textContent).toContain('পরবর্তী ধাপ: পর্যালোচনা');
+    expect(window.readReceiptTokens()[saved!.id]).toHaveLength(64);expect(el('report-modal').classList.contains('hidden')).toBe(true);
+    const copied=jest.fn().mockResolvedValue(undefined);Object.defineProperty(window.navigator,'clipboard',{value:{writeText:copied},configurable:true});el('receipt-share').click();
+    await eventually(()=>copied.mock.calls.length===1);expect(copied.mock.calls[0][0]).toContain('?report='+saved!.id);expect(copied.mock.calls[0][0]).not.toContain(window.readReceiptTokens()[saved!.id]);
+  });
   test('new navigation keeps the existing IDs and exposes authority login through More',async()=>{
     expect(el('primary-navigation').closest('#civic-sidebar')).not.toBeNull();
     const more=el('civic-bottom-nav').querySelector('[data-nav-tab="more"]');more.click();expect(el('more-sheet').hasAttribute('open')).toBe(true);

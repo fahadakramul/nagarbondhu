@@ -1,6 +1,10 @@
 import { AiAnalysisSchema, analyzeBengaliComplaint } from '../src/services/ai.service';
+import { CONFIG } from '../src/config';
 
 describe('AI Complaint Analysis Unit & Schema Tests', () => {
+  let key:string;
+  beforeEach(()=>{key=CONFIG.GEMINI_API_KEY;CONFIG.GEMINI_API_KEY='';});
+  afterEach(()=>{CONFIG.GEMINI_API_KEY=key;});
   test('validates correct AI response schema with Zod', () => {
     const validData = {
       category: 'WATERLOGGING',

@@ -11,6 +11,17 @@ import * as rainService from '../src/services/rain.service';
 import * as environmentService from '../src/services/environment.service';
 const { JSDOM } = require('jsdom');
 
+test('the public page ships essential layout CSS without the Tailwind CDN',()=>{
+  const html=fs.readFileSync(path.join(__dirname,'../public/index.html'),'utf8');
+  const css=fs.readFileSync(path.join(__dirname,'../public/tailwind.css'),'utf8');
+  expect(html).toContain('href="/tailwind.css"');
+  expect(html).not.toContain('cdn.tailwindcss.com');
+  expect(html).toContain('src="/vendor/leaflet/leaflet.js"');
+  expect(html).not.toContain('unpkg.com/leaflet');
+  expect(fs.existsSync(path.join(__dirname,'../public/vendor/leaflet/images/marker-icon.png'))).toBe(true);
+  for(const rule of ['.fixed{position:fixed}', '.inset-0{inset:0}', '.flex{display:flex}', '.hidden{display:none}', '.bg-civic-700{'])expect(css).toContain(rule);
+});
+
 describe('Administrator UI connected to the real API',()=>{
   let dom:any,window:any,context:any,oldMode:string,oldKey:string,snapshot:any,reportId:string;
   const run=(code:string)=>vm.runInContext(code,context);

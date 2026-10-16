@@ -14,32 +14,17 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="NagarBondhu AI">
   
-  <!-- Tailwind CSS & FontAwesome -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Bundled Tailwind CSS keeps the layout available when third-party CDNs are slow or blocked. -->
+  <link rel="stylesheet" href="/tailwind.css">
   
   <!-- Leaflet CSS & JS for Interactive Map -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="/vendor/leaflet/leaflet.css" />
+  <script src="/vendor/leaflet/leaflet.js"></script>
   
   <!-- Google Fonts: Hind Siliguri (Bengali) & Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            civic: {50: '#EEF2FF', 100: '#E0E7FF', 500: '#6366F1', 600: '#4F46E5', 700: '#4338CA', 800: '#3730A3', 900: '#312E81'}
-          },
-          fontFamily: {
-            bengali: ['"Hind Siliguri"', 'sans-serif'],
-          }
-        }
-      }
-    }
-  </script>
 
   <style>
     body {

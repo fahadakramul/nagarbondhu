@@ -71,4 +71,11 @@ main,.tab-content{min-width:0}
 @media(prefers-reduced-motion:no-preference){#authority-shell,.city-environment{animation:panel-arrive .16s ease-out}@keyframes panel-arrive{from{opacity:.6;transform:translateY(4px)}to{opacity:1;transform:none}}}
 
 .authority-mode #civic-sidebar #primary-navigation{display:none!important}
+.theme-obsidian .leaflet-popup-content{min-width:0;margin:12px 14px;line-height:1.5}
+.map-report-popup{display:grid;gap:8px;max-height:250px;overflow-y:auto;min-width:0}
+.theme-obsidian .leaflet-popup-content .map-report-popup-item{display:block;width:100%;padding:10px 12px;text-align:left;white-space:normal;overflow-wrap:anywhere;line-height:1.55;border:1px solid #c7d2fe;border-radius:10px;background:#eef2ff!important;color:#312e81!important;font-size:13px}
+.theme-obsidian .leaflet-popup-content .map-report-popup-zoom{width:100%;padding:9px;border-radius:9px;background:#4338ca!important;color:#fff!important;font-size:12px}
+#dashboard-duplicates-list>div{line-height:1.65}
+#dashboard-duplicates-list .duplicate-report-link{display:inline-flex;align-items:center;margin:8px 8px 0 0;padding:6px 10px;min-height:36px;border:1px solid #c4b5fd;border-radius:9px;background:#fff;color:#5b21b6;text-decoration:none;font-size:12px;font-weight:700}
+#dashboard-duplicates-list .duplicate-report-link:hover{background:#f3e8ff}
 #report-modal{z-index:75!important;overscroll-behavior:contain}#report-modal>div{max-height:90dvh;overscroll-behavior:contain}

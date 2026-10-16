@@ -44,7 +44,7 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0B0F19" />
+      <StatusBar barStyle="light-content" backgroundColor="#3730A3" />
 
       {hasError ? (
         <View style={styles.errorContainer}>

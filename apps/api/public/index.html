@@ -150,7 +150,7 @@
           <button type="button" onclick="switchTab('feed')">অগ্রাধিকার স্কোর</button>
           <button type="button" onclick="switchTab('feed')">নাগরিক যাচাই</button>
           <button type="button" onclick="switchTab('scorecard')">ওয়ার্ড স্কোরকার্ড</button>
-          <button type="button" onclick="switchTab('dashboard')">বৃষ্টির আগে কাজ</button>
+          <button type="button" onclick="showPublicRain()">বৃষ্টির পূর্বাভাস ও প্রস্তুতি</button>
         </div>
       </div>
 
@@ -163,10 +163,10 @@
           <button type="button" onclick="switchTab('feed')"><i class="fa-solid fa-list-check" aria-hidden="true"></i><span>রিপোর্ট তালিকা<small>রিপোর্ট ও অগ্রগতি খুঁজুন</small></span></button>
           <button type="button" onclick="switchTab('dashboard')"><i class="fa-solid fa-chart-pie" aria-hidden="true"></i><span>প্ল্যানিং ড্যাশবোর্ড<small>অগ্রাধিকার ও হটস্পট</small></span></button>
           <button type="button" onclick="switchTab('scorecard')"><i class="fa-solid fa-table-cells" aria-hidden="true"></i><span>ওয়ার্ড স্কোরকার্ড<small>ওয়ার্ডভিত্তিক রিপোর্ট</small></span></button>
-          <button type="button" onclick="openPlanningModule('scenarios')"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i><span>বিকল্প পরিকল্পনা<small>What-If Urban Planner</small></span></button>
-          <button type="button" onclick="openPlanningModule('clusters')"><i class="fa-solid fa-diagram-project" aria-hidden="true"></i><span>সম্ভাব্য মূল কারণ<small>Root-Cause Cluster Intelligence</small></span></button>
-          <button type="button" onclick="openPlanningModule('coverage')"><i class="fa-solid fa-chart-column" aria-hidden="true"></i><span>রিপোর্টিং কভারেজ<small>Urban Voice &amp; Reporting Coverage</small></span></button>
-          <button type="button" onclick="openPlanningModule('missions')"><i class="fa-solid fa-route" aria-hidden="true"></i><span>ফিল্ড পরিদর্শন<small>Smart Field Mission Planner</small></span></button>
+          <button type="button" onclick="openUrbanPlanner('scenarios')"><i class="fa-solid fa-scale-balanced" aria-hidden="true"></i><span>বিকল্প পরিকল্পনা<small>What-If Urban Planner</small></span></button>
+          <button type="button" onclick="openUrbanPlanner('clusters')"><i class="fa-solid fa-diagram-project" aria-hidden="true"></i><span>সম্ভাব্য মূল কারণ<small>Root-Cause Cluster Intelligence</small></span></button>
+          <button type="button" onclick="openUrbanPlanner('coverage')"><i class="fa-solid fa-chart-column" aria-hidden="true"></i><span>রিপোর্টিং কভারেজ<small>Urban Voice &amp; Reporting Coverage</small></span></button>
+          <button type="button" onclick="openUrbanPlanner('missions')"><i class="fa-solid fa-route" aria-hidden="true"></i><span>ফিল্ড পরিদর্শন<small>Smart Field Mission Planner</small></span></button>
           <button type="button" onclick="openTimelineMap()"><i class="fa-solid fa-clock" aria-hidden="true"></i><span>সময়ভিত্তিক ম্যাপ<small>আগের ও বর্তমান অবস্থা</small></span></button>
         </div>
         <p class="text-xs text-slate-500 mt-2">দায়িত্ব ব্যবস্থাপনা, রিপোর্টের সারাংশ ও Copilot ড্যাশবোর্ডে অ্যাডমিন লগইনের মাধ্যমে ব্যবহার করুন।</p>
@@ -634,13 +634,13 @@
   <!-- FOOTER -->
   <footer class="bg-slate-900 text-slate-400 py-6 text-xs text-center border-t border-slate-800">
     <div class="max-w-7xl mx-auto px-4 space-y-1">
-      <p class="font-bold text-slate-300">নগরবন্ধু — রাজশাহীর নাগরিক সেবা</p>
-      <p class="leading-relaxed">সরাসরি তথ্যসেবা: Google Gemini — লেখা, ছবি ও কণ্ঠ বিশ্লেষণ; OpenStreetMap Overpass — কাছের স্থাপনা; Open-Meteo — বৃষ্টির পূর্বাভাস। সেবা ব্যর্থ হলে স্পষ্ট বার্তা দেখানো হয়।</p>
-      <p>© OpenStreetMap অবদানকারীরা • আবহাওয়ার তথ্য: Open-Meteo • স্যাটেলাইট ছবি: Esri, Maxar, Earthstar Geographics; স্থাননাম: Esri।</p>
+      <p class="font-bold text-slate-300">NagarBondhu — Civic information for Rajshahi</p>
+      <p class="leading-relaxed">Live providers: Google Gemini for text, image and voice analysis; OpenStreetMap Overpass for nearby places; Open-Meteo for weather forecasts. Service failures are clearly labelled.</p>
+      <p>© OpenStreetMap contributors · Weather: Open-Meteo · Satellite imagery: Esri, Maxar, Earthstar Geographics · Place names: Esri.</p>
       <div class="pt-4 space-y-2 leading-relaxed text-slate-300">
-        <p>তৈরি করেছেন: <strong class="text-white">Fahad MD Akramul Islam</strong></p>
-        <p>ভাবনা ও সহযোগিতা: <strong class="text-white">Tashika Hossain</strong></p>
-        <p class="max-w-xl mx-auto">নগর ও অঞ্চল পরিকল্পনা বিভাগ, রুয়েট — দুজনই ২৪ সিরিজের শিক্ষার্থী।</p>
+        <p>Created by <strong class="text-white">Fahad MD Akramul Islam</strong></p>
+        <p>Concept and collaboration: <strong class="text-white">Tashika Hossain</strong></p>
+        <p class="max-w-xl mx-auto">Department of Urban and Regional Planning, RUET · Both are students of the 2024 cohort.</p>
       </div>
     </div>
   </footer>

@@ -99,6 +99,9 @@ describe('Administrator UI connected to the real API',()=>{
   });
   test('weather and air-quality panel preserves PM labels and shows actual provider forecast data',async()=>{
     await eventually(()=>!!el('environment-content').querySelector('.environment-air'));
+    expect(el('environment-content').querySelector('.environment-quick')).not.toBeNull();
+    expect(el('environment-details').open).toBe(false);
+    el('environment-details').open=true;
     expect(el('environment-content').textContent).toContain('PM₂.₅');expect(el('environment-content').textContent).toContain('US AQI');
     expect(el('environment-content').textContent).toContain('Copernicus CAMS');expect(el('environment-content').textContent).not.toContain('অপরাহ্ণ₂');
     expect(el('environment-content').querySelectorAll('.environment-days > div').length).toBe(5);

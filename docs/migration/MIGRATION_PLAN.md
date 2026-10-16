@@ -1,5 +1,15 @@
 # NagarBondhu AI migration plan
 
+## Corrected scope: personal Codex workflow handoff
+
+On 16 October 2026 the owner clarified that `fahadakramul/nagarbondhu`, the local VS Code checkout and the current Render services already belong to the personal account. Keep the same repository, Git history, Render service, database and mobile endpoint. No new repository, deployment, database or ownership transfer is needed. The original assessment below records the earlier, broader proposal and is superseded wherever it suggests creating or transferring those assets.
+
+The only synchronization target is the existing `origin/main`. Before a push, compare local `main` with a freshly verified remote `main`, review every unpublished commit and file, scan the proposed diff for secrets and private uploads, and run shared/API builds and API tests. Push only after the owner approves the exact reviewed commit set. Do not force-push, rewrite history, rotate credentials or modify production data as part of this handoff. In personal Codex, open the existing local folder or clone this same repository after the approved push, then start with `AGENTS.md`, `PROJECT_HANDOFF_CONTEXT.md` and `PERSONAL_WORKSPACE_SETUP.md`.
+
+Historical credential-like defaults and the tracked upload-path file are already in the local ancestry of `origin/main`; omitting them from a new documentation commit does not remove earlier exposure. Review their nature and access before broader sharing. A normal fast-forward documentation push will not add application code or a new upload, but live GitHub state must be checked before declaring it safe.
+
+## Original assessment (superseded for repository and deployment strategy)
+
 Audit date: 16 October 2026. Source checkout: `main` at `e001e8b`; clean before this documentation work. This plan does not establish legal ownership. The existing GitHub repository, Render service and database must remain running during preparation.
 
 ## Decision gates

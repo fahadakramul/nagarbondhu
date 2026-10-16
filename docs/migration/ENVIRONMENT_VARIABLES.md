@@ -1,6 +1,6 @@
 # Environment variables
 
-Values below are descriptions only. Never copy the current ignored `.env`, `credentials.json`, service settings or production connection string into a personal repo. Root `.env.example` and `apps/mobile/.env.example` contain placeholders. The API loads `apps/api/.env`; Render supplies variables through its service environment.
+Values below are descriptions only. Keep the current ignored `.env`, `credentials.json`, service settings and production connection string out of Git and Codex handoff text. The existing personal Render service can retain its current private values. Root `.env.example` and `apps/mobile/.env.example` contain placeholders. The API loads `apps/api/.env`; Render supplies variables through its service environment. Rows calling for a new service, key or URL reflect the superseded deployment proposal, not a requirement for this workflow handoff.
 
 | Name | Role / migration action |
 | --- | --- |

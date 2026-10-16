@@ -1,5 +1,7 @@
 # Dependencies and external services
 
+**Scope correction:** The owner confirmed that the listed GitHub repository and Render services are already personal. The right-hand column records an earlier new-infrastructure proposal and is superseded for this Codex workflow handoff. Continue with the existing repository and services; do not create replacements from this document.
+
 | Service/asset | Purpose and observed integration | Personal migration and check |
 | --- | --- | --- |
 | GitHub `fahadakramul/nagarbondhu` | Current `origin`, branch `main`; six checkpoint tags. Ownership/permissions were not authenticated in this audit. | Confirm owner and authorization. Create private destination only after approval; test clone and branch protection separately. |

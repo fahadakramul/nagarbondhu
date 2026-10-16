@@ -1,5 +1,7 @@
 # Personal deployment guide (prepared, not executed)
 
+**Historical proposal only.** The owner confirmed that the existing Render web service and database are already personal and requested no new deployment. The steps below are superseded for the Codex workflow handoff. Keep the current service and database; review `render.yaml` before any separately authorized deployment.
+
 ## Render web + database
 
 1. In an authorized personal Render workspace, create private Postgres and a separate Node web service from the approved private repository. Keep repository root as service root because the API imports `packages/shared`.

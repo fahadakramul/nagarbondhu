@@ -1,5 +1,7 @@
 # Migration checklist
 
+**Scope correction, 16 October 2026:** The owner confirmed that the current GitHub repository, local checkout and Render services are already personal. The checklist below is retained as an audit record; its new-repository, new-service, new-database, account-transfer and cutover items are superseded. The current task is to verify the unpublished documentation commit, obtain explicit push approval, then open this same repository in personal Codex. Do not run the superseded setup/deployment items for this workflow handoff.
+
 Status as of 16 October 2026: preparation only. Checked boxes mean verified in this audit, not a completed account migration.
 
 ## Source and authorization

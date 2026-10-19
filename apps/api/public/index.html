@@ -277,12 +277,13 @@
 
     <!-- ==================== TAB 2: REPORT A PROBLEM ==================== -->
     <section id="section-community" class="tab-content hidden max-w-3xl mx-auto space-y-5" aria-labelledby="community-title">
-      <div class="community-header"><p>নাগরিক কর্নার</p><h2 id="community-title">কমিউনিটি ফিড</h2><p>নমুনা আলোচনায় লাইক ও মন্তব্য করে অভিজ্ঞতা ভাগ করুন। নিচে প্রকাশ্য নাগরিক রিপোর্টের অগ্রগতি দেখুন। মন্তব্যে ব্যক্তিগত তথ্য লিখবেন না।</p></div>
+      <div class="community-header"><p>নাগরিক কর্নার</p><h2 id="community-title">কমিউনিটি আলোচনা</h2><p>এলাকার উন্নয়নের ভাবনা, প্রশ্ন বা পরামর্শ লিখুন। প্রতিবেশীরা মতামত জানাতে পারবেন; কর্তৃপক্ষের কর্নারেও প্রকাশিত পরামর্শ দেখা যাবে। এটি আনুষ্ঠানিক অভিযোগ জমা দেওয়ার জায়গা নয়।</p></div>
       <div class="community-actions"><button type="button" onclick="switchTab('report')">সমস্যা জানান</button><button type="button" id="community-refresh">ফিড হালনাগাদ করুন</button></div>
-      <div class="community-demo-intro"><strong>নমুনা আলোচনা · বাস্তব ঘটনা বা সরকারি উদ্যোগ নয়</strong><span>লাইক ও মন্তব্য শুধু এই কমিউনিটি আলোচনাগুলোতে দেখা যাবে।</span></div>
-      <p id="community-demo-status" role="status" aria-live="polite"></p><div id="community-demo-list" class="community-list"></div>
-      <h3 class="community-report-heading">প্রকাশ্য নাগরিক রিপোর্ট</h3>
+      <form id="community-compose" class="community-compose"><h3>নতুন আলোচনা শুরু করুন</h3><p>নাম, ফোন নম্বর, ঠিকানা বা অন্যের ব্যক্তিগত তথ্য লিখবেন না। প্রকাশিত লেখা সবাই দেখতে পারবেন।</p><label>আলোচনার ধরন<select name="topic"><option value="IDEA">পরামর্শ</option><option value="DISCUSSION">আলোচনা</option><option value="QUESTION">প্রশ্ন</option></select></label><label>শিরোনাম<input name="title" minlength="8" maxlength="120" required placeholder="যেমন: পাড়ায় আরও ছায়ার ব্যবস্থা"></label><label>বিস্তারিত<textarea name="body" minlength="20" maxlength="1500" rows="4" required placeholder="আপনার ভাবনাটি লিখুন এবং অন্যদের মতামত জানতে চান"></textarea></label><label>ওয়ার্ড (ঐচ্ছিক)<select name="wardNumber" id="community-ward"><option value="">সমগ্র রাজশাহী / উল্লেখ করতে চাই না</option></select></label><button type="submit">আলোচনা প্রকাশ করুন</button><p id="community-compose-status" role="status" aria-live="polite"></p></form>
+      <h3 class="community-report-heading">নাগরিকদের আলোচনা</h3>
       <p id="community-status" role="status" aria-live="polite"></p><div id="community-list" class="community-list"></div>
+      <div class="community-demo-intro"><strong>নমুনা আলোচনা · বাস্তব ঘটনা বা সরকারি উদ্যোগ নয়</strong><span>ফিড কীভাবে ব্যবহার করবেন, তার উদাহরণ। এই নমুনাতেও লাইক ও মন্তব্য করা যায়।</span></div>
+      <p id="community-demo-status" role="status" aria-live="polite"></p><div id="community-demo-list" class="community-list"></div>
     </section>
     <section id="section-report" class="tab-content hidden max-w-3xl mx-auto space-y-6">
       <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">

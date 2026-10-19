@@ -51,7 +51,7 @@ app.get('/api/v1/health', (req, res) => {
     timestamp: new Date().toISOString(),
     persistence: persistenceState,
     release:process.env.RENDER_GIT_COMMIT || 'local',
-    features:['resolution-ratings','nearby-sensitive','citizen-affirmations','citizen-verification','ward-scorecard','photo-check','voice-complaint','rain-queue','community-interactions'],
+    features:['resolution-ratings','nearby-sensitive','citizen-affirmations','citizen-verification','ward-scorecard','photo-check','voice-complaint','rain-queue','community-interactions','community-posts'],
   });
 });
 

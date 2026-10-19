@@ -447,6 +447,21 @@ model CommunityComment {
   deviceHash String @map("device_hash")
   text String
   createdAt DateTime @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at")
   @@index([postId, createdAt])
   @@map("community_comments")
+}
+
+model CommunityPost {
+  id String @id
+  deviceHash String @map("device_hash")
+  topic String
+  title String
+  body String
+  wardNumber Int? @map("ward_number")
+  createdAt DateTime @default(now()) @map("created_at")
+  deletedAt DateTime? @map("deleted_at")
+  @@index([createdAt])
+  @@index([topic, createdAt])
+  @@map("community_posts")
 }

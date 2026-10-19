@@ -64,34 +64,41 @@
   };
 
   const community=document.getElementById('community-list'),status=document.getElementById('community-status');
+  const demoList=document.getElementById('community-demo-list'),demoStatus=document.getElementById('community-demo-status'),compose=document.getElementById('community-compose'),composeStatus=document.getElementById('community-compose-status');
+  const topics={IDEA:'পরামর্শ',DISCUSSION:'আলোচনা',QUESTION:'প্রশ্ন'};
   let request=0;
-  const demoList=document.getElementById('community-demo-list'),demoStatus=document.getElementById('community-demo-status');
-  let demoRequest=0;
+  for(let ward=1;ward<=30;ward++){const option=document.createElement('option');option.value=String(ward);option.textContent='ওয়ার্ড '+bn(ward);document.getElementById('community-ward').appendChild(option);}
   function renderDiscussion(post){
-    const article=document.createElement('article');article.className='community-post community-demo-post';
-    const heading=document.createElement('div');heading.className='community-post-head';const badge=document.createElement('span');badge.textContent='নমুনা · '+post.topic;heading.appendChild(badge);
+    const article=document.createElement('article');article.className='community-post'+(post.demo?' community-demo-post':'');
+    const heading=document.createElement('div');heading.className='community-post-head';const badge=document.createElement('span');badge.textContent=(post.demo?'নমুনা · ':'নাগরিক · ')+(topics[post.topic]||'আলোচনা');heading.appendChild(badge);
+    if(post.createdAt){const time=document.createElement('time');time.dateTime=post.createdAt;time.textContent=new Date(post.createdAt).toLocaleDateString('bn-BD');heading.appendChild(time);}
     const title=document.createElement('h3');title.textContent=post.title;const body=document.createElement('p');body.textContent=post.body;
+    const meta=document.createElement('p');meta.className='community-meta';meta.textContent=post.wardNumber?'ওয়ার্ড '+bn(post.wardNumber):'সমগ্র রাজশাহী';
     const actions=document.createElement('div');actions.className='community-discussion-actions';
     const like=document.createElement('button');like.type='button';like.textContent=(post.likedByMe?'✓ লাইক দিয়েছেন':'♡ লাইক')+' · '+bn(post.likeCount);like.disabled=post.likedByMe;
-    like.onclick=async()=>{like.disabled=true;try{const {data}=await platformApi('/community/posts/'+encodeURIComponent(post.id)+'/like',{deviceId:civicDevice()});post={...post,...data};like.textContent='✓ লাইক দিয়েছেন · '+bn(post.likeCount);}catch(error){like.disabled=false;demoStatus.textContent=error.message;}};
+    like.onclick=async()=>{like.disabled=true;try{const {data}=await platformApi('/community/posts/'+encodeURIComponent(post.id)+'/like',{deviceId:civicDevice()});post={...post,...data};like.textContent='✓ লাইক দিয়েছেন · '+bn(post.likeCount);}catch(error){like.disabled=false;(post.demo?demoStatus:status).textContent=error.message;}};
+    actions.appendChild(like);
+    if(post.mine){const remove=document.createElement('button');remove.type='button';remove.textContent='নিজের পোস্ট সরান';remove.onclick=async()=>{if(!await mvpConfirm('এই আলোচনা সরাবেন?'))return;remove.disabled=true;try{await platformApi('/community/posts/'+encodeURIComponent(post.id)+'/remove',{deviceId:civicDevice()});loadCommunity();}catch(error){status.textContent=error.message;remove.disabled=false;}};actions.appendChild(remove);}
     const comments=document.createElement('div');comments.className='community-comments';const commentTitle=document.createElement('strong');commentTitle.textContent='মন্তব্য · '+bn(post.commentCount);comments.appendChild(commentTitle);
     const commentList=document.createElement('div');commentList.className='community-comment-list';
-    function showComments(){commentList.replaceChildren();for(const comment of post.comments){const item=document.createElement('p');item.textContent=comment.text;commentList.appendChild(item);}commentTitle.textContent='মন্তব্য · '+bn(post.commentCount);}
+    function showComments(){commentList.replaceChildren();for(const comment of post.comments||[]){const row=document.createElement('div');row.className='community-comment-row';const item=document.createElement('p');item.textContent=comment.text;row.appendChild(item);if(comment.mine){const remove=document.createElement('button');remove.type='button';remove.textContent='সরান';remove.setAttribute('aria-label','নিজের মন্তব্য সরান');remove.onclick=async()=>{if(!await mvpConfirm('এই মন্তব্য সরাবেন?'))return;remove.disabled=true;try{const {data}=await platformApi('/community/comments/'+encodeURIComponent(comment.id)+'/remove',{deviceId:civicDevice()});post={...post,...data};showComments();}catch(error){(post.demo?demoStatus:status).textContent=error.message;remove.disabled=false;}};row.appendChild(remove);}commentList.appendChild(row);}commentTitle.textContent='মন্তব্য · '+bn(post.commentCount);}
     showComments();comments.appendChild(commentList);
-    const form=document.createElement('form');form.className='community-comment-form';const field=document.createElement('input');field.type='text';field.maxLength=500;field.minLength=3;field.required=true;field.setAttribute('aria-label','মন্তব্য লিখুন');field.placeholder='আপনার মতামত লিখুন (নাম বা ফোন নম্বর নয়)';const submit=document.createElement('button');submit.type='submit';submit.textContent='মন্তব্য করুন';form.append(field,submit);
-    form.onsubmit=async event=>{event.preventDefault();submit.disabled=true;try{const {data}=await platformApi('/community/posts/'+encodeURIComponent(post.id)+'/comments',{deviceId:civicDevice(),text:field.value.trim()});post={...post,...data};field.value='';showComments();demoStatus.textContent='মন্তব্য প্রকাশিত হয়েছে।';}catch(error){demoStatus.textContent=error.message;}finally{submit.disabled=false;}};
-    actions.appendChild(like);comments.appendChild(form);article.append(heading,title,body,actions,comments);return article;
+    const form=document.createElement('form');form.className='community-comment-form';const field=document.createElement('input');field.type='text';field.maxLength=500;field.minLength=3;field.required=true;field.setAttribute('aria-label','মন্তব্য লিখুন');field.placeholder='মতামত লিখুন (ব্যক্তিগত তথ্য নয়)';const submit=document.createElement('button');submit.type='submit';submit.textContent='মন্তব্য করুন';form.append(field,submit);
+    form.onsubmit=async event=>{event.preventDefault();submit.disabled=true;try{const {data}=await platformApi('/community/posts/'+encodeURIComponent(post.id)+'/comments',{deviceId:civicDevice(),text:field.value.trim()});post={...post,...data};field.value='';showComments();(post.demo?demoStatus:status).textContent='মন্তব্য প্রকাশিত হয়েছে।';}catch(error){(post.demo?demoStatus:status).textContent=error.message;}finally{submit.disabled=false;}};
+    comments.appendChild(form);article.append(heading,title,body,meta,actions,comments);return article;
   }
-  async function loadDemoDiscussions(){const sequence=++demoRequest;demoStatus.textContent='নমুনা আলোচনা লোড হচ্ছে…';demoList.replaceChildren();try{const response=await fetch('/api/v1/community/posts',{headers:{'X-Civic-Device':civicDevice()},signal:AbortSignal.timeout(15000)});const result=await response.json();if(!response.ok||!result.success)throw new Error(result.error||'আলোচনা পাওয়া যায়নি');if(sequence!==demoRequest)return;for(const post of result.data)demoList.appendChild(renderDiscussion(post));demoStatus.textContent='নমুনা আলোচনা · '+bn(result.data.length)+'টি';}catch(error){if(sequence===demoRequest)demoStatus.textContent='নমুনা আলোচনা লোড হয়নি: '+error.message;}}
-  async function loadCommunity(){const sequence=++request;status.textContent='নাগরিক রিপোর্ট লোড হচ্ছে…';community.replaceChildren();try{
-    const response=await fetch('/api/v1/reports?source=citizen_report&limit=30&offset=0',{signal:AbortSignal.timeout(30000)});const result=await response.json();if(!response.ok||!result.success)throw new Error(result.error||'ফিড পাওয়া যায়নি');if(sequence!==request)return;
-    status.textContent=result.reports.length?'প্রকাশ্য নাগরিক রিপোর্ট · সর্বশেষ '+result.reports.length+'টি':'এখনও প্রকাশ্য নাগরিক রিপোর্ট নেই।';
-    for(const report of result.reports){const article=document.createElement('article');article.className='community-post';const heading=document.createElement('div');heading.className='community-post-head';heading.innerHTML='<span>নাগরিক রিপোর্ট</span><time></time>';heading.querySelector('time').dateTime=report.createdAt;heading.querySelector('time').textContent=new Date(report.createdAt).toLocaleDateString('bn-BD');const title=document.createElement('h3');title.textContent=report.title;const description=document.createElement('p');description.textContent=report.description;const meta=document.createElement('p');meta.className='community-meta';meta.textContent=(report.addressLabel||'রাজশাহী')+' · '+(ACTION_LABELS[report.actionStatus||report.status]||'অবস্থা অজানা');const action=document.createElement('button');action.type='button';action.textContent='বিস্তারিত ও অগ্রগতি দেখুন';action.onclick=()=>openDetailModal(report.id);article.append(heading,title,description,meta,action);if(typeof affirmButton==='function')article.appendChild(affirmButton(report));community.appendChild(article);}
+  async function loadCommunity(){const sequence=++request;status.textContent='আলোচনা লোড হচ্ছে…';demoStatus.textContent='';community.replaceChildren();demoList.replaceChildren();try{
+    const response=await fetch('/api/v1/community/posts',{headers:{'X-Civic-Device':civicDevice()},signal:AbortSignal.timeout(15000)});const result=await response.json();if(!response.ok||!result.success)throw new Error(result.error||'আলোচনা পাওয়া যায়নি');if(sequence!==request)return;
+    const real=result.data.filter(post=>!post.demo),examples=result.data.filter(post=>post.demo);
+    for(const post of real)community.appendChild(renderDiscussion(post));for(const post of examples)demoList.appendChild(renderDiscussion(post));
+    status.textContent=real.length?'নাগরিক আলোচনা · '+bn(real.length)+'টি':'এখনও নাগরিক আলোচনা নেই। প্রথম পরামর্শটি লিখুন।';
+    demoStatus.textContent='নমুনা আলোচনা · '+bn(examples.length)+'টি';
   }catch(error){if(sequence===request)status.textContent='ফিড লোড হয়নি: '+error.message;}};
-  document.getElementById('community-refresh').onclick=()=>{loadDemoDiscussions();loadCommunity();};
-  const previousSwitch=switchTab;switchTab=function(tab){previousSwitch(tab);if(tab==='community'){loadDemoDiscussions();loadCommunity();}};
+  compose.onsubmit=async event=>{event.preventDefault();const button=compose.querySelector('[type="submit"]');button.disabled=true;composeStatus.textContent='প্রকাশ করা হচ্ছে…';try{const form=new FormData(compose);await platformApi('/community/posts',{deviceId:civicDevice(),topic:form.get('topic'),title:String(form.get('title')).trim(),body:String(form.get('body')).trim(),wardNumber:form.get('wardNumber')?Number(form.get('wardNumber')):null});compose.reset();composeStatus.textContent='আপনার আলোচনা প্রকাশিত হয়েছে।';await loadCommunity();}catch(error){composeStatus.textContent=error.message;}finally{button.disabled=false;}};
+  document.getElementById('community-refresh').onclick=loadCommunity;
+  const previousSwitch=switchTab;switchTab=function(tab){previousSwitch(tab);if(tab==='community')loadCommunity();};
   document.addEventListener('DOMContentLoaded',()=>{
-    if(currentTab==='community'){loadDemoDiscussions();loadCommunity();}
+    if(currentTab==='community')loadCommunity();
     const match=location.pathname.match(/^\/reports\/([^/]+)$/);
     if(match){let id;try{id=decodeURIComponent(match[1]);}catch{return;}beforeReport='/reports';openDetailModal(id);}
   });

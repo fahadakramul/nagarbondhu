@@ -19,6 +19,7 @@ const tableMap: Record<string, string> = {
   resolutionRatings: 'resolutionRating',
   clusterReviews: 'clusterReview', fieldMissions: 'fieldMission',
   communityLikes: 'communityLike', communityComments: 'communityComment',
+  communityPosts: 'communityPost',
 };
 function rowData(name: string, row: any) {
   if(name==='reports')return {...fields(row, ['deletedAt','deletedReason','id','reporterId','title','description','category','userCategory','latitude','longitude','addressLabel','wardId','imageUrl','status','actionStatus','sourceType','createdAt','updatedAt','resolvedAt']),reopenedCount:row.reopenedCount||0,...Object.fromEntries(['nearbySensitive','affirmations','citizenVerification','photoCheck'].filter(k=>row[k]).map(k=>[k,row[k]]))};

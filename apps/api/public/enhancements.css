@@ -1,12 +1,12 @@
 /* Compact citizen navigation, verified-source links, and a report-based community feed. */
+.civic-brand-group{display:flex;align-items:center;gap:12px;min-width:0}
 #sidebar-collapse{display:none}
 #authority-banner[hidden],#authority-shell[hidden]{display:none!important}
 #tab-dashboard{display:none!important}
 .authority-mode #sidebar-collapse{color:#92400e}
 @media(min-width:1024px){
-  #sidebar-collapse{display:block;position:fixed;left:247px;top:16px;z-index:55;padding:8px 11px;border:1px solid #c7d2fe;border-radius:10px;background:#fff;color:#312e81;font-size:12px;font-weight:700;box-shadow:0 3px 12px #1e1b4b14}
+  #sidebar-collapse{display:block;flex-shrink:0;padding:8px 11px;border:1px solid #c7d2fe;border-radius:10px;background:#fff;color:#312e81;font-size:12px;font-weight:700;box-shadow:0 3px 12px #1e1b4b14}
   .sidebar-collapsed #civic-sidebar{transform:translateX(-100%)}
-  .sidebar-collapsed #sidebar-collapse{left:12px}
   .sidebar-collapsed.theme-obsidian>header,.sidebar-collapsed.theme-obsidian>main,.sidebar-collapsed.theme-obsidian>footer{margin-left:0;width:100%}
   #civic-sidebar,.theme-obsidian>header,.theme-obsidian>main,.theme-obsidian>footer{transition:margin-left .18s ease,width .18s ease,transform .18s ease}
 }
@@ -19,6 +19,7 @@
 .civic-notice:hover .civic-notice-track,.civic-notice:focus-within .civic-notice-track{animation-play-state:paused}
 @keyframes civic-scroll{to{transform:translateX(-50%)}}
 .civic-links{background:#fff;border:1px solid #e0e7ff;border-radius:17px;padding:20px;display:grid;gap:16px}
+.home-citizen-corner{display:grid;gap:14px;margin-top:8px}.home-citizen-heading{border-top:1px solid #cbd5e1;padding-top:18px}.home-citizen-heading p{font-size:12px;font-weight:700;color:#4338ca}.home-citizen-heading h2{font-size:22px;font-weight:750;color:#1e1b4b;margin-top:3px}
 .civic-links h3{font-size:19px;font-weight:750;color:#1e1b4b}.civic-links p{font-size:12px;color:#4338ca;font-weight:700}.civic-links small{display:block;color:#64748b;line-height:1.6;margin-top:4px}
 .civic-links-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
 .civic-links-grid a{display:flex;align-items:center;min-height:48px;padding:10px 13px;border:1px solid #c7d2fe;border-radius:11px;color:#312e81;font-size:13px;font-weight:700;background:#eef2ff}

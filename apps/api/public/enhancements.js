@@ -7,7 +7,8 @@
   const collapsed=()=>document.body.classList.contains('sidebar-collapsed');
   function setSidebar(value){document.body.classList.toggle('sidebar-collapsed',value);toggle.setAttribute('aria-expanded',String(!value));toggle.textContent=value?'☰ বিভাগ খুলুন':'⇤ বিভাগ লুকান';try{localStorage.setItem('nagarbondhu-sidebar-collapsed',String(value));}catch{}}
   toggle.onclick=()=>setSidebar(!collapsed());
-  document.body.insertBefore(toggle,document.querySelector('main'));
+  const headerRow=document.querySelector('body > header > div'),brand=headerRow.firstElementChild,brandGroup=document.createElement('div');
+  brandGroup.className='civic-brand-group';headerRow.insertBefore(brandGroup,brand);brandGroup.append(toggle,brand);
   try{setSidebar(localStorage.getItem('nagarbondhu-sidebar-collapsed')==='true');}catch{setSidebar(false);}
 
   // The citizen corner links to the separate planner studio instead of embedding its dashboard.
@@ -17,7 +18,7 @@
 
   const ticker=document.createElement('section');ticker.className='civic-notice';ticker.setAttribute('aria-label','সরকারি নোটিশের উৎস');
   ticker.innerHTML='<strong>📢 নগর বিজ্ঞপ্তি</strong><div class="civic-notice-window"><div class="civic-notice-track"><span>রাজশাহী সিটি কর্পোরেশনের যাচাইকৃত নোটিশ ও নাগরিক পরামর্শ অফিসিয়াল পোর্টালে দেখুন। নগরবন্ধু কোনো নোটিশ জারি করে না।</span><span aria-hidden="true">রাজশাহী সিটি কর্পোরেশনের যাচাইকৃত নোটিশ ও নাগরিক পরামর্শ অফিসিয়াল পোর্টালে দেখুন।</span></div></div><a href="https://erajshahi.portal.gov.bd/" target="_blank" rel="noopener noreferrer">অফিসিয়াল নোটিশ ↗</a>';
-  home.querySelector('.task-actions')?.after(ticker);
+  home.querySelector('.task-greeting')?.after(ticker);
   async function loadOfficialNotices(){try{
     const response=await fetch('/api/v1/city-notices',{signal:AbortSignal.timeout(10000)});const data=await response.json();if(!response.ok||!data.available||!Array.isArray(data.notices))return;
     const track=ticker.querySelector('.civic-notice-track');track.replaceChildren();
@@ -28,10 +29,13 @@
     if(track.children.length){ticker.querySelector('strong').textContent='📢 রাসিকের নোটিশ';const sourceLink=ticker.querySelector(':scope > a');sourceLink.textContent='সব নোটিশ ↗';sourceLink.href='https://erajshahi.portal.gov.bd/pages/notices';}
   }catch{/* Keep the attributed source link when the official portal is unavailable. */}}
   loadOfficialNotices();
-  const links=document.createElement('section');links.className='civic-links';links.innerHTML='<div><p>নাগরিক কর্নার</p><h3>জরুরি সরকারি ওয়েবসাইট</h3><small>লিংকগুলো সরকারি সাইটে খুলবে। নগরবন্ধু ওই সেবাগুলোর লগইন বা তথ্য সংগ্রহ করে না।</small></div><div class="civic-links-grid"></div>';
+  const links=document.createElement('section');links.className='civic-links';links.innerHTML='<div><p>সরকারি সেবা</p><h3>জরুরি সরকারি ওয়েবসাইট</h3><small>লিংকগুলো সরকারি সাইটে খুলবে। নগরবন্ধু ওই সেবাগুলোর লগইন বা তথ্য সংগ্রহ করে না।</small></div><div class="civic-links-grid"></div>';
   const destinations=[['রাজশাহী সিটি কর্পোরেশন','https://erajshahi.portal.gov.bd/'],['জাতীয় তথ্য বাতায়ন','https://bangladesh.gov.bd/'],['সরকারি অভিযোগ প্রতিকার','https://www.grs.gov.bd/'],['জন্ম ও মৃত্যু নিবন্ধন','https://www.bdris.gov.bd/'],['ই-পাসপোর্ট','https://www.epassport.gov.bd/'],['সরকারি তথ্যসেবা ৩৩৩','https://333.gov.bd/']];
   for(const [label,url] of destinations){const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=label+' ↗';links.querySelector('.civic-links-grid').appendChild(a);}
-  home.querySelector('.city-environment')?.after(links);
+  const actions=home.querySelector('.task-actions'),extra=home.querySelector('.home-extra'),pulse=home.querySelector('.city-pulse'),environment=home.querySelector('.city-environment');
+  const corner=document.createElement('section');corner.className='home-citizen-corner';corner.setAttribute('aria-labelledby','home-citizen-title');corner.innerHTML='<div class="home-citizen-heading"><p>রাজশাহীর নাগরিক তথ্য</p><h2 id="home-citizen-title">নাগরিক কর্নার</h2></div>';
+  corner.append(environment,links);
+  ticker.after(actions);actions.after(extra);extra.after(pulse);pulse.after(corner);
 
   // Voice is the first reporting action; a transcription stays editable before submission.
   const voice=document.getElementById('voice-input-card'),description=document.getElementById('form-description');

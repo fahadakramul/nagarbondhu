@@ -143,7 +143,7 @@ export const PRIORITY_METADATA: Record<
   },
 };
 
-export const RAJSHAHI_WARDS = [
+const FEATURED_WARDS = [
   {
     wardNumber: 1,
     wardName: 'ওয়ার্ড ০১ (কাজীহাটা - কোর্ট চত্বর)',
@@ -208,3 +208,16 @@ export const RAJSHAHI_WARDS = [
     centerLongitude: 88.6480,
   },
 ];
+
+// All 30 numbered wards are selectable. Unverified ward centres remain unset (0, 0)
+// and must never be presented as mapped boundaries or incident coordinates.
+export const RAJSHAHI_WARDS = Array.from({ length: 30 }, (_, index) => {
+  const wardNumber = index + 1;
+  return FEATURED_WARDS.find(ward => ward.wardNumber === wardNumber) || {
+    wardNumber,
+    wardName: `ওয়ার্ড ${String(wardNumber).padStart(2, '0').replace(/\d/g, digit => '০১২৩৪৫৬৭৮৯'[Number(digit)])}`,
+    areaDescription: 'ওয়ার্ডের কেন্দ্র ও সীমানা যাচাই করা হয়নি; ঘটনার স্থান মানচিত্রে নিজে চিহ্নিত করুন।',
+    centerLatitude: 0,
+    centerLongitude: 0,
+  };
+});

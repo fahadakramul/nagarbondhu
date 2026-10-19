@@ -12,9 +12,9 @@
   const description=document.getElementById('form-description').parentElement;
   const photo=steps[0].querySelector('#form-image');let photoBlock=photo;while(photoBlock.parentElement!==steps[0])photoBlock=photoBlock.parentElement;
   const categoryLabel=document.getElementById('citizen-category').parentElement;categoryLabel.classList.remove('hidden');
-  const optionalTools=document.createElement('details');optionalTools.className='wizard-optional-tools';optionalTools.innerHTML='<summary>কণ্ঠে বলা বা ছবি যোগ করা <span>ঐচ্ছিক</span></summary><p>সমস্যা লিখলেই পরের ধাপে যেতে পারবেন। চাইলে কণ্ঠ বা ছবি ব্যবহার করুন।</p>';
+  const optionalTools=document.createElement('details');optionalTools.className='wizard-optional-tools';optionalTools.innerHTML='<summary>ছবি যোগ করা <span>ঐচ্ছিক</span></summary><p>ছবি থাকলে যুক্ত করুন। ছবি ছাড়াও রিপোর্ট জমা দেওয়া যায়।</p>';
   description.after(categoryLabel,optionalTools);
-  optionalTools.append(document.getElementById('voice-input-card'),photoBlock,steps[0].querySelector('.vision-check'));
+  optionalTools.append(photoBlock,steps[0].querySelector('.vision-check'));
   const nearby=document.createElement('div');nearby.id='wizard-nearby';nearby.innerHTML='<p class="font-bold text-sm">কাছের সংবেদনশীল স্থাপনা</p><button type="button">২০০ মিটারের স্থাপনা দেখুন</button><div id="wizard-nearby-content" aria-live="polite"></div>';steps[1].appendChild(nearby);
   nearby.querySelector('button').onclick=async()=>{const pin=pickerMarker?.getLatLng();if(!pin)return;const seq=++nearbySequence,box=document.getElementById('wizard-nearby-content');box.textContent='স্থাপনার তথ্য লোড হচ্ছে…';try{const {data}=await platformApi('/nearby?latitude='+pin.lat+'&longitude='+pin.lng);if(seq===nearbySequence)box.innerHTML=nearbyHtml(data);}catch{if(seq===nearbySequence)box.textContent='স্থাপনার তথ্য পাওয়া যায়নি।';}};
   new MutationObserver(()=>{const original=document.getElementById('nearby-preview');if(original&&original.parentElement!==nearby)nearby.appendChild(original);}).observe(document.getElementById('ai-preview-box'),{childList:true,subtree:true});

@@ -13,9 +13,12 @@ const TAB_ROUTES = Object.freeze({
   feed: '/reports',
   dashboard: '/dashboard',
   scorecard: '/scorecard',
+  community: '/community',
 });
 
 function tabFromPath(pathname) {
+  if (/^\/reports\/[^/]+$/.test(pathname)) return 'feed';
+  if (/^\/assistant\/(citizen|authority|planner)\/[^/]+$/.test(pathname)) return 'home';
   return Object.keys(TAB_ROUTES).find(tab => TAB_ROUTES[tab] === pathname) || 'home';
 }
 
@@ -41,7 +44,7 @@ let selectedImageDataUrl = null;
 let selectedImageFileName = '';
 
 // Rajshahi Wards
-const RAJSHAHI_WARDS = [
+const FEATURED_WARDS = [
   { wardNumber: 1, wardName: 'ওয়ার্ড ০১ (কাজীহাটা - কোর্ট চত্বর)', lat: 24.3820, lng: 88.5895 },
   { wardNumber: 2, wardName: 'ওয়ার্ড ০২ (মহিষবাথান - রাজপাড়া)', lat: 24.3785, lng: 88.5760 },
   { wardNumber: 9, wardName: 'ওয়ার্ড ০৯ (বোয়ালিয়া - সাগরপাড়া)', lat: 24.3685, lng: 88.6015 },
@@ -52,6 +55,13 @@ const RAJSHAHI_WARDS = [
   { wardNumber: 28, wardName: 'ওয়ার্ড ২৮ (মতিহার - রাজশাহী বিশ্ববিদ্যালয়)', lat: 24.3680, lng: 88.6430 },
   { wardNumber: 30, wardName: 'ওয়ার্ড ৩০ (বিনোদপুর - রুয়েট চত্বর)', lat: 24.3640, lng: 88.6480 },
 ];
+// The numbered list is complete. Only the nine named map hints have approximate centres.
+const RAJSHAHI_WARDS = Array.from({length:30}, (_, index) => {
+  const wardNumber=index+1;
+  return FEATURED_WARDS.find(ward=>ward.wardNumber===wardNumber) || {
+    wardNumber, wardName:'ওয়ার্ড '+String(wardNumber).padStart(2,'0').replace(/\d/g,d=>'০১২৩৪৫৬৭৮৯'[d]), lat:null, lng:null
+  };
+});
 
 const CATEGORY_NAMES_BN = {
   ROAD_DAMAGE: 'সড়ক ক্ষতি ও খানাখন্দ',
@@ -79,16 +89,23 @@ document.addEventListener('DOMContentLoaded', () => {
   populateOverrideButtons();
   initPickerMap();
   loadData();
+  window.__civicRestoringRoute=true;
   switchTab(tabFromPath(window.location.pathname));
+  window.__civicRestoringRoute=false;
 });
 
-window.addEventListener('popstate', () => switchTab(tabFromPath(window.location.pathname)));
+window.addEventListener('popstate', () => {
+  window.__civicRestoringRoute=true;
+  switchTab(tabFromPath(window.location.pathname));
+  window.__civicRestoringRoute=false;
+  window.__civicHandlePopState?.();
+});
 
 // Tab Switcher
 function switchTab(tabId) {
   const route = TAB_ROUTES[tabId];
   if (!route) return;
-  if (window.location.pathname !== route) window.history.pushState(null, '', route);
+  if (window.location.pathname !== route && !window.__civicRestoringRoute) window.history.pushState(null, '', route);
   currentTab = tabId;
   document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
   document.querySelectorAll('.nav-tab').forEach(el => {
@@ -98,6 +115,7 @@ function switchTab(tabId) {
 
   const targetSection = document.getElementById(`section-${tabId}`);
   if (targetSection) targetSection.classList.remove('hidden');
+  document.querySelector('footer')?.classList.toggle('hidden',tabId!=='home');
 
   const targetNav = document.getElementById(`tab-${tabId}`);
   if (targetNav) {

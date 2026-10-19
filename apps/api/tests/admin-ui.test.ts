@@ -90,11 +90,10 @@ describe('Administrator UI connected to the real API',()=>{
     await eventually(()=>copied.mock.calls.length===1);expect(copied.mock.calls[0][0]).toContain('?report='+saved!.id);expect(copied.mock.calls[0][0]).not.toContain(window.readReceiptTokens()[saved!.id]);
     el('receipt-track').click();await eventually(()=>el('public-tracking').textContent.includes(saved!.id));expect(run('selectedReport?.id')).toBe(saved!.id);
   });
-  test('new navigation keeps the existing IDs and exposes authority login through More',async()=>{
+  test('new navigation keeps the existing IDs and exposes the separate authority corner',async()=>{
     expect(el('primary-navigation').closest('#civic-sidebar')).not.toBeNull();
-    const more=el('civic-bottom-nav').querySelector('[data-nav-tab="more"]');more.click();expect(el('more-sheet').hasAttribute('open')).toBe(true);
-    const loginButton=Array.from(el('more-sheet').querySelectorAll('button')).find((b:any)=>b.textContent==='কর্তৃপক্ষ লগইন') as any;
-    loginButton.click();expect(el('operator-login-modal').classList.contains('hidden')).toBe(false);expect(el('more-sheet').hasAttribute('open')).toBe(false);
+    expect(el('civic-bottom-nav').querySelector('[data-nav-tab="community"]')).not.toBeNull();
+    el('authority-pill').click();await eventually(()=>!el('operator-login-modal').classList.contains('hidden'));
     window.closeOperatorLogin();
     el('civic-bottom-nav').querySelector('[data-nav-tab="report"]').click();expect(run('currentTab')).toBe('report');
     expect(el('civic-bottom-nav').querySelector('[aria-current]').dataset.navTab).toBe('report');

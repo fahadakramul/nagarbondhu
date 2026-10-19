@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { RequestHandler } from 'express';
 import { CONFIG } from './config';
 import { db } from './db';
+import { RAJSHAHI_WARDS } from '@nagarbondhu/shared';
 
 type Snapshot = Record<string, any[]>;
 let client: PrismaClient | null = null;
@@ -17,6 +18,7 @@ const tableMap: Record<string, string> = {
   submissionReceipts: 'submissionReceipt', feedback: 'citizenFeedback', notices: 'reportNotice',
   resolutionRatings: 'resolutionRating',
   clusterReviews: 'clusterReview', fieldMissions: 'fieldMission',
+  communityLikes: 'communityLike', communityComments: 'communityComment',
 };
 function rowData(name: string, row: any) {
   if(name==='reports')return {...fields(row, ['deletedAt','deletedReason','id','reporterId','title','description','category','userCategory','latitude','longitude','addressLabel','wardId','imageUrl','status','actionStatus','sourceType','createdAt','updatedAt','resolvedAt']),reopenedCount:row.reopenedCount||0,...Object.fromEntries(['nearbySensitive','affirmations','citizenVerification','photoCheck'].filter(k=>row[k]).map(k=>[k,row[k]]))};
@@ -57,6 +59,15 @@ export async function initializeDatabase() {
     snapshot.statusHistories = snapshot.statusHistories.map(({ changedByLabel, ...row }) => ({ ...row, changedBy: changedByLabel || row.changedBy || 'সিস্টেম' }));
     db.restore(snapshot);
     committed = db.snapshot();
+    for (const ward of RAJSHAHI_WARDS) {
+      const id = `ward-${ward.wardNumber}`;
+      if (!db.wards.has(id)) db.wards.set(id, {
+        id, wardNumber: ward.wardNumber, wardName: ward.wardName,
+        areaDescription: ward.areaDescription, centerLatitude: ward.centerLatitude,
+        centerLongitude: ward.centerLongitude, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+      });
+    }
+    if (db.wards.size !== snapshot.wards.length) await flushDatabase();
   } else {
     await flushDatabase();
   }

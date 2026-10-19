@@ -7,6 +7,8 @@
   
   <!-- PWA & Mobile WebAPK Support -->
   <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="apple-touch-icon" href="/icon.png">
   <meta name="theme-color" content="#4338CA">
   <meta name="color-scheme" content="light">
   <meta name="mobile-web-app-capable" content="yes">
@@ -45,6 +47,7 @@
   <link rel="stylesheet" href="/authority.css">
   <link rel="stylesheet" href="/desktop-polish.css">
   <link rel="stylesheet" href="/clarity.css">
+  <link rel="stylesheet" href="/enhancements.css">
 </head>
 <body class="theme-obsidian bg-slate-50 text-slate-800 min-h-screen flex flex-col font-bengali">
 
@@ -93,6 +96,9 @@
         </a>
         <a href="/reports" onclick="event.preventDefault();switchTab('feed')" id="tab-feed" class="nav-tab px-4 py-2 rounded-md text-slate-300 hover:text-white transition flex items-center gap-1.5">
           <i class="fa-solid fa-list-check"></i> রিপোর্ট তালিকা
+        </a>
+        <a href="/community" onclick="event.preventDefault();switchTab('community')" id="tab-community" class="nav-tab px-4 py-2 rounded-md text-slate-300 hover:text-white transition flex items-center gap-1.5">
+          <i class="fa-solid fa-people-group"></i> কমিউনিটি ফিড
         </a>
         <a href="/dashboard" onclick="event.preventDefault();switchTab('dashboard')" id="tab-dashboard" class="nav-tab px-4 py-2 rounded-md text-slate-300 hover:text-white transition flex items-center gap-1.5">
           <i class="fa-solid fa-chart-pie"></i> প্ল্যানিং ড্যাশবোর্ড
@@ -270,6 +276,14 @@
     </section>
 
     <!-- ==================== TAB 2: REPORT A PROBLEM ==================== -->
+    <section id="section-community" class="tab-content hidden max-w-3xl mx-auto space-y-5" aria-labelledby="community-title">
+      <div class="community-header"><p>নাগরিক কর্নার</p><h2 id="community-title">কমিউনিটি ফিড</h2><p>নমুনা আলোচনায় লাইক ও মন্তব্য করে অভিজ্ঞতা ভাগ করুন। নিচে প্রকাশ্য নাগরিক রিপোর্টের অগ্রগতি দেখুন। মন্তব্যে ব্যক্তিগত তথ্য লিখবেন না।</p></div>
+      <div class="community-actions"><button type="button" onclick="switchTab('report')">সমস্যা জানান</button><button type="button" id="community-refresh">ফিড হালনাগাদ করুন</button></div>
+      <div class="community-demo-intro"><strong>নমুনা আলোচনা · বাস্তব ঘটনা বা সরকারি উদ্যোগ নয়</strong><span>লাইক ও মন্তব্য শুধু এই কমিউনিটি আলোচনাগুলোতে দেখা যাবে।</span></div>
+      <p id="community-demo-status" role="status" aria-live="polite"></p><div id="community-demo-list" class="community-list"></div>
+      <h3 class="community-report-heading">প্রকাশ্য নাগরিক রিপোর্ট</h3>
+      <p id="community-status" role="status" aria-live="polite"></p><div id="community-list" class="community-list"></div>
+    </section>
     <section id="section-report" class="tab-content hidden max-w-3xl mx-auto space-y-6">
       <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
         <div>
@@ -277,7 +291,7 @@
             <i class="fa-solid fa-bullhorn text-civic-600"></i> নাগরিক সমস্যা রিপোর্ট করুন
           </h2>
           <p class="text-xs text-slate-500 mt-1">
-            সমস্যার বিবরণ বাংলা বা ইংরেজিতে লিখুন। সমস্যার ধরন নির্বাচন করুন। চাইলে জমা দেওয়ার আগে বিবরণ বিশ্লেষণ করুন।
+            আগে কণ্ঠে বলুন অথবা বাংলা বা ইংরেজিতে লিখুন। লেখা দেখে ঠিক করুন; AI সম্ভাব্য সমস্যার ধরন ও তীব্রতা বিশ্লেষণ করতে পারে।
           </p>
         </div>
 
@@ -635,14 +649,14 @@
   <!-- FOOTER -->
   <footer class="bg-slate-900 text-slate-300 py-5 text-xs text-center border-t border-slate-800">
     <div class="max-w-7xl mx-auto px-4">
-      <p class="font-bold">নগরবন্ধু · রাজশাহীর নাগরিক তথ্যসেবা</p>
-      <p class="mt-1">তথ্য: Google Gemini · OpenStreetMap · Open-Meteo</p>
+      <p class="font-bold">NagarBondhu AI · Rajshahi civic information prototype</p>
+      <p class="mt-1">An independent project; not an official Rajshahi City Corporation service.</p>
       <details class="footer-details">
-        <summary>তথ্যসূত্র ও কৃতিত্ব</summary>
-        <p>লেখা, ছবি ও কণ্ঠ বিশ্লেষণ: Google Gemini; আশেপাশের স্থান: OpenStreetMap Overpass; আবহাওয়া: Open-Meteo। সেবা পাওয়া না গেলে তা আলাদাভাবে দেখানো হয়।</p>
-        <p>© OpenStreetMap contributors · স্যাটেলাইট ছবি: Esri, Maxar, Earthstar Geographics · স্থানের নাম: Esri।</p>
-        <p>নির্মাণ: <strong>Fahad MD Akramul Islam</strong> · পরিকল্পনা ও সহযোগিতা: <strong>Tashika Hossain</strong></p>
-        <p>নগর ও অঞ্চল পরিকল্পনা বিভাগ, RUET · উভয়েই ২৪ সিরিজের শিক্ষার্থী।</p>
+        <summary>Sources and credits</summary>
+        <p>Text, photo and voice analysis: Google Gemini. Nearby places: OpenStreetMap Overpass. Weather and air quality: Open-Meteo and Copernicus CAMS. Unavailable sources are labelled in context.</p>
+        <p>© OpenStreetMap contributors · Satellite imagery: Esri, Maxar, Earthstar Geographics · Place names: Esri.</p>
+        <p>Developed by <strong>Fahad MD Akramul Islam</strong> · Planning and collaboration: <strong>Tashika Hossain</strong>.</p>
+        <p>Department of Urban and Regional Planning, RUET · Both are students of the 24 Series.</p>
       </details>
     </div>
   </footer>
@@ -662,5 +676,6 @@
   <script src="/moderation.js"></script>
   <script src="/authority.js"></script>
   <script src="/environment.js"></script>
+  <script src="/enhancements.js"></script>
 </body>
 </html>

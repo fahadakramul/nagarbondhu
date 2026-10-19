@@ -430,3 +430,23 @@ model FieldMission {
   @@index([sourceType, status])
   @@map("field_missions")
 }
+
+model CommunityLike {
+  id String @id
+  postId String @map("post_id")
+  deviceHash String @map("device_hash")
+  createdAt DateTime @default(now()) @map("created_at")
+  @@unique([postId, deviceHash])
+  @@index([postId])
+  @@map("community_likes")
+}
+
+model CommunityComment {
+  id String @id
+  postId String @map("post_id")
+  deviceHash String @map("device_hash")
+  text String
+  createdAt DateTime @default(now()) @map("created_at")
+  @@index([postId, createdAt])
+  @@map("community_comments")
+}

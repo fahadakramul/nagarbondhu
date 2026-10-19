@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   BackHandler,
   Platform,
+  Linking,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 
@@ -66,6 +67,18 @@ export default function App() {
             source={{
               uri: APP_URL,
             }}
+            onShouldStartLoadWithRequest={(request) => {
+              if (!/^https?:\/\//i.test(request.url)) return true;
+              try {
+                if (new URL(request.url).origin === new URL(APP_URL).origin) return true;
+              } catch { return false; }
+              Linking.openURL(request.url).catch(() => {});
+              return false;
+            }}
+            onOpenWindow={(event) => {
+              const url = event.nativeEvent.targetUrl;
+              if (/^https?:\/\//i.test(url)) Linking.openURL(url).catch(() => {});
+            }}
             style={styles.webView}
             javaScriptEnabled={true}
             domStorageEnabled={true}
@@ -75,6 +88,7 @@ export default function App() {
             allowFileAccess={true}
             allowFileAccessFromFileURLs={true}
             allowUniversalAccessFromFileURLs={true}
+            setSupportMultipleWindows={false}
             startInLoadingState={true}
             renderLoading={() => (
               <View style={styles.loadingContainer}>

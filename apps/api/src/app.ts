@@ -17,6 +17,8 @@ import platformRoutes from './routes/platform.routes';
 import competitionRoutes from './routes/competition.routes';
 import featuresRoutes from './routes/features.routes';
 import assistantRoutes from './routes/assistant.routes';
+import cityNoticesRoutes from './routes/city-notices.routes';
+import communityRoutes from './routes/community.routes';
 
 export const app = express();
 app.set('trust proxy',1);
@@ -49,7 +51,7 @@ app.get('/api/v1/health', (req, res) => {
     timestamp: new Date().toISOString(),
     persistence: persistenceState,
     release:process.env.RENDER_GIT_COMMIT || 'local',
-    features:['resolution-ratings','nearby-sensitive','citizen-affirmations','citizen-verification','ward-scorecard','photo-check','voice-complaint','rain-queue'],
+    features:['resolution-ratings','nearby-sensitive','citizen-affirmations','citizen-verification','ward-scorecard','photo-check','voice-complaint','rain-queue','community-interactions'],
   });
 });
 
@@ -64,6 +66,8 @@ app.use('/api/v1/ai', assistantRoutes);
 app.use('/api/v1/map', mapRoutes);
 app.use('/api/v1/duplicates', duplicateRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1', cityNoticesRoutes);
+app.use('/api/v1', communityRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/admin', actionRoutes);
 

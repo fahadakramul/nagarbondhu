@@ -44,6 +44,8 @@ export class DatabaseRepository {
   notices = new Map<string, import('./services/citizen.service').ReportNotice>();
   clusterReviews = new Map<string, import('./services/competition.service').ClusterReview>();
   fieldMissions = new Map<string, import('./services/competition.service').FieldMission>();
+  communityLikes = new Map<string, {id:string;postId:string;deviceHash:string;createdAt:string}>();
+  communityComments = new Map<string, {id:string;postId:string;deviceHash:string;text:string;createdAt:string}>();
 
   constructor() {
     this.seedDefaultData();
@@ -54,7 +56,7 @@ export class DatabaseRepository {
   }
 
   snapshot(): Record<string, any[]> {
-    const names = ['users', 'wards', 'reports', 'aiAnalyses', 'priorityAssessments', 'possibleDuplicates', 'departments', 'officers', 'recommendations', 'actionPlans', 'actionEvents', 'progressUpdates', 'submissionReceipts', 'feedback', 'resolutionRatings', 'notices', 'clusterReviews', 'fieldMissions'] as const;
+    const names = ['users', 'wards', 'reports', 'aiAnalyses', 'priorityAssessments', 'possibleDuplicates', 'departments', 'officers', 'recommendations', 'actionPlans', 'actionEvents', 'progressUpdates', 'submissionReceipts', 'feedback', 'resolutionRatings', 'notices', 'clusterReviews', 'fieldMissions', 'communityLikes', 'communityComments'] as const;
     const snapshot: Record<string, any[]> = { statusHistories: this.statusHistories };
     for (const name of names) snapshot[name] = Array.from((this[name] as Map<string, unknown>).values());
     return JSON.parse(JSON.stringify(snapshot));

@@ -68,7 +68,7 @@ describe('Reports & Planning Dashboard Integration Tests', () => {
     expect(res.body.data.totalReports).toBeGreaterThan(0);
     expect(res.body.data.byCategory.length).toBeGreaterThan(0);
     expect(res.body.data.byWard.length).toBeGreaterThan(0);
-    expect(res.body.data.hotspots.length).toBeGreaterThan(0);
+    expect(res.body.data.hotspots).toHaveLength(0); // Seed coordinates are illustrative and unconfirmed.
     expect(res.body.data.recommendedActions.length).toBeGreaterThan(0);
   });
 
@@ -123,4 +123,13 @@ describe('Reports & Planning Dashboard Integration Tests', () => {
     expect(res.text).toContain('নগরবন্ধু');
     expect(res.text).toContain('NagarBondhu AI');
   });
+
+  test.each(['/report','/map','/reports','/dashboard','/scorecard'])(
+    'serves the web application at %s for direct links', async (path) => {
+      const res = await request(app).get(path);
+      expect(res.status).toBe(200);
+      expect(res.text).toContain('id="primary-navigation"');
+      expect(res.text).toContain('src="/app.js"');
+    }
+  );
 });

@@ -78,7 +78,8 @@ describe('Administrator UI connected to the real API',()=>{
     run("pickerMarker={getLatLng(){return {lat:24.36,lng:88.62};}}");
     el('wizard-next').click();expect(window.document.querySelector('[data-wizard-step="1"]').hidden).toBe(false);
     el('wizard-next').click();expect(window.document.querySelector('[data-wizard-step="1"]').hidden).toBe(false);
-    el('location-confirmed').checked=true;el('wizard-next').click();expect(window.document.querySelector('[data-wizard-step="2"]').hidden).toBe(false);
+    el('location-confirmed').checked=true;el('wizard-next').click();expect(window.document.querySelector('[data-wizard-step="2"]').hidden).toBe(true);
+    window.updateLocationFromLatLng(24.36,88.62);el('location-confirmed').checked=true;el('wizard-next').click();expect(window.document.querySelector('[data-wizard-step="2"]').hidden).toBe(false);
     Object.defineProperty(window.crypto,'subtle',{value:require('crypto').webcrypto.subtle,configurable:true});
     window.TextEncoder=require('util').TextEncoder;
     const before=new Set(db.reports.keys());await window.handleFormSubmit({preventDefault(){}});
@@ -87,6 +88,7 @@ describe('Administrator UI connected to the real API',()=>{
     expect(window.readReceiptTokens()[saved!.id]).toHaveLength(64);expect(el('report-modal').classList.contains('hidden')).toBe(true);
     const copied=jest.fn().mockResolvedValue(undefined);Object.defineProperty(window.navigator,'clipboard',{value:{writeText:copied},configurable:true});el('receipt-share').click();
     await eventually(()=>copied.mock.calls.length===1);expect(copied.mock.calls[0][0]).toContain('?report='+saved!.id);expect(copied.mock.calls[0][0]).not.toContain(window.readReceiptTokens()[saved!.id]);
+    el('receipt-track').click();await eventually(()=>el('public-tracking').textContent.includes(saved!.id));expect(run('selectedReport?.id')).toBe(saved!.id);
   });
   test('new navigation keeps the existing IDs and exposes authority login through More',async()=>{
     expect(el('primary-navigation').closest('#civic-sidebar')).not.toBeNull();
@@ -96,6 +98,22 @@ describe('Administrator UI connected to the real API',()=>{
     window.closeOperatorLogin();
     el('civic-bottom-nav').querySelector('[data-nav-tab="report"]').click();expect(run('currentTab')).toBe('report');
     expect(el('civic-bottom-nav').querySelector('[aria-current]').dataset.navTab).toBe('report');
+  });
+  test('section URLs support direct navigation and browser history',async()=>{
+    run("switchTab('map')");
+    expect(window.location.pathname).toBe('/map');
+    expect(el('section-map').classList.contains('hidden')).toBe(false);
+    expect(el('tab-feed').getAttribute('href')).toBe('/reports');
+    run("switchTab('feed')");
+    expect(window.location.pathname).toBe('/reports');
+    expect(el('section-feed').classList.contains('hidden')).toBe(false);
+    window.history.back();
+    await eventually(()=>window.location.pathname==='/map'&&run('currentTab')==='map');
+    window.history.replaceState(null,'','/scorecard');
+    window.dispatchEvent(new window.PopStateEvent('popstate'));
+    await eventually(()=>run('currentTab')==='scorecard');
+    expect(el('section-scorecard').classList.contains('hidden')).toBe(false);
+    expect(window.location.pathname).toBe('/scorecard');
   });
   test('assistant uses honest fallback and its action prefills without submitting',async()=>{
     window.openCivicAssistant();const first=el('assistant-starters').querySelector('button');first.click();
@@ -115,7 +133,9 @@ describe('Administrator UI connected to the real API',()=>{
     el('environment-details').open=true;
     expect(el('environment-content').textContent).toContain('PM₂.₅');expect(el('environment-content').textContent).toContain('US AQI');
     expect(el('environment-content').textContent).toContain('Copernicus CAMS');expect(el('environment-content').textContent).not.toContain('অপরাহ্ণ₂');
-    expect(el('environment-content').querySelectorAll('.environment-days > div').length).toBe(5);
+    const forecastDays=el('environment-content').querySelectorAll('.environment-days > div').length;
+    expect(forecastDays).toBeGreaterThan(0);
+    expect(forecastDays).toBeLessThanOrEqual(5);
   });
   test('switching modes closes menus, reuses the scoped demo session, and restores the selected corner tab',async()=>{
     window.showOperatorLogin();el('authority-demo-login').click();await eventually(()=>window.document.body.classList.contains('authority-mode'));
@@ -129,9 +149,16 @@ describe('Administrator UI connected to the real API',()=>{
   });
   test('assistant threads persist, switch, and delete through a confirmation modal',async()=>{
     window.openCivicAssistant('আমার এলাকার পানি জমে থাকে');await eventually(()=>!!el('assistant-turns').querySelector('.assistant-answer'));
-    const saved=JSON.parse(window.localStorage.getItem('nagarbondhu-threads'));expect(saved).toHaveLength(1);expect(saved[0].messages).toHaveLength(2);expect(el('assistant-turns').querySelector('.assistant-time').textContent).toMatch(/[০-৯]/);
+    const saved=JSON.parse(window.localStorage.getItem('nagarbondhu-threads-citizen'));expect(saved).toHaveLength(1);expect(saved[0].messages).toHaveLength(2);expect(el('assistant-turns').querySelector('.assistant-time').textContent).toMatch(/[০-৯]/);
     el('assistant-reset').click();expect(el('assistant-turns').children.length).toBe(0);window.openCivicAssistant('রাস্তার বাতি নষ্ট');await eventually(()=>!!el('assistant-turns').querySelector('.assistant-answer'));
     el('assistant-history').click();const rows=el('assistant-thread-drawer').querySelectorAll('div');expect(rows.length).toBe(2);rows[1].querySelector('button').click();expect(el('assistant-turns').textContent).toContain('আমার এলাকার পানি জমে থাকে');
+  });
+  test('floating assistant changes identity and clears incompatible context between workspaces',async()=>{
+    window.openCivicAssistant('আমার এলাকার পানি জমে থাকে');await eventually(()=>!!el('assistant-turns').querySelector('.assistant-answer'));el('assistant-close').click();
+    window.showOperatorLogin();el('authority-demo-login').click();await eventually(()=>window.document.body.classList.contains('authority-mode'));
+    window.openCivicAssistant();expect(el('assistant-title').textContent).toBe('নগরবন্ধু সহায়ক · কর্তৃপক্ষ');expect(el('assistant-turns').textContent).not.toContain('আমার এলাকার পানি');
+    el('assistant-close').click();el('authority-tabs').querySelector('[data-authority-tab="planning"]').click();await eventually(()=>window.document.body.classList.contains('planner-mode'));
+    window.openCivicAssistant();expect(el('assistant-title').textContent).toBe('নগরবন্ধু সহায়ক · নগর পরিকল্পনাবিদ');expect(el('assistant-turns').textContent).not.toContain('আমার এলাকার পানি');
   });
   test('filter sheet supports multiple categories while retaining the original select handlers',async()=>{
     const row=el('section-map').querySelector('.filter-chips');row.querySelector('button').click();

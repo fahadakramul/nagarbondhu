@@ -31,6 +31,11 @@ export interface AiServiceResult {
   modelName: string;
   isFallback: boolean;
 }
+function preserveTestQualifier(data:AiAnalysisData,input:string):AiAnalysisData {
+  if(!/(?:\bQA\b|\btest report\b|\bsynthetic\b|\bdemo data\b|পরীক্ষামূলক|টেস্ট রিপোর্ট|ডেমো রিপোর্ট)/i.test(input))return data;
+  const label='পরীক্ষামূলক QA রিপোর্ট — ';
+  return {...data,summary:/QA|পরীক্ষামূলক|টেস্ট|ডেমো/i.test(data.summary)?data.summary:label+data.summary,clearerDescription:data.clearerDescription&&!/QA|পরীক্ষামূলক|টেস্ট|ডেমো/i.test(data.clearerDescription)?label+data.clearerDescription:data.clearerDescription};
+}
 
 /**
  * Intelligent Rule-based fallback analyzer for Bengali civic complaints
@@ -112,7 +117,7 @@ export async function analyzeBengaliComplaint(complaintText: string, allowFallba
     // Transparent fallback when key is not configured
     const fallbackData = analyzeWithRuleFallback(complaintText);
     return {
-      data: fallbackData,
+      data: preserveTestQualifier(fallbackData,complaintText),
       provider: 'Rule-Based Fallback (GEMINI_API_KEY not configured)',
       modelName: 'keyword-heuristic-v1',
       isFallback: true,
@@ -180,7 +185,7 @@ Complaint Text:
     const validatedData = AiAnalysisSchema.parse(parsed);
 
     return {
-      data: validatedData,
+      data: preserveTestQualifier(validatedData,complaintText),
       provider: 'Google Gemini AI',
       modelName: CONFIG.GEMINI_MODEL,
       isFallback: false,
@@ -190,7 +195,7 @@ Complaint Text:
     console.warn('[AI Service] Live provider unavailable; using labelled heuristic fallback.');
     const fallbackData = analyzeWithRuleFallback(complaintText);
     return {
-      data: fallbackData,
+      data: preserveTestQualifier(fallbackData,complaintText),
       provider: 'Rule Fallback (Gemini API Call Failed)',
       modelName: 'keyword-heuristic-v1',
       isFallback: true,

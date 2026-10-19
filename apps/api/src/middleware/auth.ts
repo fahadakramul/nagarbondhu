@@ -19,7 +19,7 @@ export function protectDemoWrites(req: Request, res: Response, next: NextFunctio
     const writes=(req.method==='DELETE'&&/^\/api\/v1\/admin\/reports\/[^/]+$/.test(path)) ||
       (['POST','PATCH','PUT'].includes(req.method)&&/^\/api\/v1\/admin\/reports\/[^/]+\/(restore|status|action-status|action-plan|action-recommendations|progress)$/.test(path)) ||
       (req.method==='POST'&&/^\/api\/v1\/competition\/(admin|demo)\/(missions|missions\/[^/]+\/update|clusters\/[^/]+\/review)$/.test(path)) ||
-      (req.method==='POST'&&path==='/api/v1/admin/copilot');
+      (req.method==='POST'&&(path==='/api/v1/admin/copilot'||path==='/api/v1/ai/assistant'));
     if(!['GET','HEAD','OPTIONS'].includes(req.method)&&!writes)return res.status(403).json({success:false,error:'ডেমো কর্তৃপক্ষের এই অনুমতি নেই।'});
     const json=res.json.bind(res);
     const clean=(value:any):any=>Array.isArray(value)?value.map(clean):value&&typeof value==='object'?Object.fromEntries(Object.entries(value).filter(([key])=>!/(phone|mobile|contact|receipt|trackingToken|capability|password|email)/i.test(key)).map(([key,v])=>[key,clean(v)])):typeof value==='string'?require('../services/privacy').publicText(value):value;

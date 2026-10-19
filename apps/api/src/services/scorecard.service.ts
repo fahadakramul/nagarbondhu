@@ -1,8 +1,9 @@
 import { db } from '../db';
 import { workflowStatus, getPlan } from './action.service';
-export function wardScorecard(source='citizen_report',category?:string){
+import { AnalyticsFilters, filteredReports } from './analytics.service';
+export function wardScorecard(source='citizen_report',category?:string,filters:AnalyticsFilters={}){
   const terminal=['RESOLVED','CLOSED','REJECTED'];
-  const rows=db.activeReports().filter(r=>(source==='all'||r.sourceType===source)&&(!category||r.category===category));
+  const rows=filteredReports({...filters,source,category});
   return Array.from(db.wards.values()).sort((a,b)=>a.wardNumber-b.wardNumber).map(ward=>{
     const reports=rows.filter(r=>(getPlan(r.id)?.wardId||r.wardId)===ward.id),total=reports.length;
     const resolved=reports.filter(r=>['RESOLVED','CLOSED'].includes(workflowStatus(r)));

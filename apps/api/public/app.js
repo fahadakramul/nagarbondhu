@@ -6,6 +6,18 @@ let isAdminMode = false;
 let authToken = null;
 let allReports = [];
 let dashboardData = null;
+const TAB_ROUTES = Object.freeze({
+  home: '/',
+  report: '/report',
+  map: '/map',
+  feed: '/reports',
+  dashboard: '/dashboard',
+  scorecard: '/scorecard',
+});
+
+function tabFromPath(pathname) {
+  return Object.keys(TAB_ROUTES).find(tab => TAB_ROUTES[tab] === pathname) || 'home';
+}
 
 // Map & Layer State
 let mainMap = null;
@@ -67,10 +79,16 @@ document.addEventListener('DOMContentLoaded', () => {
   populateOverrideButtons();
   initPickerMap();
   loadData();
+  switchTab(tabFromPath(window.location.pathname));
 });
+
+window.addEventListener('popstate', () => switchTab(tabFromPath(window.location.pathname)));
 
 // Tab Switcher
 function switchTab(tabId) {
+  const route = TAB_ROUTES[tabId];
+  if (!route) return;
+  if (window.location.pathname !== route) window.history.pushState(null, '', route);
   currentTab = tabId;
   document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
   document.querySelectorAll('.nav-tab').forEach(el => {

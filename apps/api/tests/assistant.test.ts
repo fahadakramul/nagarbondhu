@@ -23,7 +23,7 @@ describe('Data-grounded assistant',()=>{
     expect(ward.body.data.actions).toContainEqual({type:'open_scorecard',wardId:'ward-12'});
     const fetch=jest.spyOn(global,'fetch');
     const off=await request(app).post('/api/v1/ai/assistant').send(payload('Write a Python sorting algorithm'));
-    expect(off.body.data.actions).toEqual([]);expect(off.body.data.summary_bn).toContain('নগর সমস্যা');
+    expect(off.body.data.actions).toEqual([]);expect(off.body.data.summary_bn).toBe('দুঃখিত 🙂 এই প্রশ্নটি আমার সহায়তার আওতার বাইরে। আমি শুধু আপনার নাগরিক সমস্যা, রিপোর্ট ও সংশ্লিষ্ট নগরসেবা বিষয়ে সাহায্য করার জন্য আছি।');
     const urgent=await request(app).post('/api/v1/ai/assistant').send(payload('সামনে আগুন লেগেছে'));
     expect(urgent.body.data.summary_bn).toMatch(/^জরুরি.*৯৯৯/);expect(fetch).not.toHaveBeenCalled();
   });
@@ -33,7 +33,7 @@ describe('Data-grounded assistant',()=>{
     const fetch=jest.spyOn(global,'fetch').mockResolvedValueOnce(result(calls.map(functionCall=>({functionCall})))).mockResolvedValueOnce(result([{text:JSON.stringify({...answer,app_facts:['untrusted reference placeholder']})}]));
     const r=await request(app).post('/api/v1/ai/assistant').send(payload('পানি জমে আছে। test@example.com 01712345678 '+ 'a'.repeat(64)));
     expect(r.status).toBe(200);expect(r.body.fallback).toBe(false);expect(fetch).toHaveBeenCalledTimes(2);
-    expect(r.body.data.app_facts.some((f:any)=>f.source==='Open-Meteo'&&f.text_bn.includes('১২'))).toBe(true);
+    expect(r.body.data.app_facts.some((f:any)=>f.source==='Open-Meteo'&&f.text_bn.includes('বর্তমান পূর্বাভাস পাওয়া যাচ্ছে না'))).toBe(true);
     expect(JSON.stringify(r.body.data)).not.toContain('৯৯৯৯');expect(JSON.stringify(r.body.data)).not.toContain('untrusted reference placeholder');expect(r.body.data.contact_bn[0]).toContain('নমুনা');expect(r.body.data.actions.some((a:any)=>a.id==='nonexistent-private-id')).toBe(false);
     const outgoing=JSON.stringify(fetch.mock.calls);expect(outgoing).not.toContain('test@example.com');expect(outgoing).not.toContain('01712345678');expect(outgoing).not.toContain('a'.repeat(64));
   });

@@ -10,6 +10,7 @@ let mapRequestSequence=0;
 let queueOffset=0;
 let feedOffset=0;
 let platformLocationSource='MAP_PIN';
+let platformLocationSelected=false;
 const uuid=()=>crypto.randomUUID ? crypto.randomUUID() : '10000000-1000-4000-8000-100000000000'.replace(/[018]/g,c=>(Number(c)^crypto.getRandomValues(new Uint8Array(1))[0]&15>>Number(c)/4).toString(16));
 async function platformApi(path,body) {
   const response=await fetch('/api/v1'+path,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});
@@ -19,8 +20,9 @@ function setPlatformMessage(text){document.getElementById('submission-message').
 function readReceiptTokens(){try{return JSON.parse(localStorage.getItem('nagarbondhu-receipts') || '{}');}catch{return {};}}
 function showDeviceReceipts(){const box=document.getElementById('device-receipts');box.innerHTML=Object.keys(readReceiptTokens()).map(id=>`<button class="block underline break-all" data-device-report="${platformEscape(id)}">${platformEscape(id)}</button>`).join('') || 'এই ডিভাইসে কোনো receipt নেই।';box.querySelectorAll('[data-device-report]').forEach(b=>b.onclick=()=>openDetailModal(b.dataset.deviceReport));}
 function populateWardDropdown(){const select=document.getElementById('form-ward');select.innerHTML='<option value="">ওয়ার্ড অজানা / নিজে নির্বাচন করুন</option>'+RAJSHAHI_WARDS.map(w=>`<option value="${w.wardNumber}">${platformEscape(w.wardName)}</option>`).join('');}
-function onWardSelect(){document.getElementById('location-confirmed').checked=false;}
-function updateLocationFromLatLng(lat,lng,accuracy=null){platformLocationSource=accuracy?'GPS':'MAP_PIN';document.getElementById('coords-display').textContent=`${lat.toFixed(5)}, ${lng.toFixed(5)}${accuracy?' (±'+Math.round(accuracy)+'m)':''}`;document.getElementById('location-confirmed').checked=false;}
+function onWardSelect(){const selected=RAJSHAHI_WARDS.find(w=>String(w.wardNumber)===document.getElementById('form-ward').value);if(selected&&pickerMap)pickerMap.panTo([selected.lat,selected.lng]);platformLocationSelected=false;const checkbox=document.getElementById('location-confirmed');checkbox.checked=false;checkbox.setCustomValidity('মানচিত্রে ঘটনার স্থান নিজে নির্বাচন করুন; ওয়ার্ডের কেন্দ্র ঘটনার স্থান নয়।');document.getElementById('coords-display').textContent='ঘটনার স্থান এখনও নির্বাচন হয়নি';}
+function updateLocationFromLatLng(lat,lng,accuracy=null){platformLocationSelected=true;platformLocationSource=accuracy?'GPS':'MAP_PIN';document.getElementById('coords-display').textContent=`${lat.toFixed(5)}, ${lng.toFixed(5)}${accuracy?' (±'+Math.round(accuracy)+'m)':''} · ${accuracy?'GPS':'আপনার নির্বাচিত পিন'}`;const checkbox=document.getElementById('location-confirmed');checkbox.checked=false;checkbox.setCustomValidity('');}
+document.getElementById('location-confirmed').setCustomValidity('মানচিত্রে ঘটনার স্থান নিজে নির্বাচন করুন; প্রথম পিন শুধু মানচিত্রের কেন্দ্র।');
 async function runAiPreview(allowFallback=false){
   const title=document.getElementById('form-title').value.trim(),text=document.getElementById('form-description').value.trim(),button=document.getElementById('btn-ai-preview');
   if(text.length<5){setPlatformMessage('আগে বিস্তারিত বর্ণনা লিখুন।');return;}
@@ -28,8 +30,8 @@ async function runAiPreview(allowFallback=false){
   button.disabled=true;button.textContent='বিশ্লেষণ চলছে…';
   try{
     const result=await platformApi('/ai/analyze-complaint',{text,title,allowFallback}),d=result.data;
-    if(title!==document.getElementById('form-title').value.trim() || text!==document.getElementById('form-description').value.trim()){setPlatformMessage('বিবরণ বদলেছে; নতুন তথ্যের জন্য আবার Preview নিন।');return;}
-    document.getElementById('form-title').value=d.title_bn || d.summary.slice(0,60);
+    if(text!==document.getElementById('form-description').value.trim()){setPlatformMessage('বিবরণ বদলেছে; নতুন তথ্যের জন্য আবার Preview নিন।');return;}
+    if(title===document.getElementById('form-title').value.trim()&&!title)document.getElementById('form-title').value=d.title_bn || d.summary.slice(0,60);
     setPlatformMessage(result.metadata.isFallback?'নিয়মভিত্তিক সারাংশ তৈরি হয়েছে।':'সারাংশ তৈরি হয়েছে। জমা দেওয়ার আগে দেখে নিন।');
     document.getElementById('ai-preview-box').classList.remove('hidden');
     document.getElementById('ai-preview-category-badge').textContent=CATEGORY_NAMES_BN[d.category];
@@ -37,14 +39,14 @@ async function runAiPreview(allowFallback=false){
     document.getElementById('ai-preview-severity').textContent=d.severity;
     document.getElementById('ai-preview-confidence').textContent=d.confidence==null?'অনির্ধারিত':Math.round(d.confidence*100);
     document.getElementById('ai-preview-reasons').innerHTML=(d.reasons||[]).map(r=>`<li>${platformEscape(r)}</li>`).join('');
-    assistantDescription=d.clearerDescription || d.summary;assistantCategory=d.category;assistantInput=document.getElementById('form-title').value.trim()+'\n'+text;
+    assistantDescription=d.clearerDescription || d.summary;assistantCategory=d.category;assistantInput=text;
     document.getElementById('assistant-details').innerHTML=`<p>${result.metadata.isFallback?'নিয়মভিত্তিক সারাংশ; নির্ভরযোগ্যতার অনুমান নেই।':'বিবরণ থেকে তৈরি সারাংশ; মাঠে যাচাই প্রয়োজন।'}</p><p>মূল বিষয়: ${platformEscape((d.keywords||[]).join(', '))}</p><p>মাঠপর্যায়ে যাচাই: ${d.fieldVerificationNecessary?'প্রয়োজন':'প্রয়োজন হতে পারে'}</p><ul>${(d.missing_information||[]).map(t=>`<li>• ${platformEscape(t)}</li>`).join('')}</ul><p>${platformEscape(assistantDescription)}</p><button type="button" class="${buttonClass}" onclick="document.getElementById('form-description').value=assistantDescription">খসড়া বর্ণনা নিন, তারপর সম্পাদনা করুন</button>`;
   }catch(error){setPlatformMessage(error.message+' বিশ্লেষণ ছাড়াও রিপোর্ট জমা দিতে পারেন।');document.getElementById('ai-preview-feedback').innerHTML=`<p role="alert">${platformEscape(error.message)}</p><button type="button" class="${buttonClass}" onclick="runAiPreview()">আবার বিশ্লেষণ করুন</button><button type="button" class="${buttonClass}" onclick="runAiPreview(true)">নিয়মভিত্তিক সারাংশ দেখুন</button>`;}
   finally{button.disabled=false;button.textContent='বিবরণ বিশ্লেষণ করুন';}
 }
 async function checkDuplicatePreview(){
   const pin=pickerMarker?.getLatLng();if(!pin)throw new Error('মানচিত্রে স্থান নির্বাচন করুন।');
-  const input={title:document.getElementById('form-title').value.trim(),description:document.getElementById('form-description').value.trim(),category:userOverrideCategory || (assistantInput===document.getElementById('form-title').value.trim()+'\n'+document.getElementById('form-description').value.trim()?assistantCategory:null) || 'OTHER',latitude:pin.lat,longitude:pin.lng};
+  const input={title:document.getElementById('form-title').value.trim(),description:document.getElementById('form-description').value.trim(),category:userOverrideCategory || (assistantInput===document.getElementById('form-description').value.trim()?assistantCategory:null) || 'OTHER',latitude:pin.lat,longitude:pin.lng};
   if(input.category==='OTHER' && !userOverrideCategory){setPlatformMessage('সম্ভাব্য মিল দেখতে category নির্বাচন করুন, অথবা AI preview পর্যালোচনা করুন।');return [];}
   const result=await platformApi('/reports/duplicate-suggestions',input);
   const container=document.getElementById('duplicate-preview');
@@ -54,7 +56,7 @@ async function checkDuplicatePreview(){
 }
 async function handleFormSubmit(event){
   event.preventDefault();if(platformSubmitBusy)return;
-  if(!document.getElementById('location-confirmed').checked){setPlatformMessage('মানচিত্রের pin এবং নির্বাচিত/অজানা ওয়ার্ড নিশ্চিত করুন।');return;}
+  if(!platformLocationSelected||!document.getElementById('location-confirmed').checked){setPlatformMessage('মানচিত্রে ঘটনার স্থান বেছে পিন এবং নির্বাচিত/অজানা ওয়ার্ড নিশ্চিত করুন।');return;}
   platformSubmitBusy=true;const button=document.getElementById('btn-submit-report');button.disabled=true;button.textContent='যাচাই ও সংরক্ষণ হচ্ছে…';
   try{
     const pin=pickerMarker.getLatLng();const ward=document.getElementById('form-ward').value;
@@ -73,7 +75,7 @@ async function handleFormSubmit(event){
     try{localStorage.setItem('nagarbondhu-receipts',JSON.stringify(tokens));}catch{alert('রিপোর্ট সংরক্ষিত হয়েছে, তবে এই browser-এ receipt রাখা যায়নি। রিপোর্ট নম্বর: '+result.report.id);}
     sessionStorage.removeItem('nagarbondhu-pending');
     setPlatformMessage('সার্ভারে সংরক্ষিত হয়েছে। রিপোর্ট নম্বর: '+result.report.id);
-    document.getElementById('report-form').reset();clearSelectedImage();userOverrideCategory=null;document.getElementById('ai-preview-box').classList.add('hidden');
+    document.getElementById('report-form').reset();platformLocationSelected=false;document.getElementById('location-confirmed').setCustomValidity('মানচিত্রে ঘটনার স্থান নিজে নির্বাচন করুন; প্রথম পিন শুধু মানচিত্রের কেন্দ্র।');document.getElementById('coords-display').textContent='ঘটনার স্থান এখনও নির্বাচন হয়নি';clearSelectedImage();userOverrideCategory=null;document.getElementById('ai-preview-box').classList.add('hidden');
     document.getElementById('stats-source').value='citizen_report';feedOffset=0;await loadData();switchTab('feed');openDetailModal(result.report.id);
   }catch(error){setPlatformMessage(error.message+' একই তথ্য রেখে আবার চেষ্টা করুন; retry-তে দ্বিতীয় রিপোর্ট তৈরি হবে না।');}
   finally{platformSubmitBusy=false;button.disabled=false;button.textContent='রিপোর্ট জমা দিন';}
@@ -123,11 +125,11 @@ function renderMapMarkers(){
   if(!mainMap._platformZoomBound){mainMap.on('zoomend',renderMapMarkers);mainMap._platformZoomBound=true;}
   const value=id=>document.getElementById(id)?.value;
   const records=mapRecords.filter(r=>(!value('twin-ward')||r.wardId===value('twin-ward'))&&(value('map-category-filter')==='ALL'||r.category===value('map-category-filter'))&&(value('map-priority-filter')==='ALL'||r.priorityLevel===value('map-priority-filter'))&&(!value('map-status')||r.status===value('map-status'))&&(!value('map-from')||Date.parse(r.createdAt)>=Date.parse(value('map-from')+'T00:00:00+06:00'))&&(!value('map-to')||Date.parse(r.createdAt)<=Date.parse(value('map-to')+'T23:59:59.999+06:00'))&&(!value('map-source')||r.sourceType===value('map-source')));
-  const clusters=[];for(const r of records){const point=mainMap.latLngToLayerPoint([r.latitude,r.longitude]);let group=clusters.find(g=>g.point.distanceTo(point)<45);if(!group){group={point,rows:[]};clusters.push(group);}group.rows.push(r);}
+  const clusters=[];for(const r of records){const point=mainMap.latLngToLayerPoint([r.latitude,r.longitude]);let group=r.locationConfirmed?clusters.find(g=>g.rows[0].locationConfirmed&&g.point.distanceTo(point)<45):null;if(!group){group={point,rows:[]};clusters.push(group);}group.rows.push(r);}
   for(const group of clusters){const r=group.rows[0],many=group.rows.length>1;const color=group.rows.some(x=>x.priorityLevel==='CRITICAL')?'#B91C1C':group.rows.some(x=>x.priorityLevel==='HIGH')?'#9A3412':group.rows.some(x=>x.priorityLevel==='MEDIUM')?'#F59E0B':'#4338CA';const ring=many?'#fff':r.priorityLevel==='CRITICAL'?'#dc2626':r.priorityLevel==='HIGH'?'#f59e0b':'#cbd5e1';const symbol=['RESOLVED','CLOSED'].includes(r.status)?'✓':r.status==='IN_PROGRESS'?'→':'•';const icon=L.divIcon({className:'custom-pin',html:`<div style="background:${color};width:32px;height:32px;border:3px solid ${ring};border-radius:50%;color:white;text-align:center;line-height:26px;font-weight:bold">${many?group.rows.length:symbol}</div>`,iconSize:[32,32]});const marker=L.marker([r.latitude,r.longitude],{icon,civicReportCount:group.rows.length});
-    const wrapper=document.createElement('div');wrapper.className='map-report-popup';for(const item of group.rows.slice(0,30)){const button=document.createElement('button');button.className='map-report-popup-item';button.textContent=item.title+' • '+(ACTION_LABELS[item.status]||item.status)+(item.sourceType==='demo_seed'?' • নমুনা':'');button.onclick=()=>typeof selectTwinReport==='function'?selectTwinReport(item.id):openDetailModal(item.id);wrapper.appendChild(button);}if(many){const zoom=document.createElement('button');zoom.className='map-report-popup-zoom';zoom.textContent='এলাকায় জুম করুন';zoom.onclick=()=>mainMap.fitBounds(group.rows.map(r=>[r.latitude,r.longitude]),{maxZoom:19,padding:[30,30]});wrapper.appendChild(zoom);}marker.bindPopup(wrapper,{minWidth:230,maxWidth:320,autoPanPadding:[20,20]});currentMarkerGroup.addLayer(marker);
+    const wrapper=document.createElement('div');wrapper.className='map-report-popup';for(const item of group.rows.slice(0,30)){const button=document.createElement('button');button.className='map-report-popup-item';button.textContent=item.title+' • '+(ACTION_LABELS[item.status]||item.status)+(item.sourceType==='demo_seed'?' • নমুনা':'')+(item.locationConfirmed?'':' • অবস্থান নিশ্চিত নয়');button.onclick=()=>typeof selectTwinReport==='function'?selectTwinReport(item.id):openDetailModal(item.id);wrapper.appendChild(button);}if(many){const zoom=document.createElement('button');zoom.className='map-report-popup-zoom';zoom.textContent='এলাকায় জুম করুন';zoom.onclick=()=>mainMap.fitBounds(group.rows.map(r=>[r.latitude,r.longitude]),{maxZoom:19,padding:[30,30]});wrapper.appendChild(zoom);}marker.bindPopup(wrapper,{minWidth:230,maxWidth:320,autoPanPadding:[20,20]});currentMarkerGroup.addLayer(marker);
   }
-  document.getElementById('map-coverage').textContent=`${records.length} উপলব্ধ রিপোর্ট । ${records.length?'Cluster সংখ্যা রিপোর্টের ঘনত্ব; নিশ্চিত বিপদ নয়।':'এই filters অনুযায়ী কোনো রিপোর্ট নেই।'} সব নগর সমস্যা বা official ward boundary দেখানো হয় না।`;
+  document.getElementById('map-coverage').textContent=`${records.length}টি রিপোর্ট দেখানো হচ্ছে। ${records.length?'কাছাকাছি চিহ্ন রিপোর্টের ঘনত্ব বোঝায়, নিশ্চিত বিপদ নয়।':'এই ফিল্টারে কোনো রিপোর্ট নেই।'} এটি সব নগর সমস্যা বা সরকারি ওয়ার্ড সীমানা দেখায় না।`;
 }
 const originalSwitchTab=switchTab;
 switchTab=function(tab){originalSwitchTab(tab);if(tab==='map')loadMapRecords();if(tab==='dashboard' && isAdminMode)loadPlanningTools();};

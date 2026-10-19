@@ -3,7 +3,8 @@ import { db } from '../db';
 import { ReportCategory, ReportStatus, PriorityLevel } from '@nagarbondhu/shared';
 import { publicText } from '../services/privacy';
 import { z } from 'zod';
-import { workflowStatus } from '../services/action.service';
+import { workflowStatus, getPlan } from '../services/action.service';
+import { AnalyticsQueryBase, filteredReports } from '../services/analytics.service';
 
 const router = Router();
 
@@ -11,16 +12,8 @@ const router = Router();
 // Returns lightweight geospatial points with privacy protection
 router.get('/reports', (req, res, next) => {
   try {
-  z.object({category:z.enum(['ROAD_DAMAGE','WATERLOGGING','DRAINAGE','WASTE','FOOTPATH','STREETLIGHT','OTHER']).optional(),status:z.string().max(40).optional(),priority:z.enum(['LOW','MEDIUM','HIGH','CRITICAL']).optional(),wardId:z.string().max(100).optional()}).strict().parse(req.query);
-  const { category, status, priority, wardId } = req.query;
-
-  const results = db.findReports({
-    category: category as ReportCategory,
-    wardId: wardId as string,
-    limit: db.reports.size,
-  });
-
-  const markers = results.reports.map((r) => {
+  const { status, priority, ...filters }=AnalyticsQueryBase.extend({status:z.string().max(40).optional(),priority:z.enum(['LOW','MEDIUM','HIGH','CRITICAL']).optional()}).refine(q=>!q.from||!q.to||q.from<=q.to,'Invalid date range').parse(req.query);
+  const markers = filteredReports(filters).map((r) => {
     const prio = db.findPriorityAssessmentByReportId(r.id);
     return {
       id: r.id,
@@ -33,7 +26,9 @@ router.get('/reports', (req, res, next) => {
       latitude: r.latitude,
       longitude: r.longitude,
       addressLabel: publicText(r.addressLabel || ""),
+      wardId: getPlan(r.id)?.wardId || r.wardId,
       wardName: r.wardName,
+      locationConfirmed:Array.from(db.submissionReceipts.values()).some(s=>s.reportId===r.id&&s.locationConfirmed),
       imageUrl: r.imageUrl,
       createdAt: r.createdAt,
     };

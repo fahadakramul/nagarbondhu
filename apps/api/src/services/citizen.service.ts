@@ -3,6 +3,7 @@ import { Report, assessDuplicate } from '@nagarbondhu/shared';
 import { db } from '../db';
 import { getPlan, workflowStatus } from './action.service';
 import { publicText } from './privacy';
+import { AnalyticsFilters, filteredReports } from './analytics.service';
 
 export interface SubmissionReceipt { id:string; reportId:string; fingerprint:string; capabilityHash:string; deviceHash?:string|null; locationConfirmed:boolean; locationSource:string; createdAt:string }
 export function citizenSummary(report:Report){const v=report.citizenVerification;return {affirmations:{count:report.affirmations?.count||0},citizenVerification:v?{fixedVotes:v.fixedVotes,notFixedVotes:v.notFixedVotes,reporterVerdict:v.reporterVerdict,lastAt:v.lastAt}:null,reopenedCount:report.reopenedCount||0};}
@@ -21,8 +22,8 @@ export function receiptFor(reportId:string, capability:string) {
   const digest=hash(capability);
   return Array.from(db.submissionReceipts.values()).find(r=>r.reportId===reportId && timingSafeEqual(Buffer.from(r.capabilityHash),Buffer.from(digest)));
 }
-export function duplicateSuggestions(input: Pick<Report,'title'|'description'|'category'|'latitude'|'longitude'>) {
-  return db.activeReports().filter(r=>!['CLOSED','REJECTED'].includes(workflowStatus(r)) && Date.parse(r.createdAt)>Date.now()-180*86400000).map(r=>({report:r,match:assessDuplicate(input,r,300)})).filter(r=>r.match.isPossibleDuplicate).sort((a,b)=>b.match.similarityScore-a.match.similarityScore).slice(0,8).map(({report:r,match})=>({id:r.id,title:publicText(r.title),status:workflowStatus(r),sourceType:r.sourceType,createdAt:r.createdAt,similarity:match.similarityScore,reasons:match.matchingReasons}));
+export function duplicateSuggestions(input: Pick<Report,'title'|'description'|'category'|'latitude'|'longitude'>,filters:AnalyticsFilters={source:'citizen_report'}) {
+  return filteredReports(filters).filter(r=>!['CLOSED','REJECTED'].includes(workflowStatus(r)) && Date.parse(r.createdAt)>Date.now()-180*86400000 && (r.sourceType==='demo_seed'||Array.from(db.submissionReceipts.values()).some(s=>s.reportId===r.id&&s.locationConfirmed))).map(r=>({report:r,match:assessDuplicate(input,r,300)})).filter(r=>r.match.isPossibleDuplicate).sort((a,b)=>b.match.similarityScore-a.match.similarityScore).slice(0,8).map(({report:r,match})=>({id:r.id,title:publicText(r.title),status:workflowStatus(r),sourceType:r.sourceType,createdAt:r.createdAt,similarity:match.similarityScore,reasons:match.matchingReasons}));
 }
 export function publicTracking(reportId:string) {
   const report=db.findReportById(reportId);

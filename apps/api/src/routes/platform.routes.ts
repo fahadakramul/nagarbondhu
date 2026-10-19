@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto';
 import { db } from '../db';
 import { authenticate, requireRole } from '../middleware/auth';
 import { publicTracking, receiptFor, hash, resolutionRatingSummary } from '../services/citizen.service';
-import { analytics, csvExport } from '../services/analytics.service';
+import { analytics, csvExport, AnalyticsQuery } from '../services/analytics.service';
 import { planningInterpretation } from '../services/planning-ai.service';
 import { event, fail, getReport, getPlan, workflowStatus, transition } from '../services/action.service';
 import { civicLimit } from '../middleware/civicLimit';
@@ -25,7 +25,7 @@ router.post('/reports/:id/rating',civicLimit,(req,res,next)=>{
     res.status(existing?200:201).json({success:true,data:{score:data.score,...resolutionRatingSummary(req.params.id)}});
   }catch(e){next(e);}
 });
-export const AnalyticsQuery=z.object({wardId:z.string().max(100).optional(),category:z.enum(['ROAD_DAMAGE','WATERLOGGING','DRAINAGE','WASTE','FOOTPATH','STREETLIGHT','OTHER']).optional(),from:z.string().date().optional(),to:z.string().date().optional(),source:z.enum(['all','demo_seed','citizen_report']).optional()}).strict().refine(q=>!q.from || !q.to || q.from<=q.to,'Invalid date range');
+export { AnalyticsQuery } from '../services/analytics.service';
 router.get('/reports/:id/tracking',(req,res,next)=>{try{const data=publicTracking(req.params.id);if(!data)fail('Report not found',404);res.json({success:true,data});}catch(e){next(e);}});
 router.post('/reports/:id/feedback',(req,res,next)=>{
   try {

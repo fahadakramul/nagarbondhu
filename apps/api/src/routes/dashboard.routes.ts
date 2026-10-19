@@ -19,27 +19,18 @@ router.get('/summary', (req, res, next) => {
 });
 
 // GET /api/v1/dashboard/categories
-router.get('/categories', (req, res) => {
-  const summary = db.getDashboardSummary();
-  res.json({
-    success: true,
-    categories: summary.byCategory,
-  });
+router.get('/categories', (req, res, next) => {
+  try { const summary=dashboardSummary(AnalyticsQuery.parse(req.query));res.json({success:true,categories:summary.byCategory,source:summary.source,total:summary.totalReports}); } catch(error){next(error);}
 });
 
 // GET /api/v1/dashboard/wards
-router.get('/wards', (req, res) => {
-  const summary = db.getDashboardSummary();
-  res.json({
-    success: true,
-    wards: summary.byWard,
-  });
+router.get('/wards', (req, res, next) => {
+  try { const summary=dashboardSummary(AnalyticsQuery.parse(req.query));res.json({success:true,wards:summary.byWard,source:summary.source,total:summary.totalReports}); } catch(error){next(error);}
 });
 
 // GET /api/v1/dashboard/trends
-router.get('/trends', (req, res) => {
-  const summary = db.getDashboardSummary();
-  res.json({
+router.get('/trends', (req, res, next) => {
+  try { const summary=dashboardSummary(AnalyticsQuery.parse(req.query));res.json({
     success: true,
     trends: {
       total: summary.totalReports,
@@ -49,7 +40,7 @@ router.get('/trends', (req, res) => {
           ? Math.round((summary.resolvedReports / summary.totalReports) * 100)
           : 0,
     },
-  });
+  }); } catch(error){next(error);}
 });
 
 // GET /api/v1/dashboard/insights

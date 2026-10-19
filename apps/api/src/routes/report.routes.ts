@@ -15,10 +15,11 @@ import {
 import { createHmac } from 'crypto';
 import { hash, duplicateSuggestions, citizenSummary } from '../services/citizen.service';
 import { deviceHash } from '../middleware/civicLimit';
-import { workflowStatus } from '../services/action.service';
+import { workflowStatus, getPlan } from '../services/action.service';
 import { publicText } from '../services/privacy';
 import { nearbySensitive } from '../services/nearby.service';
 import { checkPhoto, uploadedPhoto } from '../services/media-ai.service';
+import { AnalyticsQueryBase, filteredReports } from '../services/analytics.service';
 const router = Router();
 const publicReport = (report: Report) => ({ ...report, actionStatus:workflowStatus(report), reporterId: undefined, reporterName: undefined,
   ...citizenSummary(report),
@@ -111,7 +112,9 @@ router.post('/upload-image', async (req, res, next) => {
 
 // POST /api/v1/reports
 // Submit a civic report with end-to-end AI analysis, priority scoring & duplicate detection
+const submissionsInFlight=new Set<string>();
 router.post('/', optionalAuthenticate, async (req, res, next) => {
+  let submissionKey:string|null=null;
   try {
     const input = CreateReportSchema.parse(req.body);
     if (input.wardId && !db.wards.has(input.wardId)) fail('Unknown ward; select an available ward.');
@@ -125,6 +128,8 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
       if (existing.fingerprint !== fingerprint) fail('Submission key was already used with different content.',409);
       return res.json({success:true,report:publicReport(db.findReportById(existing.reportId)!),trackingToken,replayed:true});
     }
+    if(submissionsInFlight.has(key))fail('একই রিপোর্ট জমা হচ্ছে। কিছুক্ষণ পরে একই তথ্য দিয়ে আবার চেষ্টা করুন।',409);
+    submissionsInFlight.add(key);submissionKey=key;
     const reportId = `rep-${randomUUID()}`;
     const reporterId = req.user?.id || null;
     const reporterName = req.user?.displayName || 'সচেতন নাগরিক';
@@ -220,13 +225,15 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
     });
   } catch (err) {
     next(err);
+  } finally {
+    if(submissionKey)submissionsInFlight.delete(submissionKey);
   }
 });
 
 router.post('/duplicate-suggestions', (req,res,next)=>{
   try {
-    const input=CreateReportSchema.pick({title:true,description:true,category:true,latitude:true,longitude:true}).extend({category:CreateReportSchema.shape.category.unwrap()}).strict().parse(req.body);
-    res.json({success:true,data:duplicateSuggestions({...input,title:input.title || input.description.slice(0,60)})});
+    const {source,wardId,from,to,...input}=CreateReportSchema.pick({title:true,description:true,category:true,latitude:true,longitude:true}).extend({category:CreateReportSchema.shape.category.unwrap(),source:z.enum(['all','demo_seed','citizen_report']).default('citizen_report'),wardId:z.string().max(100).optional(),from:z.string().date().optional(),to:z.string().date().optional()}).strict().refine(q=>!q.from||!q.to||q.from<=q.to,'Invalid date range').parse(req.body);
+    res.json({success:true,data:duplicateSuggestions({...input,title:input.title || input.description.slice(0,60)},{source,wardId,from,to,category:input.category})});
   } catch(error) {next(error);}
 });
 
@@ -234,20 +241,13 @@ router.post('/duplicate-suggestions', (req,res,next)=>{
 // Public report feed with filters and sanitized reporter privacy
 router.get('/', (req, res, next) => {
   try {
-  const { category, status, priority, wardId, limit, offset, source } = z.object({category:CreateReportSchema.shape.category,status:z.enum(['SUBMITTED','AI_ANALYZED','UNDER_REVIEW','IN_PROGRESS','RESOLVED','REJECTED']).optional(),priority:z.enum(['LOW','MEDIUM','HIGH','CRITICAL']).optional(),wardId:z.string().max(100).optional(),limit:z.coerce.number().int().min(1).max(100).default(50),source:z.enum(['all','demo_seed','citizen_report']).optional(),offset:z.coerce.number().int().min(0).default(0)}).strict().parse(req.query);
-
-  const results = db.findReports({
-    category: category as ReportCategory,
-    status: status as ReportStatus,
-    priority,
-    source,
-    wardId: wardId as string,
-    limit,
-    offset,
-  });
+  const { status, priority, limit, offset, ...filters } = AnalyticsQueryBase.extend({status:z.enum(['SUBMITTED','AI_ANALYZED','UNDER_REVIEW','IN_PROGRESS','RESOLVED','REJECTED']).optional(),priority:z.enum(['LOW','MEDIUM','HIGH','CRITICAL']).optional(),limit:z.coerce.number().int().min(1).max(100).default(50),offset:z.coerce.number().int().min(0).default(0)}).refine(q=>!q.from||!q.to||q.from<=q.to,'Invalid date range').parse(req.query);
+  const eligible=new Set(filteredReports(filters).map(r=>r.id));
+  const all=db.findReports({limit:Math.max(db.reports.size,1)}).reports.filter(r=>eligible.has(r.id)&&(!status||workflowStatus(r)===status)&&(!priority||db.findPriorityAssessmentByReportId(r.id)?.priorityLevel===priority));
+  const results={reports:all.slice(offset,offset+limit),total:all.length};
 
   // Sanitize reports (strip private reporter ids)
-  const sanitized = results.reports.map(publicReport);
+  const sanitized = results.reports.map(r=>publicReport({...r,wardId:getPlan(r.id)?.wardId||r.wardId}));
 
   res.json({
     success: true,

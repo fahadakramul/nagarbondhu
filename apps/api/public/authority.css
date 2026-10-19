@@ -13,7 +13,7 @@
 .feature-directory button[onclick^="openUrbanPlanner"]{background:#ecfeff;border:1px solid #67e8f9;color:#155e75}
 .feature-directory button[onclick^="openUrbanPlanner"] i{color:#0891b2}
 .feature-directory button[onclick^="openUrbanPlanner"] small{color:#0e7490}
-.authority-mode #assistant-fab{display:none!important}
+.authority-mode #assistant-fab{display:flex!important;bottom:calc(90px + env(safe-area-inset-bottom))}
 .authority-heading #authority-assistant-open{margin-top:16px;padding:10px 16px;min-height:44px;border:1px solid #67e8f9;border-radius:12px;background:#164e63;color:#ecfeff;font-weight:700}
 #authority-assistant{width:min(540px,calc(100vw - 24px));max-height:88dvh;padding:0;border:1px solid #67e8f9;border-radius:22px;background:#f8fafc;color:#0f172a;box-shadow:0 24px 80px #0f172a55}
 #authority-assistant::backdrop{background:#0f172a99}
@@ -29,6 +29,8 @@
 #authority-assistant-result p{margin:8px 0;overflow-wrap:anywhere}
 @media(max-width:640px){.authority-entry,.planner-entry{align-items:stretch;flex-direction:column;padding:18px}.authority-entry button,.planner-entry button{width:100%}}
 .authority-mode.planner-mode .authority-heading{background:linear-gradient(125deg,#083344,#164e63)}
+.authority-heading label{display:inline-flex;align-items:center;gap:8px;margin-top:12px;color:#fff;font-size:13px;font-weight:700}.authority-heading select{background:#fff;color:#0f172a;border-radius:8px;padding:8px;max-width:100%}
+#authority-banner{flex-wrap:wrap}#authority-demo-scope{font-size:12px;max-width:42rem}#authority-demo-scope[hidden]{display:none}
 .authority-mode.planner-mode #authority-banner{background:#0891b2;color:#fff}
 .authority-mode.planner-mode #authority-banner button{background:#ecfeff;color:#164e63;border-color:#67e8f9}
 .authority-mode.planner-mode #authority-tabs [aria-current="true"],.authority-mode.planner-mode #authority-bottom-nav [aria-current="true"],.authority-mode.planner-mode #authority-sidebar-nav [aria-current="true"]{background:#06b6d4;color:#083344!important;border-color:#06b6d4}

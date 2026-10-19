@@ -51,4 +51,8 @@ describe('AI Complaint Analysis Unit & Schema Tests', () => {
     expect(result.data.category).toBe('STREETLIGHT');
     expect(result.data.reasons[0]).toContain('সড়কবাতি');
   });
+  test('keeps explicit QA provenance in a generated summary',async()=>{
+    const result=await analyzeBengaliComplaint('QA test report: ড্রেনের পাশে পানি জমেছে।');
+    expect(result.data.summary).toMatch(/QA|পরীক্ষামূলক/);
+  });
 });

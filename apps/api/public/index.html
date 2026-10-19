@@ -44,6 +44,7 @@
   <link rel="stylesheet" href="/finish.css">
   <link rel="stylesheet" href="/authority.css">
   <link rel="stylesheet" href="/desktop-polish.css">
+  <link rel="stylesheet" href="/clarity.css">
 </head>
 <body class="theme-obsidian bg-slate-50 text-slate-800 min-h-screen flex flex-col font-bengali">
 
@@ -68,7 +69,7 @@
           <span class="text-[10px] bg-black/20 px-1.5 py-0.5 rounded">পরিবর্তন করুন</span>
         </button>
 
-        <a href="#report-section" onclick="switchTab('report')" class="hidden sm:inline-flex items-center gap-1.5 header-report-cta bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg shadow transition">
+        <a href="/report" onclick="event.preventDefault();switchTab('report')" class="hidden sm:inline-flex items-center gap-1.5 header-report-cta bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg shadow transition">
           <i class="fa-solid fa-plus"></i> রিপোর্ট করুন
         </a>
       </div>
@@ -81,22 +82,22 @@
         <span id="navigation-current">হোম</span>
       </button>
       <div id="primary-navigation" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-xs font-semibold">
-        <button onclick="switchTab('home')" id="tab-home" class="nav-tab px-4 py-2 rounded-md text-indigo-400 bg-slate-800 transition flex items-center gap-1.5">
+        <a href="/" onclick="event.preventDefault();switchTab('home')" id="tab-home" class="nav-tab px-4 py-2 rounded-md text-indigo-400 bg-slate-800 transition flex items-center gap-1.5">
           <i class="fa-solid fa-house"></i> হোম
-        </button>
-        <button onclick="switchTab('report')" id="tab-report" class="nav-tab px-4 py-2 rounded-md text-slate-300 hover:text-white transition flex items-center gap-1.5">
+        </a>
+        <a href="/report" onclick="event.preventDefault();switchTab('report')" id="tab-report" class="nav-tab px-4 py-2 rounded-md text-slate-300 hover:text-white transition flex items-center gap-1.5">
           <i class="fa-solid fa-bullhorn"></i> সমস্যা রিপোর্ট
-        </button>
-        <button onclick="switchTab('map')" id="tab-map" class="nav-tab px-4 py-2 rounded-md text-slate-300 hover:text-white transition flex items-center gap-1.5">
+        </a>
+        <a href="/map" onclick="event.preventDefault();switchTab('map')" id="tab-map" class="nav-tab px-4 py-2 rounded-md text-slate-300 hover:text-white transition flex items-center gap-1.5">
           <i class="fa-solid fa-map-location-dot"></i> সমস্যার ম্যাপ
-        </button>
-        <button onclick="switchTab('feed')" id="tab-feed" class="nav-tab px-4 py-2 rounded-md text-slate-300 hover:text-white transition flex items-center gap-1.5">
+        </a>
+        <a href="/reports" onclick="event.preventDefault();switchTab('feed')" id="tab-feed" class="nav-tab px-4 py-2 rounded-md text-slate-300 hover:text-white transition flex items-center gap-1.5">
           <i class="fa-solid fa-list-check"></i> রিপোর্ট তালিকা
-        </button>
-        <button onclick="switchTab('dashboard')" id="tab-dashboard" class="nav-tab px-4 py-2 rounded-md text-slate-300 hover:text-white transition flex items-center gap-1.5">
+        </a>
+        <a href="/dashboard" onclick="event.preventDefault();switchTab('dashboard')" id="tab-dashboard" class="nav-tab px-4 py-2 rounded-md text-slate-300 hover:text-white transition flex items-center gap-1.5">
           <i class="fa-solid fa-chart-pie"></i> প্ল্যানিং ড্যাশবোর্ড
-        </button>
-        <button onclick="switchTab('scorecard')" id="tab-scorecard" class="nav-tab px-4 py-2 rounded-md text-slate-300 hover:text-white transition whitespace-nowrap"><i class="fa-solid fa-table-cells" aria-hidden="true"></i> ওয়ার্ড স্কোরকার্ড</button>
+        </a>
+        <a href="/scorecard" onclick="event.preventDefault();switchTab('scorecard')" id="tab-scorecard" class="nav-tab px-4 py-2 rounded-md text-slate-300 hover:text-white transition whitespace-nowrap"><i class="fa-solid fa-table-cells" aria-hidden="true"></i> ওয়ার্ড স্কোরকার্ড</a>
       </div>
     </nav>
   </header>
@@ -334,7 +335,7 @@
           <!-- RAJSHAHI WARD SELECTOR -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label for="form-ward" class="block text-xs font-bold text-slate-700 mb-1">রাজশাহীর এলাকা / ওয়ার্ড (অজানা রাখা যায়)</label>
+              <label for="form-ward" class="block text-xs font-bold text-slate-700 mb-1">রাজশাহীর নির্বাচিত কিছু এলাকা / ওয়ার্ড (অজানা রাখা যায়; সম্পূর্ণ সরকারি সীমানা নয়)</label>
               <select id="form-ward" onchange="onWardSelect(this.value)" class="w-full text-sm p-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-civic-500 focus:outline-none bg-white">
                 <!-- Injected via JS -->
               </select>
@@ -375,7 +376,7 @@
             </p>
           </div>
 
-          <label class="flex items-start gap-2 text-xs"><input type="checkbox" id="location-confirmed" required> ম্যাপের পিনের জায়গা ও ওয়ার্ড দেখে নিয়েছি। ওয়ার্ড জানা না থাকলে অজানা রাখুন।</label>
+          <label class="flex items-start gap-2 text-xs"><input type="checkbox" id="location-confirmed" required> আমি মানচিত্রে ঘটনার নির্দিষ্ট স্থান বেছে নিয়েছি; ওয়ার্ড অনুমান হলে অজানা রেখেছি।</label>
           <!-- ENHANCED IMAGE UPLOAD & CAMERA SECTION -->
           <div class="space-y-2">
             <label class="block text-xs font-bold text-slate-700">সমস্যার ছবি যোগ করুন (ঐচ্ছিক)</label>
@@ -444,9 +445,9 @@
       <div class="flex flex-wrap justify-between items-center gap-3 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
         <div>
           <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-            <i class="fa-solid fa-map-location-dot text-civic-600"></i> Urban Digital Twin Lite — শহরের সমস্যা ও পরিবর্তন
+            <i class="fa-solid fa-map-location-dot text-civic-600"></i> শহরের সমস্যার মানচিত্র
           </h2>
-          <p class="text-xs text-slate-500">মার্কারে ক্লিক করে রিপোর্টের পূর্ণাঙ্গ বিবরণ ও প্রায়োরিটি বিশ্লেষণ দেখুন।</p>
+          <p class="text-xs text-slate-500">চিহ্নে চাপ দিয়ে রিপোর্ট ও অগ্রাধিকার দেখুন। সময়ভিত্তিক তুলনা ফিল্টারে আছে।</p>
         </div>
 
         <!-- FILTERS -->
@@ -632,16 +633,17 @@
   </div>
 
   <!-- FOOTER -->
-  <footer class="bg-slate-900 text-slate-400 py-6 text-xs text-center border-t border-slate-800">
-    <div class="max-w-7xl mx-auto px-4 space-y-1">
-      <p class="font-bold text-slate-300">NagarBondhu — Civic information for Rajshahi</p>
-      <p class="leading-relaxed">Live providers: Google Gemini for text, image and voice analysis; OpenStreetMap Overpass for nearby places; Open-Meteo for weather forecasts. Service failures are clearly labelled.</p>
-      <p>© OpenStreetMap contributors · Weather: Open-Meteo · Satellite imagery: Esri, Maxar, Earthstar Geographics · Place names: Esri.</p>
-      <div class="pt-4 space-y-2 leading-relaxed text-slate-300">
-        <p>Created by <strong class="text-white">Fahad MD Akramul Islam</strong></p>
-        <p>Concept and collaboration: <strong class="text-white">Tashika Hossain</strong></p>
-        <p class="max-w-xl mx-auto">Department of Urban and Regional Planning, RUET · Both are 24 series students.</p>
-      </div>
+  <footer class="bg-slate-900 text-slate-300 py-5 text-xs text-center border-t border-slate-800">
+    <div class="max-w-7xl mx-auto px-4">
+      <p class="font-bold">নগরবন্ধু · রাজশাহীর নাগরিক তথ্যসেবা</p>
+      <p class="mt-1">তথ্য: Google Gemini · OpenStreetMap · Open-Meteo</p>
+      <details class="footer-details">
+        <summary>তথ্যসূত্র ও কৃতিত্ব</summary>
+        <p>লেখা, ছবি ও কণ্ঠ বিশ্লেষণ: Google Gemini; আশেপাশের স্থান: OpenStreetMap Overpass; আবহাওয়া: Open-Meteo। সেবা পাওয়া না গেলে তা আলাদাভাবে দেখানো হয়।</p>
+        <p>© OpenStreetMap contributors · স্যাটেলাইট ছবি: Esri, Maxar, Earthstar Geographics · স্থানের নাম: Esri।</p>
+        <p>নির্মাণ: <strong>Fahad MD Akramul Islam</strong> · পরিকল্পনা ও সহযোগিতা: <strong>Tashika Hossain</strong></p>
+        <p>নগর ও অঞ্চল পরিকল্পনা বিভাগ, RUET · উভয়েই ২৪ সিরিজের শিক্ষার্থী।</p>
+      </details>
     </div>
   </footer>
 

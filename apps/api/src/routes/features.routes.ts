@@ -12,15 +12,16 @@ import { rainQueue } from '../services/rain.service';
 import { cityEnvironment } from '../services/environment.service';
 import { nearbySensitive, emptyNearby } from '../services/nearby.service';
 import { PriorityService } from '../services/priority.service';
+import { AnalyticsQuery, filteredReports } from '../services/analytics.service';
 const router=Router();
 router.get('/city-environment',async(_req,res,next)=>{try{res.setHeader('Cache-Control','public, max-age=60');res.json({success:true,data:await cityEnvironment()});}catch(error){next(error);}});
 router.get('/admin/reports/:id/citizen-verification',authenticate,requireRole(['ADMIN','URBAN_PLANNER']),(req,res,next)=>{try{const report=getReport(req.params.id);res.json({success:true,data:report.citizenVerification?{...report.citizenVerification,items:report.citizenVerification.items.map(({voterHash,...item})=>item)}:null});}catch(e){next(e);}});
 let lastBackfillAt=0;
-router.get('/rain-queue',async(req,res,next)=>{try{const q=z.object({source:z.enum(['all','demo_seed','citizen_report']).default('citizen_report')}).strict().parse(req.query);res.json({success:true,data:await rainQueue(q.source)});}catch(e){next(e);}});
+router.get('/rain-queue',async(req,res,next)=>{try{const q=AnalyticsQuery.parse(req.query);res.json({success:true,data:await rainQueue(q.source||'citizen_report',q)});}catch(e){next(e);}});
 router.post('/ai/transcribe',civicLimit,async(req,res,next)=>{try{const q=z.object({deviceId:z.string().uuid(),audioBase64:z.string().max(7000000)}).strict().parse(req.body);res.json({success:true,data:await transcribeAudio(parseMedia(q.audioBase64,'audio')),provider:'Google Gemini'});}catch(e){next(e);}});
 router.get('/nearby',civicLimit,async(req,res,next)=>{try{const q=z.object({latitude:z.coerce.number().min(20).max(28),longitude:z.coerce.number().min(85).max(95)}).strict().parse(req.query);res.json({success:true,data:await nearbySensitive(q.latitude,q.longitude)});}catch(e){next(e);}});
 router.post('/ai/check-photo',civicLimit,async(req,res,next)=>{try{const q=z.object({deviceId:z.string().uuid(),description:z.string().trim().min(5).max(6000),imageBase64:z.string().max(5600000).optional(),imageUrl:z.string().max(2000).optional()}).strict().refine(q=>!!q.imageBase64!==!!q.imageUrl,'একটি ছবি দিন।').parse(req.body);const media=q.imageBase64?parseMedia(q.imageBase64,'image'):await uploadedPhoto(q.imageUrl!);res.json({success:true,data:await checkPhoto(q.description,media),provider:'Google Gemini'});}catch(e){next(e);}});
-router.get('/wards/scorecard',(req,res,next)=>{try{const q=z.object({source:z.enum(['all','demo_seed','citizen_report']).default('citizen_report'),category:z.enum(['ROAD_DAMAGE','WATERLOGGING','DRAINAGE','WASTE','FOOTPATH','STREETLIGHT','OTHER']).optional()}).strict().parse(req.query);res.json({success:true,data:wardScorecard(q.source,q.category),source:q.source,unknownWardCount:db.activeReports().filter(r=>!r.wardId&&!getPlan(r.id)?.wardId&&(q.source==='all'||r.sourceType===q.source)&&(!q.category||r.category===q.category)).length});}catch(e){next(e);}});
+router.get('/wards/scorecard',(req,res,next)=>{try{const q=AnalyticsQuery.parse(req.query),source=q.source||'citizen_report',rows=filteredReports({...q,source});res.json({success:true,data:wardScorecard(source,q.category,q),source,unknownWardCount:rows.filter(r=>!r.wardId&&!getPlan(r.id)?.wardId).length});}catch(e){next(e);}});
 router.post('/reports/:id/affirm',civicLimit,optionalAuthenticate,(req,res,next)=>{
   try{
     const input=z.object({deviceId:z.string().uuid(),receiptToken:z.string().length(64).optional()}).strict().parse(req.body),report=getReport(req.params.id),voter=deviceHash(input.deviceId);

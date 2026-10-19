@@ -22,10 +22,42 @@ describe('Citizen tracking, analytics and production protection',()=>{
     expect((await request(app).post('/api/v1/reports').send({...payload,title:'Changed report'})).status).toBe(409);
     expect((await request(app).post('/api/v1/reports').send({...submission(),locationConfirmed:false})).status).toBe(400);
   });
+  test('concurrent retries with the same key cannot create two reports',async()=>{
+    const payload=submission(),before=db.reports.size;
+    const [a,b]=await Promise.all([request(app).post('/api/v1/reports').send(payload),request(app).post('/api/v1/reports').send(payload)]);
+    expect([a.status,b.status].sort()).toEqual(expect.arrayContaining([201]));
+    expect([200,201,409]).toContain(a.status);expect([200,201,409]).toContain(b.status);
+    const retry=await request(app).post('/api/v1/reports').send(payload);
+    expect(retry.status).toBe(200);expect(db.reports.size).toBe(before+1);
+    expect([a.body.report?.id,b.body.report?.id]).toContain(retry.body.report.id);
+  });
   test('pre-submission matching returns public references without creating duplicate records',async()=>{
-    const report=db.reports.get('rep-001')!,before=db.possibleDuplicates.size;
-    const result=await request(app).post('/api/v1/reports/duplicate-suggestions').send({title:report.title,description:report.description,category:report.category,latitude:report.latitude,longitude:report.longitude});
-    expect(result.status).toBe(200);expect(result.body.data.some((r:any)=>r.id==='rep-001')).toBe(true);expect(db.possibleDuplicates.size).toBe(before);expect(JSON.stringify(result.body)).not.toContain('reporterId');
+    const created=await request(app).post('/api/v1/reports').send(submission()),report=created.body.report,before=db.possibleDuplicates.size;
+    const query={title:report.title,description:report.description,category:report.category,latitude:report.latitude,longitude:report.longitude};
+    const result=await request(app).post('/api/v1/reports/duplicate-suggestions').send(query);
+    expect(result.status).toBe(200);expect(result.body.data.some((r:any)=>r.id===report.id)).toBe(true);expect(result.body.data.every((r:any)=>r.sourceType==='citizen_report')).toBe(true);
+    const demo=await request(app).post('/api/v1/reports/duplicate-suggestions').send({...query,source:'demo_seed'});
+    expect(demo.body.data.some((r:any)=>r.id===report.id)).toBe(false);expect(db.possibleDuplicates.size).toBe(before);expect(JSON.stringify(result.body)).not.toContain('reporterId');
+  });
+  test('source, Dhaka date, ward and category select the same feed, map, scorecard, analytics and CSV records',async()=>{
+    const created=await request(app).post('/api/v1/reports').send({...submission(),wardId:'ward-25'});
+    expect(created.status).toBe(201);
+    const day=dhakaDay(created.body.report.createdAt),query=`source=citizen_report&wardId=ward-25&category=DRAINAGE&from=${day}&to=${day}`;
+    const [feed,map,scorecard,summary,csv,categories,wards,trends]=await Promise.all([
+      request(app).get('/api/v1/reports?'+query),request(app).get('/api/v1/map/reports?'+query),request(app).get('/api/v1/wards/scorecard?'+query),request(app).get('/api/v1/admin/analytics?'+query).set('Authorization','Bearer '+adminToken),request(app).get('/api/v1/admin/export.csv?'+query).set('Authorization','Bearer '+adminToken),request(app).get('/api/v1/dashboard/categories?'+query),request(app).get('/api/v1/dashboard/wards?'+query),request(app).get('/api/v1/dashboard/trends?'+query),
+    ]);
+    expect([feed.status,map.status,scorecard.status,summary.status,csv.status,categories.status,wards.status,trends.status]).toEqual([200,200,200,200,200,200,200,200]);
+    const ids=summary.body.data.rows.map((r:any)=>r.id).sort();
+    expect(ids).toContain(created.body.report.id);
+    expect(feed.body.reports.map((r:any)=>r.id).sort()).toEqual(ids);
+    expect(map.body.markers.map((r:any)=>r.id).sort()).toEqual(ids);
+    expect(map.body.markers.find((r:any)=>r.id===created.body.report.id)).toMatchObject({wardId:'ward-25',locationConfirmed:true});
+    expect(scorecard.body.data.reduce((n:number,w:any)=>n+w.total,0)+scorecard.body.unknownWardCount).toBe(ids.length);
+    expect(categories.body.categories.reduce((n:number,c:any)=>n+c.count,0)).toBe(ids.length);
+    expect(wards.body.wards.reduce((n:number,w:any)=>n+w.count,0)).toBe(ids.length);
+    expect(trends.body.trends.total).toBe(ids.length);
+    expect(csv.text.split(created.body.report.id).length-1).toBe(1);
+    expect((await request(app).get('/api/v1/map/reports?'+query.replace('citizen_report','demo_seed'))).body.count).toBe(0);
   });
   test('feedback requires receipt, stays separate from resolution, supports audited admin review',async()=>{
     const created=await request(app).post('/api/v1/reports').send(submission()),id=created.body.report.id;

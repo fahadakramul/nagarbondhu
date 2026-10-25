@@ -1,4 +1,5 @@
 import { dashboardSummary } from './services/dashboard-summary';
+import { reportSource } from './services/report-source';
 import { derivePriority } from './services/priority.service';
 import {
   User,
@@ -525,12 +526,12 @@ export class DatabaseRepository {
     return updated;
   }
 
-  activeReports(): Report[] { return Array.from(this.reports.values()).filter(r=>!r.deletedAt); }
+  activeReports(): Report[] { return Array.from(this.reports.values()).filter(r=>!r.deletedAt).map(r=>({...r,sourceType:reportSource(r)})); }
 
   findReportById(id: string): Report | null {
     const report = this.reports.get(id);
     if (!report || report.deletedAt) return null;
-    const clone = { ...report };
+    const clone = { ...report, sourceType: reportSource(report) };
     clone.wardName = report.wardId ? this.findWardById(report.wardId)?.wardName : null;
     clone.aiAnalysis = this.findAiAnalysisByReportId(id);
     clone.priorityAssessment = this.findPriorityAssessmentByReportId(id);
@@ -632,7 +633,8 @@ export class DatabaseRepository {
       if (d.reportId === reportId || d.candidateReportId === reportId) {
         const otherId = d.reportId === reportId ? d.candidateReportId : d.reportId;
         const candidate = this.reports.get(otherId);
-        if(!candidate || candidate.deletedAt)continue;
+        const original=this.reports.get(reportId);
+        if(!candidate || candidate.deletedAt || !original || reportSource(candidate)!==reportSource(original))continue;
         results.push({
           ...d,
           candidateReport: candidate ? { ...candidate } : undefined,

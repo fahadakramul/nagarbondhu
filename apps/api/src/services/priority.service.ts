@@ -88,7 +88,7 @@ export function derivePriority(reportId:string, stored:PriorityAssessmentRecord 
     const bonus=report.nearbySensitive?.bonus || 0;
     const impactContribution=6*impact;
     const score=Math.min(100,rawScore+bonus+impactContribution);
-    const priorityLevel: PriorityLevel = isCritical ? 'CRITICAL' : score>=65 ? 'HIGH' : score>=40 ? 'MEDIUM' : 'LOW';
+    const priorityLevel: PriorityLevel = isCritical || score>=85 ? 'CRITICAL' : score>=65 ? 'HIGH' : score>=45 ? 'MEDIUM' : 'LOW';
     const explanation = {
       summary: 'Priority Engine 2.0: অভিযোগে বর্ণিত তীব্রতা, বয়স ও যাচাইকৃত সমর্থনের ভিত্তিতে পর্যালোচনার সুপারিশ। মাঠপর্যায়ে যাচাই হয়নি।',
       factors: [

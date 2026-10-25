@@ -10,6 +10,7 @@ import {
   AiAnalysisRecord,
   ReportCategory,
   ReportStatus,
+  ACTION_STATUSES,
 } from '@nagarbondhu/shared';
 
 import { createHmac } from 'crypto';
@@ -18,6 +19,7 @@ import { deviceHash } from '../middleware/civicLimit';
 import { workflowStatus, getPlan } from '../services/action.service';
 import { publicText } from '../services/privacy';
 import { nearbySensitive } from '../services/nearby.service';
+import { reportSource } from '../services/report-source';
 import { checkPhoto, uploadedPhoto } from '../services/media-ai.service';
 import { AnalyticsQueryBase, filteredReports } from '../services/analytics.service';
 const router = Router();
@@ -164,17 +166,20 @@ router.post('/', optionalAuthenticate, async (req, res, next) => {
       imageUrl: input.imageUrl || null,
       status: 'SUBMITTED',
       actionStatus: 'SUBMITTED',
-      sourceType: 'citizen_report',
+      sourceType: reportSource({sourceType:'citizen_report',title,description:input.description}),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
     db.createReport(newReport);
-    if(process.env.NODE_ENV!=='test')newReport.nearbySensitive=await nearbySensitive(input.latitude,input.longitude);
-    if(input.imageUrl && process.env.NODE_ENV!=='test'){
-      try{newReport.photoCheck={...await checkPhoto(input.description,await uploadedPhoto(input.imageUrl)),checkedAt:new Date().toISOString()};}
-      catch{newReport.photoCheck={unavailable:true,message:'ছবি যাচাই করা যায়নি; রিপোর্ট গ্রহণ হয়েছে।',checkedAt:new Date().toISOString()};}
-    }
+    if(process.env.NODE_ENV!=='test')await Promise.all([
+      nearbySensitive(input.latitude,input.longitude).then(data=>{newReport.nearbySensitive=data;}),
+      (async()=>{
+        if(!input.imageUrl)return;
+        try{newReport.photoCheck={...await checkPhoto(input.description,await uploadedPhoto(input.imageUrl)),checkedAt:new Date().toISOString()};}
+        catch{newReport.photoCheck={unavailable:true,message:'ছবি যাচাই করা যায়নি; রিপোর্ট গ্রহণ হয়েছে।',checkedAt:new Date().toISOString()};}
+      })(),
+    ]);
 
     // 3. Save AI Analysis Record
     const aiRecord: AiAnalysisRecord = {
@@ -241,9 +246,10 @@ router.post('/duplicate-suggestions', (req,res,next)=>{
 // Public report feed with filters and sanitized reporter privacy
 router.get('/', (req, res, next) => {
   try {
-  const { status, priority, limit, offset, ...filters } = AnalyticsQueryBase.extend({status:z.enum(['SUBMITTED','AI_ANALYZED','UNDER_REVIEW','IN_PROGRESS','RESOLVED','REJECTED']).optional(),priority:z.enum(['LOW','MEDIUM','HIGH','CRITICAL']).optional(),limit:z.coerce.number().int().min(1).max(100).default(50),offset:z.coerce.number().int().min(0).default(0)}).refine(q=>!q.from||!q.to||q.from<=q.to,'Invalid date range').parse(req.query);
+  const { status, priority, limit, offset, ...filters } = AnalyticsQueryBase.extend({status:z.enum([...ACTION_STATUSES,'AI_ANALYZED']).optional(),priority:z.enum(['LOW','MEDIUM','HIGH','CRITICAL']).optional(),limit:z.coerce.number().int().min(1).max(100).default(50),offset:z.coerce.number().int().min(0).default(0)}).refine(q=>!q.from||!q.to||q.from<=q.to,'Invalid date range').parse(req.query);
   const eligible=new Set(filteredReports(filters).map(r=>r.id));
-  const all=db.findReports({limit:Math.max(db.reports.size,1)}).reports.filter(r=>eligible.has(r.id)&&(!status||workflowStatus(r)===status)&&(!priority||db.findPriorityAssessmentByReportId(r.id)?.priorityLevel===priority));
+  const normalizedStatus=status==='AI_ANALYZED'?'UNDER_REVIEW':status;
+  const all=db.findReports({limit:Math.max(db.reports.size,1)}).reports.filter(r=>eligible.has(r.id)&&(!normalizedStatus||workflowStatus(r)===normalizedStatus)&&(!priority||db.findPriorityAssessmentByReportId(r.id)?.priorityLevel===priority));
   const results={reports:all.slice(offset,offset+limit),total:all.length};
 
   // Sanitize reports (strip private reporter ids)

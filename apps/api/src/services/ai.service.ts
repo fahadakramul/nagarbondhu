@@ -34,7 +34,7 @@ export interface AiServiceResult {
 function preserveTestQualifier(data:AiAnalysisData,input:string):AiAnalysisData {
   if(!/(?:\bQA\b|\btest report\b|\bsynthetic\b|\bdemo data\b|পরীক্ষামূলক|টেস্ট রিপোর্ট|ডেমো রিপোর্ট)/i.test(input))return data;
   const label='পরীক্ষামূলক QA রিপোর্ট — ';
-  return {...data,summary:/QA|পরীক্ষামূলক|টেস্ট|ডেমো/i.test(data.summary)?data.summary:label+data.summary,clearerDescription:data.clearerDescription&&!/QA|পরীক্ষামূলক|টেস্ট|ডেমো/i.test(data.clearerDescription)?label+data.clearerDescription:data.clearerDescription};
+  return {...data,title_bn:data.title_bn&&!/QA|পরীক্ষামূলক|টেস্ট|ডেমো/i.test(data.title_bn)?(label+data.title_bn).slice(0,200):data.title_bn,summary:/QA|পরীক্ষামূলক|টেস্ট|ডেমো/i.test(data.summary)?data.summary:label+data.summary,clearerDescription:data.clearerDescription&&!/QA|পরীক্ষামূলক|টেস্ট|ডেমো/i.test(data.clearerDescription)?label+data.clearerDescription:data.clearerDescription};
 }
 
 /**

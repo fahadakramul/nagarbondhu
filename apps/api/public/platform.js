@@ -12,9 +12,14 @@ let feedOffset=0;
 let platformLocationSource='MAP_PIN';
 let platformLocationSelected=false;
 const uuid=()=>crypto.randomUUID ? crypto.randomUUID() : '10000000-1000-4000-8000-100000000000'.replace(/[018]/g,c=>(Number(c)^crypto.getRandomValues(new Uint8Array(1))[0]&15>>Number(c)/4).toString(16));
-async function platformApi(path,body) {
-  const response=await fetch('/api/v1'+path,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});
-  const result=await response.json();if(!response.ok || !result.success)throw new Error(result.error || 'অনুরোধ ব্যর্থ হয়েছে।');return result;
+async function platformApi(path,body,options={}) {
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),options.timeoutMs||60000);
+  const cancel=()=>controller.abort();if(options.signal?.aborted)cancel();else options.signal?.addEventListener('abort',cancel,{once:true});
+  try{
+    const response=await fetch('/api/v1'+path,{method:body===undefined?'GET':'POST',signal:controller.signal,headers:{'Content-Type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});
+    const result=await response.json();if(!response.ok || !result.success)throw new Error(result.error || 'অনুরোধ ব্যর্থ হয়েছে।');return result;
+  }catch(error){if(error.name==='AbortError')throw new Error('অনুরোধের সময় শেষ হয়েছে বা বাতিল হয়েছে। আবার চেষ্টা করুন।');throw error;}
+  finally{clearTimeout(timer);options.signal?.removeEventListener('abort',cancel);}
 }
 function setPlatformMessage(text){document.getElementById('submission-message').textContent=text;}
 function readReceiptTokens(){try{return JSON.parse(localStorage.getItem('nagarbondhu-receipts') || '{}');}catch{return {};}}
@@ -41,7 +46,7 @@ async function runAiPreview(allowFallback=false){
     document.getElementById('ai-preview-reasons').innerHTML=(d.reasons||[]).map(r=>`<li>${platformEscape(r)}</li>`).join('');
     assistantDescription=d.clearerDescription || d.summary;assistantCategory=d.category;assistantInput=text;
     document.getElementById('assistant-details').innerHTML=`<p>${result.metadata.isFallback?'নিয়মভিত্তিক সারাংশ; নির্ভরযোগ্যতার অনুমান নেই।':'বিবরণ থেকে তৈরি সারাংশ; মাঠে যাচাই প্রয়োজন।'}</p><p>মূল বিষয়: ${platformEscape((d.keywords||[]).join(', '))}</p><p>মাঠপর্যায়ে যাচাই: ${d.fieldVerificationNecessary?'প্রয়োজন':'প্রয়োজন হতে পারে'}</p><ul>${(d.missing_information||[]).map(t=>`<li>• ${platformEscape(t)}</li>`).join('')}</ul><p>${platformEscape(assistantDescription)}</p><button type="button" class="${buttonClass}" onclick="document.getElementById('form-description').value=assistantDescription">খসড়া বর্ণনা নিন, তারপর সম্পাদনা করুন</button>`;
-  }catch(error){setPlatformMessage(error.message+' বিশ্লেষণ ছাড়াও রিপোর্ট জমা দিতে পারেন।');document.getElementById('ai-preview-feedback').innerHTML=`<p role="alert">${platformEscape(error.message)}</p><button type="button" class="${buttonClass}" onclick="runAiPreview()">আবার বিশ্লেষণ করুন</button><button type="button" class="${buttonClass}" onclick="runAiPreview(true)">নিয়মভিত্তিক সারাংশ দেখুন</button>`;}
+  }catch(error){setPlatformMessage('');document.getElementById('ai-preview-feedback').innerHTML=`<p role="alert">${platformEscape(error.message)}</p><button type="button" class="${buttonClass}" onclick="runAiPreview()">আবার বিশ্লেষণ করুন</button><button type="button" class="${buttonClass}" onclick="runAiPreview(true)">নিয়মভিত্তিক সারাংশ দেখুন</button>`;}
   finally{button.disabled=false;button.textContent='বিবরণ বিশ্লেষণ করুন';}
 }
 async function checkDuplicatePreview(){
@@ -76,7 +81,7 @@ async function handleFormSubmit(event){
     sessionStorage.removeItem('nagarbondhu-pending');
     setPlatformMessage('সার্ভারে সংরক্ষিত হয়েছে। রিপোর্ট নম্বর: '+result.report.id);
     document.getElementById('report-form').reset();platformLocationSelected=false;document.getElementById('location-confirmed').setCustomValidity('মানচিত্রে ঘটনার স্থান নিজে নির্বাচন করুন; প্রথম পিন শুধু মানচিত্রের কেন্দ্র।');document.getElementById('coords-display').textContent='ঘটনার স্থান এখনও নির্বাচন হয়নি';clearSelectedImage();userOverrideCategory=null;document.getElementById('ai-preview-box').classList.add('hidden');
-    document.getElementById('stats-source').value='citizen_report';feedOffset=0;await loadData();switchTab('feed');openDetailModal(result.report.id);
+    document.getElementById('stats-source').value=result.report.sourceType==='demo_seed'?'demo_seed':'citizen_report';feedOffset=0;await loadData();switchTab('feed');openDetailModal(result.report.id);
   }catch(error){setPlatformMessage(error.message+' একই তথ্য রেখে আবার চেষ্টা করুন; retry-তে দ্বিতীয় রিপোর্ট তৈরি হবে না।');}
   finally{platformSubmitBusy=false;button.disabled=false;button.textContent='রিপোর্ট জমা দিন';}
 }

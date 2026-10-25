@@ -32,7 +32,7 @@ async function mediaJson<T>(text:string,media:{mimeType:string;data:string},sche
   for(const [k,v] of mediaCache)if(v.until<Date.now())mediaCache.delete(k);
   if(cached&&cached.until>Date.now())return cached.data as T;
   try{
-    const response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':CONFIG.GEMINI_API_KEY},signal:AbortSignal.timeout(9500),body:JSON.stringify({contents:[{parts:[{text},{inlineData:media}]}],generationConfig:{responseMimeType:'application/json',responseSchema,temperature:0}})});
+    const response=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':CONFIG.GEMINI_API_KEY},signal:AbortSignal.timeout(media.mimeType.startsWith('audio/')?40000:15000),body:JSON.stringify({contents:[{parts:[{text},{inlineData:media}]}],generationConfig:{responseMimeType:'application/json',responseSchema,temperature:0}})});
     if(!response.ok)throw new Error('Gemini HTTP '+response.status);
     const body=await response.json() as any,raw=body.candidates?.[0]?.content?.parts?.filter((p:any)=>typeof p.text==='string').map((p:any)=>p.text).join('');
     const data=schema.parse(JSON.parse(raw));if(mediaCache.size>=200)mediaCache.delete(mediaCache.keys().next().value!);mediaCache.set(key,{until:Date.now()+30*60000,data});return data;

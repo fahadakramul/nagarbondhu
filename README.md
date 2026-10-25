@@ -13,7 +13,7 @@ Citizen participation, vulnerability scoring, ward scorecards, Gemini photo/audi
 Typical civic apps are merely static ticketing systems where citizen complaints sit unanalyzed in administrative backlogs. **NagarBondhu AI** transforms citizen reports into structured, location-aware intelligence for decision-makers and urban planners:
 
 1. **Bengali Complaint Intelligence:** Citizens submit complaints in natural colloquial Bengali (or English). The AI classifies categories (`ROAD_DAMAGE`, `WATERLOGGING`, `DRAINAGE`, `WASTE`, `FOOTPATH`, `STREETLIGHT`, `OTHER`), generates summaries, gauges severity, and identifies missing information.
-2. **Transparent Priority Engine:** Uses a deterministic, explainable multi-factor formula ($P = 20 \times (0.40S + 0.30I + 0.20R + 0.10D)$) instead of opaque black-box guessing. Life-critical hazards automatically trigger safety alerts.
+2. **Transparent Priority Engine:** The current API uses reported severity, unresolved age, confirmed duplicate evidence and explicitly labelled bonuses; it does not assume population impact. See the engine 2.0 calculation below. The original shared-package formula remains available for legacy calculations and demo fixtures. Life-critical hazards trigger safety review alerts.
 3. **Automated Duplicate Report Detection:** Correlates geographic proximity (Haversine formula), category relevance, and Bengali/English text similarity to prevent duplicated fieldwork and identify recurrence hotspots.
 4. **Spatial Planning & Hotspot Analytics:** Visualizes problem clusters across Rajshahi (Shaheb Bazar Zero Point, Talaimari, RU Motihar, Kazihata, Upashahar) with live database aggregations and actionable recommendations.
 
@@ -70,7 +70,13 @@ nagarbondhu-ai/
 
 ## 🧮 4. Core Algorithms
 
-### 1. Explainable Priority Formula
+### 1. Current API priority engine (2.0)
+
+Citizen reports currently use min(100, round(20 × (0.65 × severity + 0.25 × age + 0.10 × confirmedDuplicates)) + nearbyBonus + 6 × supportedImpact). Age starts at 1 and increases weekly to 5; confirmed duplicates are capped at 5. Nearby OSM evidence adds at most 15; browser-based citizen support adds at most 30 and is not a population estimate. Weights are server-configurable and must sum to one. Scores 85+, 65+, 45+ are CRITICAL, HIGH, MEDIUM; lower scores are LOW. An urgent safety trigger may raise the level independently; an authorized recorded override is displayed separately from the calculated score.
+
+The original shared-package formula below is retained for legacy calculations and demo fixtures; it is not the current citizen-report API formula.
+
+### Legacy shared-package formula
 $$P = 20 \times (0.40S + 0.30I + 0.20R + 0.10D)$$
 - **$S$ (Severity):** 1 to 5 (from AI complaint classification or inspector)
 - **$I$ (Estimated Impact):** 1 to 5 (population density / traffic flow affected)
@@ -121,7 +127,7 @@ Reports within 300m sharing related categories and linguistic similarity are fla
    ```env
    GEMINI_API_KEY="AIzaSy..."
    ```
-   *Note: If no API key is provided, the platform automatically activates its built-in rule-based Bengali heuristic analyzer so all features work seamlessly out of the box!*
+   *Note: If no API key is provided, the platform automatically activates its built-in rule-based Bengali heuristic analyzer for text-based reporting. Live preview requires an explicit labelled fallback; photo checks and voice transcription require a working server-side Gemini key and network connection. Microphone recording requires HTTPS or localhost (plain HTTP over a phone LAN connection does not qualify).*
 
 3. **Run Automated Tests:**
    ```bash

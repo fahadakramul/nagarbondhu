@@ -217,6 +217,68 @@ describe('Administrator UI connected to the real API',()=>{
     run("voiceRecorder=null");el('voice-stop').classList.add('hidden');
     await eventually(()=>!el('voice-input-card').classList.contains('is-recording'));
   });
+  test('voice recording uses browser default format, appends real transcription and preserves edits on retry',async()=>{
+    const track={stop:jest.fn()},recorders:any[]=[];
+    Object.defineProperty(window.navigator,'mediaDevices',{value:{getUserMedia:jest.fn(async()=>({getTracks:()=>[track]}))},configurable:true});
+    window.URL.createObjectURL=jest.fn(()=>'blob:qa-voice');window.URL.revokeObjectURL=jest.fn();
+    window.MediaRecorder=class {
+      state='inactive';mimeType='audio/webm;codecs=opus';onstop:any;ondataavailable:any;onerror:any;
+      constructor(_stream:any,options:any){expect(options).toEqual({});recorders.push(this);}
+      start(){this.state='recording';}
+      stop(){this.state='inactive';this.ondataavailable?.({data:new window.Blob(['test audio'],{type:this.mimeType})});this.onstop?.();}
+    };
+    const originalFetch=window.fetch;
+    let resolveVoice:any;
+    window.fetch=jest.fn((url:string,options:any)=>url==='/api/v1/ai/transcribe'?new Promise(resolve=>{resolveVoice=()=>resolve({ok:true,json:async()=>({success:true,data:{transcript_bn:'রাস্তার আলো জ্বলে না'}})});expect(options.signal).toBeDefined();}):originalFetch(url,options));
+    el('form-description').value='আগের বিবরণ';
+    await window.startVoiceComplaint();expect(recorders).toHaveLength(1);expect(el('voice-stop').classList.contains('hidden')).toBe(false);
+    window.stopVoiceComplaint();await eventually(()=>!!resolveVoice);
+    el('form-description').value='এখন সম্পাদিত বিবরণ';resolveVoice();
+    await eventually(()=>el('voice-message').textContent.includes('ইতিমধ্যে লেখা বদলেছেন'));
+    expect(el('form-description').value).toBe('এখন সম্পাদিত বিবরণ');expect(run('!!voiceBlob')).toBe(true);
+    const retry=window.sendVoiceComplaint();await eventually(()=>window.fetch.mock.calls.filter((c:any)=>c[0]==='/api/v1/ai/transcribe').length===2);resolveVoice();await retry;
+    expect(el('form-description').value).toBe('এখন সম্পাদিত বিবরণ\nরাস্তার আলো জ্বলে না');expect(el('voice-message').textContent).toContain('Google Gemini');expect(run('voiceBlob')).toBeNull();expect(track.stop).toHaveBeenCalled();
+  });
+  test('leaving during microphone permission releases the late stream without starting a recorder',async()=>{
+    let grant:any;const track={stop:jest.fn()};
+    Object.defineProperty(window.navigator,'mediaDevices',{value:{getUserMedia:jest.fn(()=>new Promise(resolve=>grant=resolve))},configurable:true});
+    window.MediaRecorder=jest.fn();window.URL.revokeObjectURL=jest.fn();
+    const started=window.startVoiceComplaint();window.stopVoiceComplaint(true);grant({getTracks:()=>[track]});await started;
+    expect(track.stop).toHaveBeenCalledTimes(1);expect(window.MediaRecorder).not.toHaveBeenCalled();expect(el('voice-start').disabled).toBe(false);
+  });
+  test('AI failure appears once and review uses neutral title attribution after rule fallback',async()=>{
+    window.startWizardDraft();el('form-description').value='The street light is broken at the crossing.';
+    await window.runAiPreview();expect(el('submission-message').textContent).toBe('');expect(el('ai-preview-feedback').textContent).toContain('নিয়মভিত্তিক সারাংশ');
+    await window.runAiPreview(true);
+    run("pickerMarker={getLatLng(){return {lat:24.36,lng:88.62};}}");el('wizard-next').click();window.updateLocationFromLatLng(24.36,88.62);el('location-confirmed').checked=true;el('wizard-next').click();
+    expect(el('wizard-summary').textContent).toContain('রিপোর্টের শিরোনাম:');expect(el('wizard-summary').textContent).not.toContain('AI শিরোনাম');
+  });
+  test('planning and budget tabs keep the outer and inner data sources aligned',async()=>{
+    el('authority-demo-login').click();await eventually(()=>window.document.body.classList.contains('authority-mode'));
+    const planning=window.document.querySelector('#authority-sidebar-nav [data-corner-tab="planning"]');planning.click();
+    await eventually(()=>el('mvp-source')&&window.document.body.classList.contains('planner-mode'));
+    expect(el('authority-source').value).toBe(el('mvp-source').value);expect(el('authority-source').querySelector('[value="all"]').disabled).toBe(true);
+    el('authority-source').value='demo_seed';el('authority-source').dispatchEvent(new window.Event('change'));
+    await eventually(()=>el('mvp-source')?.value==='demo_seed');expect(run('mvpSource')).toBe('demo_seed');
+    window.document.querySelector('#authority-sidebar-nav [data-corner-tab="ai"]').click();
+    await eventually(()=>el('authority-ai').contains(el('competition-workspace')));
+    expect(el('brief-source').value).toBe('demo_seed');
+    el('authority-source').value='citizen_report';el('authority-source').dispatchEvent(new window.Event('change'));
+    await eventually(()=>el('mvp-source')?.value==='citizen_report');expect(el('stats-source').value).toBe('citizen_report');
+    expect(el('brief-source').value).toBe('citizen_report');
+    window.document.querySelector('#authority-sidebar-nav [data-corner-tab="queue"]').click();
+    expect(el('authority-source').querySelector('[value="all"]').disabled).toBe(false);
+    el('authority-source').value='demo_seed';el('authority-source').dispatchEvent(new window.Event('change'));
+    await window.leaveAuthorityCorner();expect(el('stats-source').value).toBe('citizen_report');
+  });
+  test('authority queue includes reports beyond the first hundred and accepts every workflow status',async()=>{
+    const seed=db.reports.get('rep-001')!;
+    for(let i=0;i<105;i++)db.reports.set('queue-audit-'+i,{...seed,id:'queue-audit-'+i,sourceType:'citizen_report',status:'UNDER_REVIEW',actionStatus:'AWAITING_FIELD_VERIFICATION',createdAt:new Date(Date.now()-i*1000).toISOString()});
+    el('authority-demo-login').click();await eventually(()=>window.document.body.classList.contains('authority-mode'));
+    el('authority-source').value='citizen_report';el('authority-status').value='AWAITING_FIELD_VERIFICATION';await window.refreshAuthorityQueue();
+    expect(el('authority-queue-list').querySelectorAll('.authority-row')).toHaveLength(105);
+    expect(el('authority-queue-note').textContent).toContain('১০৫');
+  });
   test('timeline shortcut opens the mobile filter disclosure and shows its actual source',async()=>{
     expect(el('map-filter-sheet').hasAttribute('open')).toBe(false);
     run("mvpSource='demo_seed'");window.openTimelineMap();

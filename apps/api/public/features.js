@@ -1,36 +1,71 @@
 // Public civic tools. Every number is derived from stored reports or a labelled live API.
 const bn=value=>Number(value).toLocaleString('bn-BD');
-let voiceRecorder=null,voiceStream=null,voiceTimer=null,voiceBlob=null,voiceUrl=null,voiceBusy=false;
+let voiceRecorder=null,voiceStream=null,voiceTimer=null,voiceBlob=null,voiceUrl=null,voiceBusy=false,voiceEpoch=0,voiceController=null;
+function civicRecorderOptions(){
+  const mime=['audio/webm;codecs=opus','audio/mp4','audio/webm','audio/ogg;codecs=opus'].find(t=>typeof MediaRecorder.isTypeSupported==='function'&&MediaRecorder.isTypeSupported(t));
+  return mime?{mimeType:mime}:{}; // Let older WebViews choose their native format.
+}
+async function transcribeCivicAudio(blob,deviceId,signal){
+  if(!blob?.size)throw new Error('কোনো অডিও রেকর্ড হয়নি। কয়েক সেকেন্ড বলে আবার চেষ্টা করুন।');
+  if(blob.size>5*1024*1024)throw new Error('অডিও ৫ এমবির বেশি। ছোট করে আবার রেকর্ড করুন।');
+  const audioBase64=await civicDataUrl(blob);
+  const result=await platformApi('/ai/transcribe',{deviceId,audioBase64},{signal,timeoutMs:45000});
+  const text=result.data?.transcript_bn?.trim();
+  if(!text)throw new Error('স্পষ্ট বক্তব্য শোনা যায়নি। মাইক্রোফোনের কাছে আবার বলুন।');
+  return text;
+}
+function resetVoicePreview(){
+  if(voiceUrl)URL.revokeObjectURL(voiceUrl);voiceUrl=null;voiceBlob=null;
+  const preview=document.getElementById('voice-preview');preview.removeAttribute('src');preview.classList.add('hidden');
+  document.getElementById('voice-transcribe').classList.add('hidden');
+}
 async function startVoiceComplaint(){
   const message=document.getElementById('voice-message'),start=document.getElementById('voice-start');
-  if(voiceBusy||voiceRecorder?.state==='recording')return;
+  if(voiceBusy||start.disabled||voiceRecorder?.state==='recording')return;
+  if(document.getElementById('assistant-mic')?.getAttribute('aria-pressed')==='true'||document.getElementById('assistant-mic')?.disabled){message.textContent='সহায়কের কণ্ঠ ইনপুট আগে শেষ করুন।';return;}
+  if(window.isSecureContext===false){message.textContent='মাইক্রোফোনের জন্য HTTPS বা এই কম্পিউটারে localhost দিয়ে অ্যাপ খুলুন। সাধারণ HTTP-তে ফোনের ব্রাউজার রেকর্ড করতে দেয় না। লিখেও অভিযোগ দিন।';return;}
   if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==='undefined'){message.textContent='এই ব্রাউজারে কণ্ঠ রেকর্ড করা যাচ্ছে না। লিখে অভিযোগ দিন।';return;}
-  start.disabled=true;message.textContent='মাইক্রোফোনের অনুমতি দিন…';
+  const seq=++voiceEpoch;start.disabled=true;message.textContent='মাইক্রোফোনের অনুমতি দিন…';
   try{
-    voiceStream=await navigator.mediaDevices.getUserMedia({audio:true});
-    const mime=['audio/webm;codecs=opus','audio/mp4','audio/webm','audio/ogg;codecs=opus'].find(t=>MediaRecorder.isTypeSupported(t));
-    if(!mime)throw new Error('এই ব্রাউজারের অডিও বিন্যাস সমর্থিত নয়। লিখে অভিযোগ দিন।');
-    const recorder=new MediaRecorder(voiceStream,{mimeType:mime}),chunks=[];voiceRecorder=recorder;let bytes=0;
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    if(seq!==voiceEpoch){stream.getTracks().forEach(t=>t.stop());return;}
+    voiceStream=stream;resetVoicePreview();
+    const recorder=new MediaRecorder(stream,civicRecorderOptions()),chunks=[];voiceRecorder=recorder;let bytes=0,failed=false;
     recorder.ondataavailable=e=>{if(e.data.size){chunks.push(e.data);bytes+=e.data.size;if(bytes>5*1024*1024&&recorder.state==='recording')recorder.stop();}};
-    recorder.onerror=()=>{message.textContent='রেকর্ডিং ব্যর্থ হয়েছে। আবার চেষ্টা করুন অথবা লিখুন।';stopVoiceComplaint();};
-    recorder.onstop=async()=>{clearInterval(voiceTimer);voiceStream?.getTracks().forEach(t=>t.stop());voiceStream=null;voiceRecorder=null;document.getElementById('voice-stop').classList.add('hidden');start.disabled=false;voiceBlob=new Blob(chunks,{type:recorder.mimeType});chunks.length=0;if(voiceUrl)URL.revokeObjectURL(voiceUrl);voiceUrl=URL.createObjectURL(voiceBlob);const preview=document.getElementById('voice-preview');preview.src=voiceUrl;preview.classList.remove('hidden');document.getElementById('voice-transcribe').classList.remove('hidden');await sendVoiceComplaint();};
+    recorder.onerror=()=>{failed=true;message.textContent='রেকর্ডিং ব্যর্থ হয়েছে। আবার চেষ্টা করুন অথবা লিখুন।';stopVoiceComplaint();};
+    recorder.onstop=async()=>{
+      stream.getTracks().forEach(t=>t.stop());if(seq!==voiceEpoch)return;
+      clearInterval(voiceTimer);voiceStream=null;voiceRecorder=null;document.getElementById('voice-stop').classList.add('hidden');start.disabled=false;
+      if(failed)return;
+      const mime=recorder.mimeType||chunks.find(c=>c.type)?.type||'';
+      voiceBlob=new Blob(chunks,{type:mime});chunks.length=0;
+      if(!voiceBlob.size){message.textContent='কোনো অডিও রেকর্ড হয়নি। কয়েক সেকেন্ড বলে আবার চেষ্টা করুন।';voiceBlob=null;return;}
+      voiceUrl=URL.createObjectURL(voiceBlob);const preview=document.getElementById('voice-preview');preview.src=voiceUrl;preview.classList.remove('hidden');document.getElementById('voice-transcribe').classList.remove('hidden');await sendVoiceComplaint();
+    };
     const began=Date.now();recorder.start(1000);document.getElementById('voice-stop').classList.remove('hidden');message.textContent='রেকর্ড হচ্ছে: ০ / ৬০ সেকেন্ড';voiceTimer=setInterval(()=>{const seconds=Math.floor((Date.now()-began)/1000);message.textContent='রেকর্ড হচ্ছে: '+bn(seconds)+' / ৬০ সেকেন্ড';if(seconds>=60)stopVoiceComplaint();},250);
-  }catch(error){voiceStream?.getTracks().forEach(t=>t.stop());voiceStream=null;start.disabled=false;message.textContent=error.name==='NotAllowedError'
+  }catch(error){if(seq!==voiceEpoch)return;clearInterval(voiceTimer);voiceStream?.getTracks().forEach(t=>t.stop());voiceStream=null;voiceRecorder=null;document.getElementById('voice-stop').classList.add('hidden');start.disabled=false;message.textContent=error.name==='NotAllowedError'
     ? window.ReactNativeWebView
       ? 'মাইক্রোফোনের অনুমতি পাওয়া যায়নি। ফোনের Settings → Apps → NagarBondhu AI → Permissions-এ Microphone চালু করুন। অপশন না থাকলে নতুন APK ইনস্টল করুন। লিখেও অভিযোগ দিতে পারেন।'
       : 'মাইক্রোফোনের অনুমতি পাওয়া যায়নি। ব্রাউজারের site permissions-এ Microphone চালু করুন অথবা লিখে অভিযোগ দিন।'
-    : error.name==='NotReadableError'?'মাইক্রোফোন ব্যবহার করা যাচ্ছে না। অন্য অ্যাপের রেকর্ডিং বা কল বন্ধ করে আবার চেষ্টা করুন। লিখেও অভিযোগ দিতে পারেন।':error.message;}
+    : error.name==='NotFoundError'?'মাইক্রোফোন পাওয়া যায়নি। ডিভাইসের মাইক্রোফোন সংযোগ পরীক্ষা করুন। লিখেও অভিযোগ দিতে পারেন।':error.name==='NotReadableError'?'মাইক্রোফোন ব্যবহার করা যাচ্ছে না। অন্য অ্যাপের রেকর্ডিং বা কল বন্ধ করে আবার চেষ্টা করুন। লিখেও অভিযোগ দিতে পারেন।':error.message;}
 }
-function stopVoiceComplaint(){if(voiceRecorder?.state==='recording')voiceRecorder.stop();}
+function stopVoiceComplaint(discard=false){
+  if(!discard){if(voiceRecorder?.state==='recording')voiceRecorder.stop();return;}
+  voiceEpoch++;voiceController?.abort();voiceController=null;clearInterval(voiceTimer);
+  if(voiceRecorder){voiceRecorder.onstop=null;voiceRecorder.onerror=null;if(voiceRecorder.state==='recording')voiceRecorder.stop();}
+  voiceStream?.getTracks().forEach(t=>t.stop());voiceStream=null;voiceRecorder=null;voiceBusy=false;
+  document.getElementById('voice-stop').classList.add('hidden');document.getElementById('voice-start').disabled=false;document.getElementById('voice-transcribe').disabled=false;
+  resetVoicePreview();
+}
 async function sendVoiceComplaint(){
   if(!voiceBlob||voiceBusy)return;const message=document.getElementById('voice-message'),retry=document.getElementById('voice-transcribe'),start=document.getElementById('voice-start'),description=document.getElementById('form-description'),before=description.value;
-  voiceBusy=true;retry.disabled=true;start.disabled=true;message.textContent='কণ্ঠ থেকে লেখা তৈরি হচ্ছে…';
-  try{if(voiceBlob.size>5*1024*1024)throw new Error('অডিও ৫ এমবির বেশি। ছোট করে আবার রেকর্ড করুন।');const {data}=await platformApi('/ai/transcribe',{deviceId:civicDevice(),audioBase64:await civicDataUrl(voiceBlob)});if(!data.transcript_bn.trim())throw new Error('স্পষ্ট বক্তব্য শোনা যায়নি। আবার রেকর্ড করুন।');if(description.value!==before)throw new Error('আপনি ইতিমধ্যে লেখা বদলেছেন। আবার লেখা তৈরি করতে চাপুন।');description.value=before.trim()?before+'\n'+data.transcript_bn:data.transcript_bn;description.dispatchEvent(new Event('input',{bubbles:true}));message.textContent='লেখা তৈরি হয়েছে। দেখে সম্পাদনা করুন, তারপর বিবরণ বিশ্লেষণ করুন।';voiceBlob=null;if(voiceUrl)URL.revokeObjectURL(voiceUrl);voiceUrl=null;document.getElementById('voice-preview').removeAttribute('src');document.getElementById('voice-preview').classList.add('hidden');retry.classList.add('hidden');}catch(error){message.textContent=error.message+' লিখেও রিপোর্ট দিতে পারেন।';}finally{voiceBusy=false;retry.disabled=false;start.disabled=false;}
+  const seq=voiceEpoch;voiceController=new AbortController();voiceBusy=true;retry.disabled=true;start.disabled=true;message.textContent='কণ্ঠ থেকে লেখা তৈরি হচ্ছে… সর্বোচ্চ ৪৫ সেকেন্ড লাগতে পারে।';
+  try{const text=await transcribeCivicAudio(voiceBlob,civicDevice(),voiceController.signal);if(seq!==voiceEpoch)return;if(description.value!==before)throw new Error('আপনি ইতিমধ্যে লেখা বদলেছেন। আবার লেখা তৈরি করতে চাপুন।');if((before+'\n'+text).trim().length>6000)throw new Error('বিবরণ ৬০০০ অক্ষরের বেশি হচ্ছে। লেখা ছোট করে আবার চেষ্টা করুন।');description.value=before.trim()?before+'\n'+text:text;description.dispatchEvent(new Event('input',{bubbles:true}));message.textContent='লেখা তৈরি হয়েছে · Google Gemini। দেখে সম্পাদনা করুন, তারপর বিবরণ বিশ্লেষণ করুন।';resetVoicePreview();}catch(error){if(seq===voiceEpoch)message.textContent=error.message+' লিখেও রিপোর্ট দিতে পারেন।';}finally{if(seq===voiceEpoch){voiceBusy=false;voiceController=null;retry.disabled=false;start.disabled=false;}}
 }
-window.addEventListener('pagehide',()=>{clearInterval(voiceTimer);voiceStream?.getTracks().forEach(t=>t.stop());if(voiceUrl)URL.revokeObjectURL(voiceUrl);voiceBlob=null;});
+window.addEventListener('pagehide',()=>stopVoiceComplaint(true));
 function photoCheckLabel(data){return !data||data.unavailable?data?.message||'ছবি যাচাইয়ের তথ্য নেই':data.matchesDescription==='MATCH'?'✅ ছবি ও বিবরণ মিলছে':data.matchesDescription==='UNCLEAR'?'❔ ছবি স্পষ্ট নয়':'⚠️ ছবিতে আংশিক মিল বা অন্য সমস্যা দেখা যাচ্ছে: '+data.observedDetails_bn;}
 let photoCheckBusy=false;
-async function previewPhotoCheck(){if(photoCheckBusy)return;const box=document.getElementById('photo-check-message'),description=document.getElementById('form-description').value.trim();box.textContent='ছবি ও বিবরণ যাচাই হচ্ছে…';photoCheckBusy=true;try{const imageBase64=selectedImageDataUrl,imageUrl=document.getElementById('form-image')?.value.trim();if(!imageBase64&&!imageUrl)throw new Error('আগে ছবি নির্বাচন করুন।');const {data}=await platformApi('/ai/check-photo',{deviceId:civicDevice(),description,...(imageBase64?{imageBase64}:{imageUrl})});if(description!==document.getElementById('form-description').value.trim()||imageBase64!==selectedImageDataUrl){box.textContent='ছবি বা বিবরণ বদলেছে। আবার যাচাই করুন।';return;}box.textContent=photoCheckLabel(data)+' • প্রাথমিক AI পর্যবেক্ষণ';}catch(error){box.textContent=error.message+' যাচাই ছাড়াও রিপোর্ট জমা দিতে পারেন।';}finally{photoCheckBusy=false;}}
+async function previewPhotoCheck(){if(photoCheckBusy)return;const box=document.getElementById('photo-check-message'),description=document.getElementById('form-description').value.trim();box.textContent='ছবি ও বিবরণ যাচাই হচ্ছে…';photoCheckBusy=true;try{const imageBase64=selectedImageDataUrl,imageUrl=document.getElementById('form-image')?.value.trim();if(!imageBase64&&!imageUrl)throw new Error('আগে ছবি নির্বাচন করুন।');const {data}=await platformApi('/ai/check-photo',{deviceId:civicDevice(),description,...(imageBase64?{imageBase64}:{imageUrl})});if(description!==document.getElementById('form-description').value.trim()||imageBase64!==selectedImageDataUrl||imageUrl!==(document.getElementById('form-image')?.value.trim())){box.textContent='ছবি বা বিবরণ বদলেছে। আবার যাচাই করুন।';return;}box.textContent=photoCheckLabel(data)+' • প্রাথমিক AI পর্যবেক্ষণ';}catch(error){box.textContent=error.message+' যাচাই ছাড়াও রিপোর্ট জমা দিতে পারেন।';}finally{photoCheckBusy=false;}}
 const civicAiPreview=runAiPreview;
 runAiPreview=async function(allowFallback=false){await civicAiPreview(allowFallback);const pin=pickerMarker?.getLatLng();if(pin){try{const {data}=await platformApi('/nearby?latitude='+pin.lat+'&longitude='+pin.lng);let box=document.getElementById('nearby-preview');if(!box){box=document.createElement('div');box.id='nearby-preview';box.className='bg-indigo-50 rounded-xl p-3';document.getElementById('ai-preview-box').appendChild(box);}box.innerHTML=nearbyHtml(data);}catch{}}if(selectedImageDataUrl)await previewPhotoCheck();};
 function civicDevice(){let id=localStorage.getItem('nagarbondhu-device');if(!id){id=uuid();localStorage.setItem('nagarbondhu-device',id);}return id;}
@@ -55,7 +90,7 @@ renderReportsFeed=function(reports){scorecardFeed(civicWardFilter?reports.filter
 async function loadScorecard(){const box=document.getElementById('scorecard-cards'),message=document.getElementById('scorecard-message');box.textContent='লোড হচ্ছে…';try{const q=new URLSearchParams({source:document.getElementById('scorecard-source').value});const category=document.getElementById('scorecard-category').value;if(category)q.set('category',category);const result=await platformApi('/wards/scorecard?'+q);message.textContent=(q.get('source')==='demo_seed'?'নমুনা তথ্য • ':q.get('source')==='all'?'নাগরিক ও নমুনা মিশ্র তথ্য • ':'নাগরিক রিপোর্ট • ')+bn(result.unknownWardCount)+'টি রিপোর্টে ওয়ার্ড অজানা।';box.innerHTML=result.data.sort((a,b)=>(b.grade?b.index:-1)-(a.grade?a.index:-1)).map(w=>`<article class="bg-white border rounded-xl p-4 space-y-2"><div class="flex justify-between"><h3 class="font-bold">${platformEscape(w.wardName)}</h3><strong class="ward-grade text-indigo-800" data-grade="${platformEscape(w.grade||'')}">${w.grade||'—'}</strong></div><p class="text-xs">${w.grade?'মোট '+bn(w.total)+' • অসম্পন্ন '+bn(w.open)+' • কাজ চলছে '+bn(w.inProgress):w.label}</p><p class="text-xs">সমাধান ${bn(w.resolved)} • হার ${bn(Math.round(w.resolutionRate*100))}%</p><div class="bg-slate-100 h-2 rounded"><div class="bg-indigo-700 h-2 rounded" style="width:${Math.round(w.resolutionRate*100)}%"></div></div><p class="text-xs">মধ্যম সময়: ${w.medianDaysToResolve===null?'তথ্য নেই':bn(w.medianDaysToResolve.toFixed(1))+' দিন'} • ৭ দিন পেরিয়েছে ${bn(w.overdueCount)}</p><p class="text-xs">নাগরিক-নিশ্চিত ${bn(Math.round(w.citizenConfirmedRate*100))}% • আবার খোলা ${bn(w.reopenedCount)} • উচ্চ অগ্রাধিকারে অসম্পন্ন ${bn(w.highPriorityOpen)}</p><details class="text-xs"><summary>স্কোরের হিসাব</summary><p>${platformEscape(w.formula)}</p><p>সমাধান ${bn(w.breakdown.resolution.toFixed(2))}, সময় ${bn(w.breakdown.timeliness.toFixed(2))}, বিলম্ব ${bn(w.breakdown.overdue.toFixed(2))}, নাগরিক যাচাই ${bn(w.breakdown.citizenConfirmation.toFixed(2))}</p></details><div class="flex gap-2"><button class="text-xs underline" data-ward-map="${platformEscape(w.wardId)}">মানচিত্রে দেখুন</button><button class="text-xs underline" data-ward-feed="${platformEscape(w.wardId)}">রিপোর্ট দেখুন</button></div></article>`).join('');box.querySelectorAll('[data-ward-map]').forEach(b=>b.onclick=()=>openScorecardWard(b.dataset.wardMap,'map'));box.querySelectorAll('[data-ward-feed]').forEach(b=>b.onclick=()=>openScorecardWard(b.dataset.wardFeed,'feed'));}catch(error){box.textContent=error.message;message.textContent='স্কোরকার্ড আবার খুলে চেষ্টা করুন।';}}
 async function openScorecardWard(id,tab){civicWardFilter=id;feedOffset=0;const source=document.getElementById('scorecard-source').value;document.getElementById('stats-source').value=source;document.getElementById('feed-ward').value=id;switchTab(tab);if(tab==='feed'){await loadData();}else{initMainMap();initTwinControls();document.getElementById('map-source').value=source==='all'?'':source;document.getElementById('twin-ward').value=id;await loadMapRecords();const ward=RAJSHAHI_WARDS.find(w=>'ward-'+w.wardNumber===id);if(ward&&mainMap)mainMap.setView([ward.lat,ward.lng],15);}}
 const scorecardSwitch=switchTab;
-switchTab=function(tab){scorecardSwitch(tab);if(tab==='scorecard')loadScorecard();};
+switchTab=function(tab){if(tab!=='report'&&(voiceRecorder||voiceBusy||document.getElementById('voice-start').disabled)){stopVoiceComplaint(true);document.getElementById('voice-message').textContent='কণ্ঠ ইনপুট বন্ধ হয়েছে। আবার রেকর্ড করতে পারেন।';}scorecardSwitch(tab);if(tab==='scorecard')loadScorecard();};
 function initCivicWardControl(){if(document.getElementById('feed-ward'))return;const select=document.createElement('select');select.id='feed-ward';select.className='border rounded p-2 text-xs';select.innerHTML='<option value="">সব ওয়ার্ড</option>'+RAJSHAHI_WARDS.map(w=>`<option value="ward-${w.wardNumber}">${platformEscape(w.wardName)}</option>`).join('');select.onchange=()=>{civicWardFilter=select.value;feedOffset=0;loadData();};const label=document.createElement('label');label.className='block text-xs';label.textContent='ওয়ার্ড অনুযায়ী রিপোর্ট ';label.appendChild(select);document.getElementById('section-feed').prepend(label);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initCivicWardControl);else initCivicWardControl();
 let rainRequest=0;

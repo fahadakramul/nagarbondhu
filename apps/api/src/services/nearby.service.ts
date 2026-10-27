@@ -5,7 +5,7 @@ const cache=new Map<string,NearbySensitive>();
 const pending=new Map<string,Promise<NearbySensitive>>();
 const labels:Record<string,string>={education:'শিক্ষাপ্রতিষ্ঠান',health:'স্বাস্থ্যসেবা',market:'বাজার',transport:'বাস স্টপ',worship:'উপাসনালয়'};
 export const emptyNearby=(unavailable=false):NearbySensitive=>({fetchedAt:new Date().toISOString(),radius:200,groups:Object.fromEntries(Object.keys(labels).map(k=>[k,{count:0,items:[]}])),bonus:0,source:'OpenStreetMap (Overpass)',unavailable});
-const resultSchema=z.object({elements:z.array(z.object({type:z.string(),id:z.number(),lat:z.number().optional(),lon:z.number().optional(),center:z.object({lat:z.number(),lon:z.number()}).optional(),tags:z.record(z.string()).default({})})).max(2000)});
+const resultSchema=z.object({elements:z.array(z.object({type:z.string(),id:z.number(),lat:z.number().optional(),lon:z.number().optional(),center:z.object({lat:z.number(),lon:z.number()}).optional(),tags:z.record(z.string(),z.string()).default({})})).max(2000)});
 export async function nearbySensitive(lat:number,lon:number,timeout=5000):Promise<NearbySensitive>{
   const key=lat.toFixed(4)+','+lon.toFixed(4);
   if(pending.has(key))return pending.get(key)!;

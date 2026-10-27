@@ -4,8 +4,8 @@ import { resolve } from 'path';
 
 export const CITY_WEATHER_URL='https://api.open-meteo.com/v1/forecast?latitude=24.3745&longitude=88.6042&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,cloud_cover,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&hourly=temperature_2m,precipitation_probability,precipitation,weather_code,visibility,uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,precipitation_probability_max,wind_speed_10m_max&forecast_days=7&timezone=Asia%2FDhaka';
 export const CITY_AIR_URL='https://air-quality-api.open-meteo.com/v1/air-quality?latitude=24.3745&longitude=88.6042&current=us_aqi,pm2_5,pm10,nitrogen_dioxide,ozone,carbon_monoxide,sulphur_dioxide&hourly=us_aqi,pm2_5,pm10&forecast_days=3&timezone=Asia%2FDhaka';
-const values=z.record(z.union([z.number().finite(),z.string(),z.null()]));
-const series=z.record(z.array(z.union([z.number().finite(),z.string(),z.null()])));
+const values=z.record(z.string(),z.union([z.number().finite(),z.string(),z.null()]));
+const series=z.record(z.string(),z.array(z.union([z.number().finite(),z.string(),z.null()])));
 export const environmentSchema=z.object({current:values.refine(c=>typeof c.time==='string','Missing observation time'),hourly:series.refine(h=>Array.isArray(h.time)&&h.time.length>0,'Missing forecast hours'),daily:series.optional()});
 type Payload=z.infer<typeof environmentSchema>;
 type Entry={data:Payload;fetchedAt:string};

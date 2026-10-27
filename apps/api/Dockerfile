@@ -1,4 +1,6 @@
-FROM node:20-alpine AS builder
+FROM node:22.23.4-alpine AS builder
+
+RUN apk upgrade --no-cache && apk add --no-cache ca-certificates && update-ca-certificates
 
 WORKDIR /app
 
@@ -14,7 +16,9 @@ COPY apps/api/ ./apps/api/
 RUN npm --prefix packages/shared run build
 RUN npm --prefix apps/api run build
 
-FROM node:20-alpine AS runner
+FROM node:22.23.4-alpine AS runner
+
+RUN apk upgrade --no-cache && apk add --no-cache ca-certificates && update-ca-certificates
 
 WORKDIR /app
 

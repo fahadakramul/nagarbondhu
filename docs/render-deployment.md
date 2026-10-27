@@ -10,7 +10,7 @@ For a manually created Web Service, use:
 - Build: `npm ci --include=dev --workspace=@nagarbondhu/shared --workspace=@nagarbondhu/api && npm run build:shared && npm --prefix apps/api run build`
 - Start: `npm --prefix apps/api run start:render`
 - Health check: `/api/v1/health`
-- Environment: `NODE_ENV=production`, `NODE_VERSION=22.16.0`, a random `JWT_SECRET`, `DATABASE_PROVIDER=postgres`, and the private Render PostgreSQL internal connection URL in `DATABASE_URL`.
+- Environment: `NODE_ENV=production`, `NODE_VERSION=22.23.4`, a random `JWT_SECRET`, `DATABASE_PROVIDER=postgres`, and the private Render PostgreSQL internal connection URL in `DATABASE_URL`.
 - Optional: `GEMINI_API_KEY` to enable live Gemini analysis. Otherwise the existing heuristic analyzer runs.
 
 After the service is live, verify `/`, `/api/v1/health`, login, reports, and image
